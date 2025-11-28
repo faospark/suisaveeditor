@@ -1,4 +1,4 @@
-# Suikoden II Save Editor
+# Suikoden II HD Remaster Save Editor
 
 A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.
 
@@ -18,7 +18,7 @@ A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save fi
 
 ### Step-by-Step Guide
 
-1. **Decrypt your save file** using [SuikodenFix](https://github.com/asilverthorn/suikoden_ref/)
+1. **Decrypt your save file** using [SuikodenFix](https://github.com/d3xMachina/Suikoden-Fix)
    - Look for files named `_decrypted_gsd2_Data*.json`
    - **Always backup your original save files first!**
 
