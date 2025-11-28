@@ -1,0 +1,551 @@
+/* Compact UI styling optimized for Pico CSS */
+
+/* Pico CSS font size overrides */
+@media (min-width: 576px) {
+    :root, :host {
+        --pico-font-size: 100%;
+    }
+}
+
+@media (min-width: 768px) {
+    :root, :host {
+        --pico-font-size: 100%;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root, :host {
+        --pico-font-size: 100%;
+    }
+}
+
+@media (min-width: 1280px) {
+    :root, :host {
+        --pico-font-size: 100%;
+    }
+}
+
+@media (min-width: 1536px) {
+    :root, :host {
+        --pico-font-size: 100%;
+    }
+}
+
+:root, :host {
+    --pico-form-element-spacing-vertical: 0.75rem;
+}
+
+input:not([type=checkbox], [type=radio], [type=range]) {
+    height: calc(1rem * var(--pico-line-height) + var(--pico-form-element-spacing-vertical) * 1 + var(--pico-border-width) * 2);
+}
+
+/* Improved table styling - more compact */
+table {
+    font-size: 0.75rem;
+    margin: 0.5rem 0;
+}
+
+table th,
+table td {
+    padding: 0.4rem 0.6rem;
+}
+
+table input {
+    width: 100%;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.7rem;
+    margin: 0;
+}
+
+/* Editor specific styles */
+.json-item {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+
+.json-item label {
+    min-width: 180px;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.json-item input,
+.json-item select {
+    flex: 1;
+    padding: 0.4rem;
+    font-size: 0.75rem;
+    margin-bottom: 0;
+}
+
+.json-object,
+.json-array {
+    margin-inline: 0;
+    margin-bottom: 0.75rem;
+    padding: .5rem;
+}
+
+hgroup {
+    margin-bottom: 1rem;
+}
+
+hgroup h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+hgroup p {
+    font-size: 0.8rem;
+    color: var(--muted-color);
+}
+
+/* Grid layout for file input */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    /* gap: 1rem; */
+    /* align-items: end; */
+}
+
+/* Button styling */
+button {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Input styling */
+input[type="file"] {
+    font-size: 0.75rem;
+}
+
+label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+/* Tabs - prettier with outlines and flexbox layout */
+.tabs {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.tabs-left {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.tabs-right {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.tab-button {
+    padding: 0.4rem 0.8rem;
+    border: 2px solid var(--pico-primary);
+    background-color: transparent;
+    color: var(--pico-primary);
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-button:hover {
+    background-color: var(--pico-primary);
+    color: var(--pico-primary-inverse);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.tab-button.outline {
+    background-color: transparent;
+    opacity: 0.7;
+    border-color: var(--muted-border-color);
+    color: var(--muted-color);
+}
+
+.tab-button:not(.outline) {
+    background-color: var(--pico-primary);
+    color: var(--pico-primary-inverse);
+    border-color: var(--pico-primary);
+}
+
+/* Data Values Tab - special styling */
+.data-values-tab {
+    border-color: #9b59b6 !important;
+    color: #9b59b6 !important;
+}
+
+.data-values-tab:hover {
+    background-color: #9b59b6 !important;
+    color: white !important;
+}
+
+.data-values-tab:not(.outline) {
+    background-color: #9b59b6 !important;
+    color: white !important;
+    border-color: #9b59b6 !important;
+}
+
+.tab-content {
+    min-height: 150px;
+    font-size: .75rem;
+}
+
+/* Data Values Content Styling */
+.data-values-content {
+    font-size: 0.7rem;
+}
+
+.data-values-content details {
+    margin-bottom: 0.75rem;
+}
+
+.data-values-content summary {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* CSS Columns for vertical enumeration */
+.data-values-list {
+    column-count: 5;
+    column-gap: 1rem;
+    padding: 0.5rem;
+}
+
+/* Responsive column count */
+@media (max-width: 1400px) {
+    .data-values-list {
+        column-count: 4;
+    }
+}
+
+@media (max-width: 1100px) {
+    .data-values-list {
+        column-count: 3;
+    }
+}
+
+@media (max-width: 800px) {
+    .data-values-list {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 500px) {
+    .data-values-list {
+        column-count: 1;
+    }
+}
+
+.data-values-item {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    font-size: 0.7rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.data-values-item .id {
+    font-weight: 600;
+    color: var(--pico-primary);
+    min-width: 30px;
+}
+
+.data-values-item .name {
+    color: var(--pico-color);
+}
+
+/* Alternating colors for details tags */
+details {
+    border-left: 3px solid var(--pico-primary);
+    padding-left: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+details:nth-child(odd) {
+    border-left-color: var(--pico-primary);
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+details:nth-child(even) {
+    border-left-color: #16a085;
+    background-color: rgba(22, 160, 133, 0.05);
+}
+
+details summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
+    user-select: none;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+details:nth-child(odd) summary {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+details:nth-child(even) summary {
+    background-color: rgba(22, 160, 133, 0.1);
+}
+
+details summary:hover {
+    background-color: var(--card-sectionning-background-color);
+    transform: translateX(2px);
+}
+
+/* Container improvements */
+.container {
+    max-width: 1400px;
+}
+
+/* Bath Items - Responsive Grid for Ornaments */
+.bath-ornaments-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .bath-ornaments-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+
+
+.gs-1 {	grid-column: span 1 }
+.gs-2 {	grid-column: span 2 }
+.gs-3 {	grid-column: span 3 }
+.gs-4 {	grid-column: span 4 }
+.gs-5 {	grid-column: span 5 }
+.gs-6 {	grid-column: span 6 }
+.gs-7 {	grid-column: span 7 }
+.gs-8 {	grid-column: span 8 }
+.gs-9 {	grid-column: span 9 }
+.gs-10 { grid-column: span 10 }
+.gs-11 { grid-column: span 11 }
+.gs-12 { grid-column: span 12 }
+.g-2-col { grid-template-columns: repeat(auto-fit, minmax(min(401px, 100%), 1fr));}
+.g-3-col { grid-template-columns: repeat(auto-fit, minmax(min(301px, 100%), 1fr));}
+.g-4-col {	grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));}
+.g-tile-col { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));}
+.grid-container--fill { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));}
+
+.d-grid {	display: grid;}
+
+.grid-12 {	
+    grid-template-columns: repeat(12, 1fr);
+	> * {
+		grid-column: span 12;
+	}
+}
+
+.gap-1 {
+	gap: 1rem 0
+}
+
+.gap-2 {
+	gap: 2rem 0
+}
+
+.g-span-1, .g-span-2, .g-span-3, .g-span-4, .g-span-5, .g-span-6, 
+.g-span-7, .g-span-8, .g-span-9, .g-span-10, .g-span-11, .g-span-12 
+{ grid-column: span 12;}
+
+@media (min-width: 576px) {
+	.container {
+		max-width: 540px;
+	}
+	.gap-1 {gap: 1rem
+	}
+	.gap-2 { gap: 2rem
+	}
+	.g-span-1 {	grid-column: span 12;
+	}
+
+	.g-span-2 {	grid-column: span 12;
+	}
+
+	.g-span-3 {	grid-column: span 12;
+	}
+
+	.g-span-4 {	grid-column: span 12;
+	}
+
+	.g-span-5 {	grid-column: span 12;
+	}
+
+	.g-span-6 {	grid-column: span 6;
+	}
+
+	.g-span-7 {	grid-column: span 12;
+	}
+
+	.g-span-8 {	grid-column: span 12;
+	}
+
+	.g-span-9 {	grid-column: span 12;
+	}
+
+	.g-span-10 { grid-column: span 12;
+	}
+
+	.g-span-11 { grid-column: span 12;
+	}
+
+	.g-span-12 { grid-column: span 12;
+	}
+
+}
+
+@media (min-width: 768px) {
+	.container {
+		max-width: 720px;
+	}
+
+	.g-3-columns > * {
+		grid-column: span 6;
+	}
+
+	.g-4-columns > * {
+		grid-column: span 6;
+	}
+
+	.g-half-columns > * {
+		grid-column: span 6;
+	}
+
+	.g-span-1 {
+		grid-column: span 1;
+	}
+
+	.g-span-2 {
+		grid-column: span 2;
+	}
+
+	.g-span-3 {
+		grid-column: span 3;
+	}
+
+	.g-span-4 {
+		grid-column: span 4;
+	}
+
+	.g-span-5 {
+		grid-column: span 5;
+	}
+
+	.g-span-6 {
+		grid-column: span 6;
+	}
+
+	.g-span-7 {
+		grid-column: span 7;
+	}
+
+	.g-span-8 {
+		grid-column: span 8;
+	}
+
+	.g-span-9 {
+		grid-column: span 9;
+	}
+
+	.g-span-10 {
+		grid-column: span 10;
+	}
+
+	.g-span-11 {
+		grid-column: span 11;
+	}
+
+	.g-span-12 {
+		grid-column: span 12;
+	}
+
+
+}
+
+@media (min-width: 992px) {
+	.container {
+		max-width: 960px;
+	}
+
+	.g-3-columns > * {
+		grid-column: span 4;
+	}
+
+	.g-4-columns > * {
+		grid-column: span 3;
+	}
+
+	.g-third-side-left {
+		.left-prime {
+			grid-column: span 12;
+		}
+
+		.right-prime {
+			grid-column: span 12;
+		}
+	}
+
+
+	@media (min-width: 1200px) {
+		.container {
+			max-width: 1140px;
+		}
+
+		.g-third-side-left {
+			
+            .left-prime {
+				grid-column: span 4;
+			}
+
+			.right-prime {
+				grid-column: span 8;
+			}
+		}
+
+	}
+}
+
+@media (min-width: 1400px) {
+	.container {
+		max-width: 1320px;
+	}
+}
+
+
+.pads-1{
+    padding: 1rem;
+}
+.b2{
+    background-color: var(--pico-card-sectioning-background-color);
+}
+.ls-none{
+    list-style: none !important;
+    padding-left: 0;
+    margin-left: 0;
+    li::marker {
+        display: none;
+    }
+    li{ list-style: none !important;}
+}

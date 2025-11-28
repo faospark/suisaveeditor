@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuikoHDEditor</title>
+  <link rel="stylesheet" href="./css/pico.css">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+
+<body>
+  <main class="container">
+    <header class="pads-1">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 style="margin-bottom: 0.5rem;">Suikoden 2 Remaster Save Editor</h1>
+          <p style="margin: 0;">A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.</p>
+        </div>
+        <div>
+          <a href="https://paypal.me/thefaospark?country.x=PH&locale.x=en_US" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: linear-gradient(135deg, #f5d020 0%, #f0b90b 100%); color: #000; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
+            ❤️ Donate
+          </a>
+        </div>
+      </div>
+    </header>
+    <article>
+      <header>
+        <div class="grid">
+          <div style="height: auto;">
+            <label for="file-input">Load JSON File</label>
+            <input type="file" id="file-input" accept=".json" style="height: auto;" />
+          </div>
+          <div style="height: 100%; display: flex; align-items: center;">
+            <label for="save-btn">&nbsp;</label>
+            <button id="save-btn" disabled>Save / Download JSON</button>
+          </div>
+        </div>
+        <div>
+          This Save Editor requires a JSON file from Suikoden 2 Remaster outputed by SuikodenFix . you need to enable save edit feature in SuikodenFix to use this editor.
+        </div>
+      </header>
+
+      <div id="editor-container">
+        <p>Please load a JSON file to start editing.</p>
+      </div>
+          <footer class="pads-1 b2">
+      <div style="font-size: .75rem;">
+       <p> Here are my other mods for Suikoden 1 and 2 HD Remaster</p>
+        <ul class="tiles tiles-manage mods d-grid ls-none g-3-col">
+            <li class="mod-tile" id="editable-mod-7402-6">
+                <a href="/suikoden1and2hdremaster/mods/6">Project Kyaro Mod</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-16">
+                <a href="/suikoden1and2hdremaster/mods/16">Early Recruitment Patch</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-18">
+                <a href="/suikoden1and2hdremaster/mods/18">Kraken Patch</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-17">
+                <a href="/suikoden1and2hdremaster/mods/17">Open Paths Mod</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-14">
+                <a href="/suikoden1and2hdremaster/mods/14">True Matilda Glitch Restoration</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-12">
+                <a href="/suikoden1and2hdremaster/mods/12">Alternate Portraits</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-5">
+                <a href="/suikoden1and2hdremaster/mods/5">Suikoden Reworded Plus</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-2">
+                <a href="/suikoden1and2hdremaster/mods/2">Genso Force PSX Buttons</a>
+            </li>
+        </ul>
+      </div>
+    </footer>
+    </article>
+
+  </main>
+  <script src="./src/gamedata.js"></script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+
+</html>
