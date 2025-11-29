@@ -219,6 +219,29 @@ function renderEditor(container, data, onUpdate) {
 
   tabsRight.appendChild(dataValuesBtn);
 
+  // Create About tab (right side, after Data Values)
+  const aboutBtn = document.createElement('button');
+  aboutBtn.textContent = 'About';
+  aboutBtn.className = 'tab-button outline about-tab';
+  aboutBtn.id = 'tab-about';
+  aboutBtn.dataset.tabName = 'About';
+
+  aboutBtn.addEventListener('click', () => {
+    // Deactivate all regular tabs
+    Object.values(tabButtons).forEach(b => b.classList.add('outline'));
+    dataValuesBtn.classList.add('outline');
+    aboutBtn.classList.remove('outline');
+
+    // Update content container
+    contentContainer.id = 'content-about';
+
+    // Render About viewer
+    createAboutViewer(contentContainer);
+  });
+
+  tabsRight.appendChild(aboutBtn);
+
+
   // Assemble tab container
   tabContainer.appendChild(tabsLeft);
   tabContainer.appendChild(tabsRight);
@@ -1916,6 +1939,200 @@ function createDataValuesViewer(container) {
   donateContainer.appendChild(donateButton);
   container.appendChild(donateContainer);
 }
+
+// MARKDOWN TO HTML CONVERTER
+// Converts basic markdown syntax to HTML for README display
+// ============================================================================
+
+function markdownToHTML(markdown) {
+  let html = markdown;
+
+  // Convert code blocks first (to avoid processing their content)
+  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+    return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
+  });
+
+  // Convert inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Convert headers (must be at start of line)
+  html = html.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+
+  // Convert bold and italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Convert links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+  // Convert blockquotes (GitHub alerts) - handle single line format
+  html = html.replace(/^> \[!(\w+)\] (.+)$/gm, (match, type, content) => {
+    const alertClass = type.toLowerCase();
+    return `<div class="alert alert-${alertClass}"><strong>${type}:</strong> ${content}</div>`;
+  });
+
+  // Convert blockquotes (GitHub alerts) - handle multi-line format
+  html = html.replace(/^> \[!(\w+)\]\n((?:^> .*$\n?)*)/gm, (match, type, content) => {
+    const alertContent = content.replace(/^> /gm, '').trim();
+    const alertClass = type.toLowerCase();
+    return `<div class="alert alert-${alertClass}"><strong>${type}:</strong> ${alertContent}</div>`;
+  });
+
+  // Convert regular blockquotes
+  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // Convert horizontal rules
+  html = html.replace(/^---$/gm, '<hr>');
+
+  // Add line break before list markers (-, *, +, 1., 2., etc.) for better spacing
+  html = html.replace(/^(\s*)([-*+]|\d+\.)\s+/gm, '<br>$1$2 ');
+
+  // Convert line breaks to paragraphs
+  html = html.split('\n\n').map(para => {
+    // Don't wrap if already wrapped in a tag
+    if (para.match(/^<(h[1-6]|ul|ol|pre|blockquote|hr|div)/)) {
+      return para;
+    }
+    // Don't wrap empty lines
+    if (para.trim() === '') {
+      return '';
+    }
+    return `<p>${para.replace(/\n/g, ' ')}</p>`;
+  }).join('\n');
+
+  return html;
+}
+
+
+// ============================================================================
+// ABOUT VIEWER
+// RENDERS: About tab with README.md content converted to HTML
+// ============================================================================
+
+function createAboutViewer(container) {
+  container.innerHTML = '';
+  container.className = 'tab-content about-content';
+
+  // Show loading state
+  const loading = document.createElement('p');
+  loading.textContent = 'Loading README...';
+  loading.style.cssText = 'color: var(--pico-muted-color); text-align: center; padding: 2rem;';
+  container.appendChild(loading);
+
+  // Fetch README.md
+  fetch('./README.md')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Failed to load README: ${response.statusText}`);
+      }
+      return response.text();
+    })
+    .then(markdown => {
+      // Clear loading state
+      container.innerHTML = '';
+
+      // Create content wrapper
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'readme-content';
+      contentWrapper.style.cssText = 'max-width: 800px; margin: 0 auto; padding: 1rem;';
+
+      // Convert markdown to HTML
+      const htmlContent = markdownToHTML(markdown);
+      contentWrapper.innerHTML = htmlContent;
+
+      // Add some styling for the README content
+      const style = document.createElement('style');
+      style.textContent = `
+        .readme-content h1 {
+          border-bottom: 2px solid var(--pico-primary);
+          padding-bottom: 0.5rem;
+          margin-top: 1.5rem;
+        }
+        .readme-content h2 {
+          border-bottom: 1px solid var(--pico-muted-border-color);
+          padding-bottom: 0.3rem;
+          margin-top: 1.5rem;
+        }
+        .readme-content h3 {
+          margin-top: 1.25rem;
+        }
+        .readme-content ul {
+          margin-left: 1.5rem;
+        }
+        .readme-content li {
+          margin-bottom: 0.5rem;
+        }
+        .readme-content code {
+          background: rgba(0,0,0,0.2);
+          padding: 0.2rem 0.4rem;
+          border-radius: 3px;
+          font-size: 0.9em;
+        }
+        .readme-content pre {
+          background: rgba(0,0,0,0.3);
+          padding: 1rem;
+          border-radius: 6px;
+          overflow-x: auto;
+        }
+        .readme-content pre code {
+          background: none;
+          padding: 0;
+        }
+        .readme-content blockquote {
+          border-left: 4px solid var(--pico-primary);
+          padding-left: 1rem;
+          margin-left: 0;
+          color: var(--pico-muted-color);
+          font-style: italic;
+        }
+        .readme-content a {
+          color: var(--pico-primary);
+          text-decoration: none;
+        }
+        .readme-content a:hover {
+          text-decoration: underline;
+        }
+        .readme-content hr {
+          border: none;
+          border-top: 1px solid var(--pico-muted-border-color);
+          margin: 2rem 0;
+        }
+        .alert {
+          padding: 1rem;
+          margin: 1rem 0;
+          border-radius: 6px;
+          border-left: 4px solid;
+        }
+        .alert-important {
+          background: rgba(138, 43, 226, 0.1);
+          border-color: #8a2be2;
+        }
+        .alert-note {
+          background: rgba(59, 130, 246, 0.1);
+          border-color: #3b82f6;
+        }
+        .alert-warning {
+          background: rgba(245, 158, 11, 0.1);
+          border-color: #f59e0b;
+        }
+      `;
+      document.head.appendChild(style);
+
+      container.appendChild(contentWrapper);
+    })
+    .catch(error => {
+      container.innerHTML = '';
+      const errorMsg = document.createElement('p');
+      errorMsg.style.cssText = 'color: var(--pico-del-color); text-align: center; padding: 2rem;';
+      errorMsg.textContent = `Error loading README: ${error.message}`;
+      container.appendChild(errorMsg);
+    });
+}
+
 
 // ============================================================================
 // GENERIC VALUE EDITORS

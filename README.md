@@ -2,6 +2,9 @@
 
 A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.
 
+**🌐 Live Demo:** [https://faospark.github.io/suisaveeditor/](https://faospark.github.io/suisaveeditor/)  
+**📦 Repository:** [https://github.com/faospark/suisaveeditor](https://github.com/faospark/suisaveeditor)
+
 ## Features
 
 - Edit character stats, equipment, runes, and recruitment flags
@@ -13,8 +16,7 @@ A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save fi
 
 ### Before You Start
 
-> [!IMPORTANT]
-> It is highly recommended that you turn off cloud saving for the game before editing save files.
+> [!IMPORTANT] It is highly recommended that you turn off cloud saving for the game before editing save files.
 
 ### Step-by-Step Guide
 
@@ -42,10 +44,18 @@ A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save fi
 
 Many thanks to the following contributors for their work on Suikoden II reference data:
 
+- **d3xMachina** - [SuikodenFix](https://github.com/d3xMachina/Suikoden-Fix)
 - **Asilverthorn** - [Suikoden Reference Tables](https://github.com/asilverthorn/suikoden_ref/)
 - **Suikosource** - [Item Digits Guide](https://suikosource.com/games/gs2/guides/itemdigits.php)
 - **makotech222** - [Suikoden II data research](https://github.com/makotech222/suiko2edit)
 
+Find me at my natural habitat and more mods at [Moogles and Mods](https://mooglesandmods.com/)
+
 ## Disclaimer
 
 This is a fan-made tool for personal use with Suikoden II HD Remaster save files. Use at your own risk.
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

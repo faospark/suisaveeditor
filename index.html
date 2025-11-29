@@ -5,7 +5,34 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SuikoHDEditor</title>
+
+  <!-- Primary Meta Tags -->
+  <title>SuikoHDEditor - Suikoden II HD Remaster Save Editor</title>
+  <meta name="title" content="SuikoHDEditor - Suikoden II HD Remaster Save Editor" />
+  <meta name="description" content="A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files. Edit character stats, equipment, runes, recruitment flags, and manage inventories." />
+  <meta name="keywords" content="Suikoden 2, Suikoden II, HD Remaster, save editor, JSON editor, game save, character editor, SuikodenFix, Suikoden save file" />
+  <meta name="author" content="faospark" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://faospark.github.io/suisaveeditor/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://faospark.github.io/suisaveeditor/" />
+  <meta property="og:title" content="SuikoHDEditor - Suikoden II HD Remaster Save Editor" />
+  <meta property="og:description" content="A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files. Edit character stats, equipment, runes, recruitment flags, and manage inventories." />
+  <meta property="og:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
+  <meta property="og:site_name" content="SuikoHDEditor" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://faospark.github.io/suisaveeditor/" />
+  <meta property="twitter:title" content="SuikoHDEditor - Suikoden II HD Remaster Save Editor" />
+  <meta property="twitter:description" content="A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files. Edit character stats, equipment, runes, recruitment flags, and manage inventories." />
+  <meta property="twitter:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
+
+  <!-- GitHub Repository -->
+  <link rel="alternate" type="application/json" href="https://github.com/faospark/suisaveeditor" />
+
   <link rel="stylesheet" href="./css/pico.css">
   <link rel="stylesheet" href="./src/style.css">
 </head>
@@ -18,7 +45,13 @@
           <h1 style="margin-bottom: 0.5rem;">Suikoden 2 Remaster Save Editor</h1>
           <p style="margin: 0;">A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.</p>
         </div>
-        <div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <a href="https://github.com/faospark/suisaveeditor" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: #24292e; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
+            <svg style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            GitHub
+          </a>
           <a href="https://paypal.me/thefaospark?country.x=PH&locale.x=en_US" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: linear-gradient(135deg, #f5d020 0%, #f0b90b 100%); color: #000; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
             ❤️ Donate
           </a>
@@ -45,37 +78,37 @@
       <div id="editor-container">
         <p>Please load a JSON file to start editing.</p>
       </div>
-          <footer class="pads-1 b2">
-      <div style="font-size: .75rem;">
-       <p> Here are my other mods for Suikoden 1 and 2 HD Remaster</p>
-        <ul class="tiles tiles-manage mods d-grid ls-none g-3-col">
+      <footer class="pads-1 b2">
+        <div style="font-size: .75rem;">
+          <p> Here are my other mods for Suikoden 1 and 2 HD Remaster</p>
+          <ul class="tiles tiles-manage mods d-grid ls-none g-3-col">
             <li class="mod-tile" id="editable-mod-7402-6">
-                <a href="/suikoden1and2hdremaster/mods/6">Project Kyaro Mod</a>
+              <a href="/suikoden1and2hdremaster/mods/6">Project Kyaro Mod</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-16">
-                <a href="/suikoden1and2hdremaster/mods/16">Early Recruitment Patch</a>
+              <a href="/suikoden1and2hdremaster/mods/16">Early Recruitment Patch</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-18">
-                <a href="/suikoden1and2hdremaster/mods/18">Kraken Patch</a>
+              <a href="/suikoden1and2hdremaster/mods/18">Kraken Patch</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-17">
-                <a href="/suikoden1and2hdremaster/mods/17">Open Paths Mod</a>
+              <a href="/suikoden1and2hdremaster/mods/17">Open Paths Mod</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-14">
-                <a href="/suikoden1and2hdremaster/mods/14">True Matilda Glitch Restoration</a>
+              <a href="/suikoden1and2hdremaster/mods/14">True Matilda Glitch Restoration</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-12">
-                <a href="/suikoden1and2hdremaster/mods/12">Alternate Portraits</a>
+              <a href="/suikoden1and2hdremaster/mods/12">Alternate Portraits</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-5">
-                <a href="/suikoden1and2hdremaster/mods/5">Suikoden Reworded Plus</a>
+              <a href="/suikoden1and2hdremaster/mods/5">Suikoden Reworded Plus</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-2">
-                <a href="/suikoden1and2hdremaster/mods/2">Genso Force PSX Buttons</a>
+              <a href="/suikoden1and2hdremaster/mods/2">Genso Force PSX Buttons</a>
             </li>
-        </ul>
-      </div>
-    </footer>
+          </ul>
+        </div>
+      </footer>
     </article>
 
   </main>
