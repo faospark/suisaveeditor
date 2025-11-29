@@ -49,7 +49,7 @@ Many thanks to the following contributors for their work on Suikoden II referenc
 - **Suikosource** - [Item Digits Guide](https://suikosource.com/games/gs2/guides/itemdigits.php)
 - **makotech222** - [Suikoden II data research](https://github.com/makotech222/suiko2edit)
 
-Find me at my natural habitat and more mods at [Moogles and Mods](https://mooglesandmods.com/)
+Find me at my natural habitat and more mods at [Moogles and Mods](https://discord.gg/bSnpVBV)
 
 ## Disclaimer
 
