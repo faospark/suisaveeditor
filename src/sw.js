@@ -1,7 +1,7 @@
 // Service Worker for SuikoHDEditor
 // Enables offline functionality by caching all app assets
 
-const CACHE_NAME = 'suikohd-editor-v1.1.0';
+const CACHE_NAME = 'suikohd-editor-v1.2.0';
 const urlsToCache = [
     './',
     './index.html',
@@ -21,27 +21,20 @@ self.addEventListener('install', (event) => {
             .then((cache) => {
                 console.log('[Service Worker] Caching app shell');
 
-                // Detect if running on localhost
-                const isLocalhost = self.location.hostname === 'localhost' ||
-                    self.location.hostname === '127.0.0.1';
-
-                // Use appropriate base path
-                const basePath = isLocalhost ? '/suisaveeditor' : '';
-
-                // Cache required files first
+                // Cache required files
                 const requiredFiles = [
-                    `${basePath}/`,
-                    `${basePath}/index.html`,
-                    `${basePath}/css/pico.css`,
-                    `${basePath}/src/style.css`,
-                    `${basePath}/src/main.js`,
-                    `${basePath}/src/gamedata.js`,
-                    `${basePath}/public/favicon.svg`
+                    './',
+                    './index.html',
+                    './css/pico.css',
+                    './src/style.css',
+                    './src/main.js',
+                    './src/gamedata.js',
+                    './public/favicon.svg'
                 ];
 
                 // Cache optional files (like debug save)
                 const optionalFiles = [
-                    `${basePath}/debug/save.json`
+                    './debug/save.json'
                 ];
 
                 // Cache required files one by one to see which fails
