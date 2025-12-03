@@ -1,7 +1,10 @@
 // Main Application Logic
 
+// App Version
+const APP_VERSION = '1.2.0';
+
 // Debug Mode Configuration
-let DEBUG_MODE = false; // Set to true to enable auto-load from debug folder
+let DEBUG_MODE = localStorage.getItem('debugMode') === 'true'; // Load from localStorage
 const DEBUG_FILE_PATH = './debug/save.json'; // Path to debug save file
 
 const fileInput = document.getElementById('file-input');
@@ -10,6 +13,38 @@ const editorContainer = document.getElementById('editor-container');
 
 let currentData = null;
 let currentFileName = 'save.json';
+
+// Status Bar Element
+const statusBar = document.querySelector('.status-bar');
+
+// Update Status Bar
+function updateStatusBar() {
+  if (!statusBar) return;
+
+  // Check if offline
+  const isOffline = !navigator.onLine;
+  
+  if (DEBUG_MODE && isOffline) {
+    statusBar.className = 'status-bar active offline-debug-mode';
+    statusBar.textContent = '🐛📡 DEBUG MODE + OFFLINE - Using debug save file without internet';
+  } else if (DEBUG_MODE) {
+    statusBar.className = 'status-bar active debug-mode';
+    statusBar.textContent = '🐛 DEBUG MODE ACTIVE - Using debug save file';
+  } else if (isOffline) {
+    statusBar.className = 'status-bar active offline-mode';
+    statusBar.textContent = '📡 OFFLINE MODE - Working without internet connection';
+  } else {
+    statusBar.className = 'status-bar';
+    statusBar.textContent = '';
+  }
+}
+
+// Listen for online/offline events
+window.addEventListener('online', updateStatusBar);
+window.addEventListener('offline', updateStatusBar);
+
+// Initial status bar update
+updateStatusBar();
 
 // Auto-load debug file if DEBUG_MODE is enable0d
 if (DEBUG_MODE) {
@@ -34,6 +69,50 @@ if (DEBUG_MODE) {
       alert('Debug mode enabled but failed to load file from: ' + DEBUG_FILE_PATH + '\n\nError: ' + err.message);
     });
 }
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Extract save file number from filename
+ * Examples: 
+ *   "_decrypted_gsd2_Data1.json" -> "1"
+ *   "gsd2_Data10.json" -> "10"
+ *   "save_3.json" -> "3"
+ */
+function extractSaveNumber(filename) {
+  if (!filename) return null;
+  
+  // Match common save file patterns
+  const patterns = [
+    /Data(\d+)/i,           // _decrypted_gsd2_Data1.json
+    /save[_\s]*(\d+)/i,     // save_3.json or save 3.json
+    /slot[_\s]*(\d+)/i,     // slot_2.json
+    /file[_\s]*(\d+)/i      // file_1.json
+  ];
+  
+  for (const pattern of patterns) {
+    const match = filename.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Update the save file indicator in the editor tabs
+ */
+function updateSaveFileIndicator() {
+  const indicator = document.getElementById('save-file-indicator');
+  if (indicator) {
+    const saveNumber = extractSaveNumber(currentFileName);
+    indicator.textContent = saveNumber ? `Save File #${saveNumber}` : `Editing: ${currentFileName}`;
+  }
+}
+
 // ============================================================================
 // SCHEMA DEFINITIONS
 // Defines labels, groupings, and rendering strategies for save file data
@@ -47,9 +126,11 @@ const Schema = {
     'base_name': 'Castle Name',
     'm_base_name': 'Suikoden 1 HQ Name',
     'kari_name': 'Greenhill Mission Aliases',
+    'food_menu': 'Castle Menu Orders',
     'team_name': 'Army Name',
     'play_time': 'Play Time',
     'base_lv': 'Castle Level',
+    'furo_info': 'Bath House Level',
     'kaji_lv': 'Blacksmith Level',
     'ninki': 'Popularity',
     'gold': 'Potch',
@@ -69,7 +150,9 @@ const Schema = {
     'sub_no': 'War Sub-Unit IDs',
     'sub_to_leader': 'Sub-Unit Assignment',
     'chara_flag': 'Recruited Characters',
-    'party_item': 'Party Bag (30 items)',
+    'exit_member': 'Active Party Members',
+    'event_item': 'Key Items',
+    'party_item': 'Inventory',
     'area_no': 'Area Location',
     'town_no': 'Town No',
     'map_no': 'Map No',
@@ -93,23 +176,27 @@ const Schema = {
     'mp': 'MP',
   },
   groups: {
-    'General': ['bozu_name', 'bozu_name2', 'macd_name', 'base_name', 'm_base_name', 'team_name', 'base_lv', 'kaji_lv', 'ninki', 'gold', 'play_time', 'location', 'date_time_now', 'kari_name'],
+    'General': ['exit_member', 'location', 'play_time', 'date_time_now', 'bozu_name', 'bozu_name2', 'macd_name', 'base_name', 'm_base_name', 'team_name', 'base_lv', 'furo_info', 'kaji_lv', 'ninki', 'gold', 'kari_name', 'food_menu'],
     'Battle Characters': ['c_varia_dat'],
-    'Party Bag': ['party_item'],
+    'Party Bag': ['event_item', 'party_item'],
     'Warehouse': ['base_item', 'room_item'],
     'Bath': ['furo_item'],
     'Recruited Characters': ['chara_flag'],
-    'System': ['version', 'win_typ', 'win_col', 'msg_spd', 'opt_bit']
+    // 'System': ['version', 'win_typ', 'win_col', 'msg_spd', 'opt_bit']
   },
   renderers: {
     'base_item': 'table',
     'furo_item': 'bath_items',
     'room_item': 'room_items',
+    'event_item': 'key_items',
     'party_item': 'table',
     'chara_flag': 'recruitment',
     'c_varia_dat': 'battle_characters',
     'play_time': 'play_time',
-    'kari_name': 'greenhill_aliases',
+    'furo_info': 'bath_level',
+    'exit_member': 'party_members',
+    'kari_name': 'castle_editors_combined',
+    'food_menu': 'skip', // Handled by combined renderer
     'location': 'location'
   },
   tableColumns: {
@@ -150,10 +237,17 @@ function renderEditor(container, data, onUpdate) {
     };
   }
 
-  // Create Tabs with flexbox layout - left and right containers
-  const tabContainer = document.createElement('div');
+  // Create Tabs with flexbox layout - use existing editor-tabs div or create new one
+  let tabContainer = document.getElementById('editor-tabs');
+  if (!tabContainer) {
+    tabContainer = document.createElement('div');
+    tabContainer.id = 'editor-tabs';
+    container.appendChild(tabContainer);
+  }
+  
+  // Clear existing tabs but keep the container
+  tabContainer.innerHTML = '';
   tabContainer.className = 'tabs';
-  tabContainer.id = 'editor-tabs';
 
   const tabsLeft = document.createElement('div');
   tabsLeft.className = 'tabs-left';
@@ -161,9 +255,8 @@ function renderEditor(container, data, onUpdate) {
   const tabsRight = document.createElement('div');
   tabsRight.className = 'tabs-right';
 
-  const contentContainer = document.createElement('div');
-  contentContainer.className = 'tab-content';
-  contentContainer.id = 'editor-content';
+  // Use the main editor-container instead of creating a new one
+  const contentContainer = container;
 
   const groupKeys = Object.keys(Schema.groups);
   let activeTab = groupKeys[0];
@@ -184,10 +277,12 @@ function renderEditor(container, data, onUpdate) {
     btn.addEventListener('click', () => {
       // Optimize: only update changed buttons
       Object.values(tabButtons).forEach(b => b.classList.add('outline'));
-      // Also update Data Values tab if it exists
-      if (dataValuesBtn) dataValuesBtn.classList.add('outline');
 
       btn.classList.remove('outline');
+      
+      // Deactivate header buttons (Data Values, About, Changelog)
+      const headerButtons = document.querySelectorAll('.tabs-right .tab-button');
+      headerButtons.forEach(b => b.classList.add('outline'));
 
       // Update content container ID to reflect current tab
       contentContainer.id = `content-${groupName.toLowerCase().replace(/\s+/g, '-')}`;
@@ -198,56 +293,26 @@ function renderEditor(container, data, onUpdate) {
     tabsLeft.appendChild(btn);
   });
 
-  // Create Data Values tab (right side)
-  const dataValuesBtn = document.createElement('button');
-  dataValuesBtn.textContent = 'Data Values';
-  dataValuesBtn.className = 'tab-button outline data-values-tab';
-  dataValuesBtn.id = 'tab-data-values';
-  dataValuesBtn.dataset.tabName = 'Data Values';
-
-  dataValuesBtn.addEventListener('click', () => {
-    // Deactivate all regular tabs
-    Object.values(tabButtons).forEach(b => b.classList.add('outline'));
-    dataValuesBtn.classList.remove('outline');
-
-    // Update content container
-    contentContainer.id = 'content-data-values';
-
-    // Render Data Values viewer
-    createDataValuesViewer(contentContainer);
-  });
-
-  tabsRight.appendChild(dataValuesBtn);
-
-  // Create About tab (right side, after Data Values)
-  const aboutBtn = document.createElement('button');
-  aboutBtn.textContent = 'About';
-  aboutBtn.className = 'tab-button outline about-tab';
-  aboutBtn.id = 'tab-about';
-  aboutBtn.dataset.tabName = 'About';
-
-  aboutBtn.addEventListener('click', () => {
-    // Deactivate all regular tabs
-    Object.values(tabButtons).forEach(b => b.classList.add('outline'));
-    dataValuesBtn.classList.add('outline');
-    aboutBtn.classList.remove('outline');
-
-    // Update content container
-    contentContainer.id = 'content-about';
-
-    // Render About viewer
-    createAboutViewer(contentContainer);
-  });
-
-  tabsRight.appendChild(aboutBtn);
-
-
   // Assemble tab container
   tabContainer.appendChild(tabsLeft);
+  
+  // Add save file indicator on the right
+  const saveFileIndicator = document.createElement('div');
+  saveFileIndicator.id = 'save-file-indicator';
+  saveFileIndicator.className = 'save-file-indicator';
+  saveFileIndicator.style.cssText = 'display: flex; align-items: center; padding: 0.4rem 0.8rem; font-size: 0.75rem; font-weight: 600; color: var(--pico-primary); background: rgba(var(--pico-primary-rgb, 52, 152, 219), 0.1); border-radius: 6px;';
+  
+  // Extract save number from filename
+  const saveNumber = extractSaveNumber(currentFileName);
+  saveFileIndicator.textContent = saveNumber ? `Save File #${saveNumber}` : `Editing: ${currentFileName}`;
+  
+  tabsRight.appendChild(saveFileIndicator);
   tabContainer.appendChild(tabsRight);
 
-  container.appendChild(tabContainer);
-  container.appendChild(contentContainer);
+  // Don't append contentContainer - it's the main editor-container
+  // Just clear it and render first tab
+  contentContainer.innerHTML = '';
+  contentContainer.className = 'tab-content';
 
   // Set initial content ID and render first tab
   contentContainer.id = `content-${activeTab.toLowerCase().replace(/\s+/g, '-')}`;
@@ -256,6 +321,14 @@ function renderEditor(container, data, onUpdate) {
 
 function renderTabContent(container, group, data, onUpdate) {
   container.innerHTML = '';
+
+  // Add section title for Party Bag
+  if (group === 'Party Bag') {
+    const title = document.createElement('h3');
+    title.textContent = 'Party Items';
+    title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.1rem; font-weight: 600;';
+    container.appendChild(title);
+  }
 
   const groupPath = Schema.groupPaths[group];
   let targetData = data;
@@ -298,6 +371,9 @@ function renderTabContent(container, group, data, onUpdate) {
       const label = Schema.labels[key] || key;
       const renderer = Schema.renderers ? Schema.renderers[key] : null;
 
+      // Skip if renderer is 'skip' (handled elsewhere)
+      if (renderer === 'skip') return;
+
       let element;
       if (renderer === 'table') {
         const columns = Schema.tableColumns[key];
@@ -324,10 +400,28 @@ function renderTabContent(container, group, data, onUpdate) {
         element = createPlayTimeEditor(value, label, (newValue) => {
           sourceData[key] = newValue;
         });
+      } else if (renderer === 'bath_level') {
+        element = createBathLevelEditor(value, label, (newValue) => {
+          sourceData[key] = newValue;
+        });
+      } else if (renderer === 'party_members') {
+        element = createPartyMembersEditor(value, label, (newValue) => {
+          sourceData[key] = newValue;
+        });
+      } else if (renderer === 'key_items') {
+        element = createKeyItemsEditor(value, label, (newValue) => {
+          sourceData[key] = newValue;
+        });
       } else if (renderer === 'greenhill_aliases') {
         element = createGreenhillAliasesEditor(value, label, (newValue) => {
           sourceData[key] = newValue;
         });
+      } else if (renderer === 'food_menu') {
+        element = createFoodMenuEditor(value, label, (newValue) => {
+          sourceData[key] = newValue;
+        });
+      } else if (renderer === 'castle_editors_combined') {
+        element = createCastleEditorsCombined(data, sourceData);
       } else if (renderer === 'location') {
         // Special handling for location - pass the entire data object
         element = createLocationEditor(data, label, (newValue) => {
@@ -350,6 +444,9 @@ function renderTabContent(container, group, data, onUpdate) {
 
     const label = Schema.labels[key] || key;
     const renderer = Schema.renderers ? Schema.renderers[key] : null;
+
+    // Skip if renderer is 'skip' (handled elsewhere)
+    if (renderer === 'skip') return;
 
     let element;
     if (renderer === 'table') {
@@ -377,10 +474,28 @@ function renderTabContent(container, group, data, onUpdate) {
       element = createPlayTimeEditor(targetData[key], label, (newValue) => {
         targetData[key] = newValue;
       });
+    } else if (renderer === 'bath_level') {
+      element = createBathLevelEditor(targetData[key], label, (newValue) => {
+        targetData[key] = newValue;
+      });
+    } else if (renderer === 'party_members') {
+      element = createPartyMembersEditor(targetData[key], label, (newValue) => {
+        targetData[key] = newValue;
+      });
+    } else if (renderer === 'key_items') {
+      element = createKeyItemsEditor(targetData[key], label, (newValue) => {
+        targetData[key] = newValue;
+      });
     } else if (renderer === 'greenhill_aliases') {
       element = createGreenhillAliasesEditor(targetData[key], label, (newValue) => {
         targetData[key] = newValue;
       });
+    } else if (renderer === 'food_menu') {
+      element = createFoodMenuEditor(targetData[key], label, (newValue) => {
+        targetData[key] = newValue;
+      });
+    } else if (renderer === 'castle_editors_combined') {
+      element = createCastleEditorsCombined(data, targetData);
     } else {
       element = createElementForValue(targetData[key], label, (newValue) => {
         targetData[key] = newValue;
@@ -396,16 +511,17 @@ function renderTabContent(container, group, data, onUpdate) {
 // ============================================================================
 
 function createTableEditor(arr, key, updateCallback, columns) {
-  const details = document.createElement('details');
-  details.open = true;
-  details.className = 'json-array';
+  const container = document.createElement('div');
+  container.className = 'table-editor-section';
 
-  const summary = document.createElement('summary');
-  summary.textContent = key + ` [${arr.length}]`;
-  details.appendChild(summary);
+  // Add title
+  const title = document.createElement('h3');
+  title.textContent = `${key} [${arr.length}]`;
+  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
+  container.appendChild(title);
 
   // Add description for Party Bag and warehouse items explaining use_cnt classification
-  if (key.includes('Party Bag') || key.includes('Warehouse')) {
+  if (key.includes('Party Bag') || key.includes('Inventory') || key.includes('Warehouse')) {
     const description = document.createElement('p');
     description.id = `${key.toLowerCase().replace(/\s+/g, '-')}-description`;
     description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
@@ -417,7 +533,7 @@ function createTableEditor(arr, key, updateCallback, columns) {
       • 64: Trade Items / Bath Items<br>
       • 80: Base/Warehouse Items<br>
       • 99+: Food Items [has specific values so be careful when it comes to use count]`;
-    details.appendChild(description);
+    container.appendChild(description);
   }
 
   const table = document.createElement('table');
@@ -610,9 +726,9 @@ function createTableEditor(arr, key, updateCallback, columns) {
   }
 
   table.appendChild(tbody);
-  details.appendChild(table);
+  container.appendChild(table);
 
-  return details;
+  return container;
 }
 
 // ============================================================================
@@ -621,19 +737,20 @@ function createTableEditor(arr, key, updateCallback, columns) {
 // ============================================================================
 
 function createBathItemsEditor(arr, key, updateCallback) {
-  const details = document.createElement('details');
-  details.open = true;
-  details.className = 'json-array';
+  const container = document.createElement('div');
+  container.className = 'bath-items-editor-section';
 
-  const summary = document.createElement('summary');
-  summary.textContent = key + ` [${arr.length}]`;
-  details.appendChild(summary);
+  // Add title
+  const title = document.createElement('h3');
+  title.textContent = `${key} [${arr.length}]`;
+  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
+  container.appendChild(title);
 
   // Add description
   const description = document.createElement('p');
   description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
   description.innerHTML = `<strong>Bath Items:</strong> All items use Trade category (use_cnt: 64). Paintings for indices 2 & 5, ornaments for other slots.`;
-  details.appendChild(description);
+  container.appendChild(description);
 
   // Define item groups
   const paintingItems = [{ id: 0, name: 'None' }];
@@ -725,7 +842,7 @@ function createBathItemsEditor(arr, key, updateCallback) {
     }
   });
 
-  details.appendChild(paintingDiv);
+  container.appendChild(paintingDiv);
 
   // Create container for Girl's and Boy's Side (responsive grid)
   const ornamentsContainer = document.createElement('div');
@@ -788,9 +905,9 @@ function createBathItemsEditor(arr, key, updateCallback) {
     ornamentsContainer.appendChild(sectionDiv);
   }
 
-  details.appendChild(ornamentsContainer);
+  container.appendChild(ornamentsContainer);
 
-  return details;
+  return container;
 }
 
 // ============================================================================
@@ -896,13 +1013,14 @@ function createRoomItemsEditor(arr, key, updateCallback) {
 // ============================================================================
 
 function createRecruitmentEditor(arr, key, updateCallback) {
-  const details = document.createElement('details');
-  details.open = true;
-  details.className = 'json-array';
+  const container = document.createElement('div');
+  container.className = 'recruitment-editor-section';
 
-  const summary = document.createElement('summary');
-  summary.textContent = key + ` [${arr.length} characters]`;
-  details.appendChild(summary);
+  // Add title
+  const title = document.createElement('h3');
+  title.textContent = `${key} [${arr.length} characters]`;
+  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
+  container.appendChild(title);
 
   // Add description for recruitment status values
   const description = document.createElement('p');
@@ -911,9 +1029,10 @@ function createRecruitmentEditor(arr, key, updateCallback) {
     • 1: Spoke to<br>
     • 70: Auto Join<br>
     • 71: Manual Recruit<br>
+    • 86: Event Locked Not Party<br>
     • 212: Deceased<br>
     • 213: On Leave`;
-  details.appendChild(description);
+  container.appendChild(description);
 
   const table = document.createElement('table');
   table.className = 'striped';
@@ -973,9 +1092,9 @@ function createRecruitmentEditor(arr, key, updateCallback) {
   });
 
   table.appendChild(tbody);
-  details.appendChild(table);
+  container.appendChild(table);
 
-  return details;
+  return container;
 }
 
 // ============================================================================
@@ -1045,6 +1164,32 @@ function createPlayTimeEditor(arr, key, updateCallback) {
 }
 
 // ============================================================================
+// BATH LEVEL EDITOR
+// RENDERS: Bath House Level (first element of furo_info array) as read-only
+// ============================================================================
+
+function createBathLevelEditor(arr, key, updateCallback) {
+  const div = document.createElement('div');
+  div.className = 'json-item';
+  div.id = 'bath-level-editor';
+
+  const label = document.createElement('label');
+  label.textContent = key;
+  div.appendChild(label);
+
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.value = arr[0] || 0;
+  input.readOnly = true;
+  input.style.opacity = '0.6';
+  input.style.cursor = 'not-allowed';
+  input.title = 'Bath House Level is read-only';
+
+  div.appendChild(input);
+  return div;
+}
+
+// ============================================================================
 // GREENHILL ALIASES EDITOR
 // RENDERS: First 3 Greenhill mission aliases (Hero, Nanami, Flik) with Flik read-only
 // ============================================================================
@@ -1099,6 +1244,274 @@ function createGreenhillAliasesEditor(arr, key, updateCallback) {
 }
 
 // ============================================================================
+// CASTLE EDITORS COMBINED
+// RENDERS: Greenhill Aliases and Food Menu in a single container
+// ============================================================================
+
+function createCastleEditorsCombined(data, sourceData) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'castle-editors-combined';
+  wrapper.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1rem; margin-top: 1rem;';
+
+  // Create Greenhill Aliases section
+  if (sourceData['kari_name']) {
+    const aliasesSection = createGreenhillAliasesEditor(sourceData['kari_name'], 'Greenhill Mission Aliases', (newValue) => {
+      sourceData['kari_name'] = newValue;
+    });
+    wrapper.appendChild(aliasesSection);
+  }
+
+  // Create Food Menu section
+  if (sourceData['food_menu']) {
+    const foodSection = createFoodMenuEditor(sourceData['food_menu'], 'Castle Restaurant Menu', (newValue) => {
+      sourceData['food_menu'] = newValue;
+    });
+    wrapper.appendChild(foodSection);
+  }
+
+  return wrapper;
+}
+
+// ============================================================================
+// ACTIVE PARTY MEMBERS EDITOR
+// RENDERS: exit_member array - current party composition (6 battle + 2 convoy)
+// ============================================================================
+
+function createPartyMembersEditor(arr, key, updateCallback) {
+  const container = document.createElement('div');
+  container.className = 'party-members-section';
+  // container.style.cssText = 'margin-bottom: 2rem; padding: 1rem; background: var(--pico-card-sectioning-background-color); border-radius: 6px;';
+
+  const title = document.createElement('h3');
+  title.textContent = key;
+  // title.style.cssText = 'margin-top: 0; margin-bottom: 0.5rem; color: var(--pico-primary);';
+  container.appendChild(title);
+
+  const description = document.createElement('p');
+  description.style.cssText = 'font-size: 0.875rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
+  description.textContent = 'First 6 slots are battle characters (0-83 only), last 2 slots are convoy members (full roster 0-124).';
+  container.appendChild(description);
+
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'party-members-grid';
+  // gridContainer.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;';
+
+  // Only show 8 slots (6 battle + 2 convoy)
+  for (let index = 0; index < Math.min(arr.length, 8); index++) {
+    const charId = arr[index];
+    const slotDiv = document.createElement('div');
+    slotDiv.className = 'json-item';
+    slotDiv.style.cssText = 'margin-bottom: 0;';
+
+    const label = document.createElement('label');
+    if (index < 6) {
+      label.textContent = `Battle Slot ${index + 1}`;
+    } else {
+      label.textContent = `Convoy ${index - 5}`;
+    }
+    label.style.cssText = 'min-width: 120px;';
+    slotDiv.appendChild(label);
+
+    // Dropdown for characters
+    const select = document.createElement('select');
+    select.style.cssText = 'flex: 1; margin-bottom: 0;';
+
+    // Add "None" option
+    const noneOption = document.createElement('option');
+    noneOption.value = 0;
+    noneOption.textContent = '0: None';
+    select.appendChild(noneOption);
+
+    // Build options based on slot type
+    if (index < 6) {
+      // Battle slots: 1-83 only (playable battle characters)
+      for (let id = 1; id <= 83; id++) {
+        const char = GameData && GameData.CHARACTERS && GameData.CHARACTERS[id];
+        if (char) {
+          const option = document.createElement('option');
+          option.value = id;
+          option.textContent = `${id}: ${char.name}`;
+          select.appendChild(option);
+        }
+      }
+    } else {
+      // Convoy slots: Full roster 0-124
+      if (GameData && GameData.CHARACTERS) {
+        Object.keys(GameData.CHARACTERS).forEach(id => {
+          const numId = parseInt(id);
+          const char = GameData.CHARACTERS[numId];
+          if (char && numId > 0) {
+            const option = document.createElement('option');
+            option.value = numId;
+            option.textContent = `${numId}: ${char.name}`;
+            select.appendChild(option);
+          }
+        });
+      }
+    }
+
+    select.value = charId;
+
+    select.addEventListener('change', (e) => {
+      arr[index] = parseInt(e.target.value);
+    });
+
+    slotDiv.appendChild(select);
+    gridContainer.appendChild(slotDiv);
+  }
+
+  container.appendChild(gridContainer);
+  return container;
+}
+
+// ============================================================================
+// KEY ITEMS EDITOR
+// RENDERS: event_item array - special quest/story items in 2-column grid
+// ============================================================================
+
+function createKeyItemsEditor(arr, key, updateCallback) {
+  const container = document.createElement('div');
+  container.className = ' key-items-editor';
+  container.id = 'key-items-editor';
+  container.style.cssText = 'padding: 1rem; background: rgba(0, 0, 0, 0.1); border-radius: 6px;';
+
+  const label = document.createElement('label');
+  label.textContent = key;
+  label.style.cssText = 'font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem;';
+  container.appendChild(label);
+
+  const gridContainer = document.createElement('div');
+  gridContainer.className='two-css-col w-100';
+
+  // Key item IDs: 29 (Blinking Mirror), 35-46, 51-55, 72-74
+  const keyItemIds = [
+    29, // Blinking Mirror
+    35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, // Range 35-46
+    51, 52, 53, 54, 55, // Range 51-55
+    72, 73, 74 // Range 72-74
+  ];
+
+  // Only show first 6 slots (rest might be unused)
+  for (let index = 0; index < Math.min(arr.length, 6); index++) {
+    const itemId = arr[index];
+    const slotDiv = document.createElement('div');
+    slotDiv.className = 'json-item';
+    slotDiv.style.cssText = 'margin-bottom: 0.5rem; display: flex; gap: 0.5rem; align-items: center;';
+
+    const slotLabel = document.createElement('label');
+    slotLabel.textContent = `Slot ${index + 1}`;
+    slotLabel.style.cssText = 'min-width: 60px; margin-bottom: 0;';
+    slotDiv.appendChild(slotLabel);
+
+    // Dropdown for key items
+    const select = document.createElement('select');
+    select.style.cssText = 'flex: 1; margin-bottom: 0;';
+
+    // Add "None" option
+    const noneOption = document.createElement('option');
+    noneOption.value = 0;
+    noneOption.textContent = '0: None';
+    select.appendChild(noneOption);
+
+    // Add key item options
+    keyItemIds.forEach(id => {
+      const itemName = GameData && GameData.ITEMS && GameData.ITEMS[id] 
+        ? GameData.ITEMS[id] 
+        : `Unknown Item ${id}`;
+      
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = `${id}: ${itemName}`;
+      select.appendChild(option);
+    });
+
+    select.value = itemId;
+
+    select.addEventListener('change', (e) => {
+      arr[index] = parseInt(e.target.value);
+    });
+
+    slotDiv.appendChild(select);
+    gridContainer.appendChild(slotDiv);
+  }
+
+  container.appendChild(gridContainer);
+  return container;
+}
+
+// ============================================================================
+// FOOD MENU EDITOR
+// RENDERS: Castle Menu Orders - recipes available at the castle restaurant
+// ============================================================================
+
+function createFoodMenuEditor(arr, key, updateCallback) {
+  const div = document.createElement('div');
+  div.className = 'json-item';
+  div.id = 'food-menu-editor';
+
+  const label = document.createElement('label');
+  label.textContent = key;
+  div.appendChild(label);
+
+  const menuContainer = document.createElement('div');
+  menuContainer.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem;';
+
+  // Add description
+  /* const description = document.createElement('p');
+  description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin: 0.5rem 0; font-style: italic;';
+  description.textContent = 'Recipes available to order at the castle restaurant. Select from dropdown or use 0 for empty slots.';
+  menuContainer.appendChild(description); */
+
+  // Only show first 6 slots (7th is hidden/unused in-game)
+  for (let index = 0; index < Math.min(arr.length, 6); index++) {
+    const recipeId = arr[index];
+    const menuGroup = document.createElement('div');
+    menuGroup.className = 'json-item';
+    menuGroup.style.cssText = 'margin-bottom: 0;';
+
+    const slotLabel = document.createElement('label');
+    slotLabel.textContent = `Slot ${index + 1}`;
+    slotLabel.style.cssText = 'min-width: 80px;';
+    menuGroup.appendChild(slotLabel);
+
+    // Recipe ID dropdown
+    const select = document.createElement('select');
+    select.style.cssText = 'margin-bottom: 0;';
+
+    // Add "None" option
+    const noneOption = document.createElement('option');
+    noneOption.value = 0;
+    noneOption.textContent = '0: None';
+    select.appendChild(noneOption);
+
+    // Add all food recipes
+    if (GameData && GameData.FOOD) {
+      Object.entries(GameData.FOOD).forEach(([id, name]) => {
+        if (id !== '0') {
+          const option = document.createElement('option');
+          option.value = id;
+          option.textContent = `${id}: ${name}`;
+          select.appendChild(option);
+        }
+      });
+    }
+
+    select.value = recipeId;
+
+    select.addEventListener('change', (e) => {
+      const newId = parseInt(e.target.value);
+      arr[index] = newId;
+    });
+
+    menuGroup.appendChild(select);
+    menuContainer.appendChild(menuGroup);
+  }
+
+  div.appendChild(menuContainer);
+  return div;
+}
+
+// ============================================================================
 // LOCATION EDITOR
 // RENDERS: Map location fields grouped together (area_no, town_no, map_no, px, py)
 // ============================================================================
@@ -1114,7 +1527,7 @@ function createLocationEditor(data, key, updateCallback) {
   container.appendChild(label);
 
   const fieldsContainer = document.createElement('div');
-  fieldsContainer.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 6px;';
+  fieldsContainer.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 6px; width:100%';
 
   // Define location fields with their sources
   const locationFields = [
@@ -1204,21 +1617,28 @@ function filterRunesForCharacter(characterIndex, slotIndex) {
     let passesSlotCheck = false;
 
     if (slotIndex === 0) { // Head slot
-      // Must have HR, N, or no slot restrictions (character-specific only)
-      passesSlotCheck = attrs.includes('HR') || attrs.includes('N') || !hasSlotAttr;
-    } else if (slotIndex === 1) { // Right Hand
-      // Must have RH, N, Wep, or no slot restrictions (but not LH exclusive)
-      if (attrs.includes('LH') && !attrs.includes('RH') && !attrs.includes('N')) {
-        passesSlotCheck = false;
+      // If it has any slot-specific attribute, it must have HR
+      if (hasSlotAttr) {
+        passesSlotCheck = attrs.includes('HR');
       } else {
-        passesSlotCheck = attrs.includes('RH') || attrs.includes('N') || attrs.includes('Wep') || !hasSlotAttr;
+        // No slot restrictions - allow for N or character-specific runes
+        passesSlotCheck = true;
+      }
+    } else if (slotIndex === 1) { // Right Hand
+      // If it has any slot-specific attribute, check for RH or Wep (but not LH exclusive)
+      if (hasSlotAttr) {
+        passesSlotCheck = (attrs.includes('RH') || attrs.includes('Wep')) && !attrs.includes('LH');
+      } else {
+        // No slot restrictions - allow for N or character-specific runes
+        passesSlotCheck = true;
       }
     } else if (slotIndex === 2) { // Left Hand
-      // Must have LH, N, Wep, or no slot restrictions (but not RH exclusive)
-      if (attrs.includes('RH') && !attrs.includes('LH') && !attrs.includes('N')) {
-        passesSlotCheck = false;
+      // If it has any slot-specific attribute, check for LH or Wep (but not RH exclusive)
+      if (hasSlotAttr) {
+        passesSlotCheck = (attrs.includes('LH') || attrs.includes('Wep')) && !attrs.includes('RH');
       } else {
-        passesSlotCheck = attrs.includes('LH') || attrs.includes('N') || attrs.includes('Wep') || !hasSlotAttr;
+        // No slot restrictions - allow for N or character-specific runes
+        passesSlotCheck = true;
       }
     }
 
@@ -1247,13 +1667,14 @@ function filterRunesForCharacter(characterIndex, slotIndex) {
 }
 
 function createBattleCharactersEditor(arr, key, updateCallback) {
-  const details = document.createElement('details');
-  details.open = true;
-  details.className = 'json-array';
+  const container = document.createElement('div');
+  container.className = 'battle-characters-section';
 
-  const summary = document.createElement('summary');
-  summary.textContent = key + ` [${Math.min(arr.length, 84)} playable characters]`;
-  details.appendChild(summary);
+  // Add title
+  const title = document.createElement('h3');
+  title.textContent = `${key} [${Math.min(arr.length, 84)} playable characters]`;
+  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
+  container.appendChild(title);
 
   const lookupTable = typeof GameData !== 'undefined' ? GameData.CHARACTERS : null;
 
@@ -1289,7 +1710,7 @@ function createBattleCharactersEditor(arr, key, updateCallback) {
   });
 
   filterContainer.appendChild(filterSelect);
-  details.appendChild(filterContainer);
+  container.appendChild(filterContainer);
 
   // Only show first 84 characters (1-83) as those are playable, skip index 0 (N/A)
   const maxIndex = Math.min(arr.length, 84);
@@ -1343,10 +1764,152 @@ function createBattleCharactersEditor(arr, key, updateCallback) {
     const rightColumn = document.createElement('div');
     rightColumn.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
 
+    // Create General section (Level, Experience, HP, Killed Enemies)
+    const generalContainer = document.createElement('div');
+    generalContainer.className = 'battle-character-general';
+    generalContainer.id = `char-${index}-general`;
+
+    const generalTitle = document.createElement('h4');
+    generalTitle.textContent = 'General';
+    generalTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
+    generalContainer.appendChild(generalTitle);
+
+    // General fields to include
+    const generalFields = [
+      { prop: 'level', label: 'Level' },
+      { prop: 'exp', label: 'Experience' },
+      { prop: 'max_hp', label: 'Max HP' },
+      { prop: 'now_hp', label: 'Current HP' },
+      { prop: 'todome', label: 'Killed Enemies' }
+    ];
+
+    generalFields.forEach(field => {
+      if (charData[field.prop] !== undefined) {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'json-item';
+        const label = document.createElement('label');
+        label.textContent = field.label;
+        fieldDiv.appendChild(label);
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = charData[field.prop];
+        input.addEventListener('input', (e) => {
+          charData[field.prop] = parseFloat(e.target.value);
+        });
+        fieldDiv.appendChild(input);
+        generalContainer.appendChild(fieldDiv);
+      }
+    });
+
+    leftColumn.appendChild(generalContainer);
+
+    // Create Magic section (MP Levels)
+    if (charData['mp'] && Array.isArray(charData['mp'])) {
+      const mpContainer = document.createElement('div');
+      mpContainer.className = 'battle-character-magic';
+      mpContainer.id = `char-${index}-magic`;
+
+      const mpTitle = document.createElement('h4');
+      mpTitle.textContent = 'Magic';
+      mpTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
+      mpContainer.appendChild(mpTitle);
+
+      const mpLevels = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
+      const maxMP = 153;
+      const mpPerSquare = 17;
+
+      charData['mp'].forEach((value, i) => {
+        if (i < mpLevels.length) {
+          const mpDiv = document.createElement('div');
+          mpDiv.className = 'json-item mp-level gap-1';
+          mpDiv.style.cssText = 'display: flex; align-items: center;';
+
+          const label = document.createElement('label');
+          label.textContent = mpLevels[i];
+          mpDiv.appendChild(label);
+
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = '0';
+          input.max = maxMP.toString();
+          input.value = value;
+          input.style.maxWidth = '80px';
+          input.addEventListener('input', (e) => {
+            const newValue = Math.min(maxMP, Math.max(0, parseFloat(e.target.value) || 0));
+            e.target.value = newValue;
+            charData['mp'][i] = newValue;
+            // Update squares display
+            updateSquares();
+          });
+          mpDiv.appendChild(input);
+
+          // Add squares display
+          const squaresDiv = document.createElement('div');
+          squaresDiv.className = 'mp-squares';
+          squaresDiv.style.cssText = 'display: flex; gap: 2px; font-size: 0.9rem; line-height: 1;';
+
+          const updateSquares = () => {
+            const currentValue = parseFloat(input.value) || 0;
+            const filledSquares = Math.floor(currentValue / mpPerSquare);
+            const totalSquares = Math.ceil(maxMP / mpPerSquare);
+            
+            squaresDiv.innerHTML = '';
+            for (let j = 0; j < totalSquares; j++) {
+              const square = document.createElement('span');
+              square.textContent = j < filledSquares ? '■' : '□';
+              square.style.color = j < filledSquares ? 'var(--pico-primary)' : 'var(--pico-muted-color)';
+              squaresDiv.appendChild(square);
+            }
+          };
+
+          updateSquares();
+          mpDiv.appendChild(squaresDiv);
+          mpContainer.appendChild(mpDiv);
+        }
+      });
+
+      leftColumn.appendChild(mpContainer);
+    }
+
+    // Create Weapon section (Weapon Level, Weapon Rune)
+    const weaponContainer = document.createElement('div');
+    weaponContainer.className = 'battle-character-weapon';
+    weaponContainer.id = `char-${index}-weapon`;
+
+    const weaponTitle = document.createElement('h4');
+    weaponTitle.textContent = 'Weapon';
+    weaponTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
+    weaponContainer.appendChild(weaponTitle);
+
+    // Weapon Level
+    if (charData['buki_lv'] !== undefined) {
+      const weaponLvDiv = document.createElement('div');
+      weaponLvDiv.className = 'json-item';
+      const label = document.createElement('label');
+      label.textContent = 'Weapon Level';
+      weaponLvDiv.appendChild(label);
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.value = charData['buki_lv'];
+      input.addEventListener('input', (e) => {
+        charData['buki_lv'] = parseFloat(e.target.value);
+      });
+      weaponLvDiv.appendChild(input);
+      weaponContainer.appendChild(weaponLvDiv);
+    }
+
+    // Weapon Rune (will be added later in the loop)
+    rightColumn.appendChild(weaponContainer); // Add to right column above runes
+
     // Render all properties of this character
     Object.keys(charData).forEach(prop => {
-      // Skip MP array entirely
-      if (prop === 'mp') return;
+      // Skip properties already handled in General and Magic sections
+      if (['level', 'exp', 'max_hp', 'now_hp', 'todome', 'mp'].includes(prop)) return;
+
+      // Skip buki_lv as it's already in Weapon section
+      if (prop === 'buki_lv') return;
 
       let el;
 
@@ -1695,13 +2258,13 @@ function createBattleCharactersEditor(arr, key, updateCallback) {
         rightColumn.appendChild(itemContainer); // Add to right column
         return; // Don't add to el
       }
-      // Special handling for buki_mon (Weapon Runes) - DROPDOWN
+      // Special handling for buki_mon (Weapon Runes) - DROPDOWN, add to Weapon section
       else if (prop === 'buki_mon') {
         const weaponRuneDiv = document.createElement('div');
         weaponRuneDiv.className = 'json-item';
 
         const label = document.createElement('label');
-        label.textContent = Schema.labels[prop] || prop;
+        label.textContent = 'Weapon Rune';
         weaponRuneDiv.appendChild(label);
 
         // Check if this character is a beast/monster (cannot equip weapon runes)
@@ -1765,7 +2328,7 @@ function createBattleCharactersEditor(arr, key, updateCallback) {
         }
 
         weaponRuneDiv.appendChild(select);
-        leftColumn.appendChild(weaponRuneDiv);
+        weaponContainer.appendChild(weaponRuneDiv); // Add to Weapon section instead of leftColumn
         return; // Don't add to el
       }
       else {
@@ -1786,7 +2349,7 @@ function createBattleCharactersEditor(arr, key, updateCallback) {
     columnsContainer.appendChild(rightColumn);
     charDetails.appendChild(columnsContainer);
 
-    details.appendChild(charDetails);
+    container.appendChild(charDetails);
   }
 
   if (arr.length > 84) {
@@ -1794,13 +2357,13 @@ function createBattleCharactersEditor(arr, key, updateCallback) {
     note.textContent = `Note: Showing only first 84 playable characters. ${arr.length - 84} non-playable characters hidden.`;
     note.style.fontStyle = 'italic';
     note.style.color = 'var(--pico-muted-color)';
-    details.appendChild(note);
+    container.appendChild(note);
   }
 
   // Add filter event listener
   filterSelect.addEventListener('change', (e) => {
     const filterValue = e.target.value;
-    const allCharDetails = details.querySelectorAll('.json-object');
+    const allCharDetails = container.querySelectorAll('.json-object');
 
     allCharDetails.forEach(charDetail => {
       if (filterValue === 'all') {
@@ -1820,7 +2383,7 @@ function createBattleCharactersEditor(arr, key, updateCallback) {
     });
   });
 
-  return details;
+  return container;
 }
 
 // ============================================================================
@@ -2133,6 +2696,45 @@ function createAboutViewer(container) {
     });
 }
 
+// ============================================================================
+// CHANGELOG VIEWER
+// RENDERS: Changelog from CHANGELOG.md with markdown parsing
+// ============================================================================
+
+function createChangelogViewer(container) {
+  container.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color);">Loading Changelog...</p>';
+
+  fetch('./CHANGELOG.md')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Failed to load CHANGELOG: ${response.statusText}`);
+      }
+      return response.text();
+    })
+    .then(markdown => {
+      // Clear loading state
+      container.innerHTML = '';
+
+      // Create content wrapper
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'changelog-content';
+      contentWrapper.style.cssText = 'max-width: 800px; margin: 0 auto; padding: 1rem;';
+
+      // Convert markdown to HTML
+      const htmlContent = markdownToHTML(markdown);
+      contentWrapper.innerHTML = htmlContent;
+
+      container.appendChild(contentWrapper);
+    })
+    .catch(error => {
+      container.innerHTML = '';
+      const errorMsg = document.createElement('p');
+      errorMsg.style.cssText = 'color: var(--pico-del-color); text-align: center; padding: 2rem;';
+      errorMsg.textContent = `Error loading Changelog: ${error.message}`;
+      container.appendChild(errorMsg);
+    });
+}
+
 
 // ============================================================================
 // GENERIC VALUE EDITORS
@@ -2239,6 +2841,18 @@ function createArrayEditor(arr, key, updateCallback) {
   return details;
 }
 
+// Exit debug mode when clicking the file input
+fileInput.addEventListener('click', (e) => {
+  if (DEBUG_MODE) {
+    e.preventDefault();
+    console.log('File input clicked - exiting debug mode...');
+    DEBUG_MODE = false;
+    localStorage.setItem('debugMode', 'false');
+    updateStatusBar();
+    alert('🐛 Debug Mode DISABLED\n\nPage will refresh to exit debug mode. Then you can load your file.');
+    location.reload();
+  }
+});
 
 fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -2253,6 +2867,9 @@ fileInput.addEventListener('change', (e) => {
         currentData = newData;
       });
       saveBtn.disabled = false;
+      
+      // Update save file indicator
+      updateSaveFileIndicator();
     } catch (err) {
       alert('Error parsing JSON: ' + err.message);
     }
@@ -2282,6 +2899,8 @@ document.addEventListener('keydown', (e) => {
 
     // Toggle debug mode
     DEBUG_MODE = !DEBUG_MODE;
+    localStorage.setItem('debugMode', DEBUG_MODE); // Save to localStorage
+    updateStatusBar(); // Update status bar
 
     if (DEBUG_MODE) {
       console.log('Debug mode ENABLED - Loading debug file...');
@@ -2310,10 +2929,81 @@ document.addEventListener('keydown', (e) => {
           console.error('Debug mode: Failed to load debug file:', err);
           alert('Debug mode enabled but failed to load file from:\n' + DEBUG_FILE_PATH + '\n\nError: ' + err.message);
           DEBUG_MODE = false; // Revert if loading fails
+          localStorage.setItem('debugMode', 'false'); // Update localStorage
+          updateStatusBar(); // Update status bar
         });
     } else {
       console.log('Debug mode DISABLED');
-      alert('🐛 Debug Mode DISABLED\n\nYou can now load files normally.');
+      alert('🐛 Debug Mode DISABLED\n\nPage will refresh to return to normal mode.');
+      location.reload(); // Refresh the page
     }
+  }
+});
+
+// Header button functionality - Data Values, About, Changelog
+document.addEventListener('DOMContentLoaded', () => {
+  // Display version number
+  const versionElement = document.getElementById('app-version');
+  if (versionElement) {
+    versionElement.textContent = `v${APP_VERSION}`;
+  }
+
+  const headerDataValuesBtn = document.getElementById('tab-data-values');
+  const headerAboutBtn = document.getElementById('tab-about');
+  const headerChangelogBtn = document.getElementById('tab-changelog');
+  const editorContainer = document.getElementById('editor-container');
+
+  if (headerDataValuesBtn) {
+    headerDataValuesBtn.addEventListener('click', () => {
+      // Deactivate all editor tab buttons
+      document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
+      
+      // Deactivate other header buttons and activate this one
+      if (headerAboutBtn) headerAboutBtn.classList.add('outline');
+      if (headerChangelogBtn) headerChangelogBtn.classList.add('outline');
+      headerDataValuesBtn.classList.remove('outline');
+      
+      // Update content container
+      editorContainer.id = 'content-data-values';
+      
+      // Render Data Values viewer
+      createDataValuesViewer(editorContainer);
+    });
+  }
+
+  if (headerAboutBtn) {
+    headerAboutBtn.addEventListener('click', () => {
+      // Deactivate all editor tab buttons
+      document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
+      
+      // Deactivate other header buttons and activate this one
+      if (headerDataValuesBtn) headerDataValuesBtn.classList.add('outline');
+      if (headerChangelogBtn) headerChangelogBtn.classList.add('outline');
+      headerAboutBtn.classList.remove('outline');
+      
+      // Update content container
+      editorContainer.id = 'content-about';
+      
+      // Render About viewer
+      createAboutViewer(editorContainer);
+    });
+  }
+
+  if (headerChangelogBtn) {
+    headerChangelogBtn.addEventListener('click', () => {
+      // Deactivate all editor tab buttons
+      document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
+      
+      // Deactivate other header buttons and activate this one
+      if (headerDataValuesBtn) headerDataValuesBtn.classList.add('outline');
+      if (headerAboutBtn) headerAboutBtn.classList.add('outline');
+      headerChangelogBtn.classList.remove('outline');
+      
+      // Update content container
+      editorContainer.id = 'content-changelog';
+      
+      // Render Changelog viewer
+      createChangelogViewer(editorContainer);
+    });
   }
 });

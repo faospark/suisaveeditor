@@ -1,6 +1,9 @@
 # Agent workflows and configuration
 .agent/
 
+# Local documentation and session notes (not uploaded to GitHub)
+notes/
+
 # Node modules
 node_modules/
 

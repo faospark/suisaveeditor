@@ -69,6 +69,7 @@ const GameData = {
     58: { "name": "Gijimu", "attrs": ["E", "H", "M"] },
     59: { "name": "Koyu", "attrs": ["C", "L", "M", "Y"] },
     60: { "name": "Lo Wen", "attrs": ["E", "L", "F"] },
+    61: { "name": "Mazus", "attrs": ["C", "R", "M"] },
     62: { "name": "Sasuke", "attrs": ["C", "V", "M", "Y"] },
     63: { "name": "Mondo", "attrs": ["C", "V", "M"] },
     64: { "name": "Vincent", "attrs": ["C", "L", "S", "N"] },
@@ -135,7 +136,15 @@ const GameData = {
 
   },
 
-  
+  // Item Type Classification by Count:
+  // • 0-9: Regular Items
+  // • 16: Equipment (Helmet, Armor, Shield, Accessories)
+  // • 32: Runes
+  // • 48: Farming Items
+  // • 64: Trade Items / Bath Items
+  // • 80: Base/Warehouse Items
+  // • 99+: Food Items [has specific values so be careful when it comes to use count]
+
   ITEMS: { // use_cnt 0 to 9
     0: "None", 1: "Medicine", 2: "Mega Medicine", 3: "Antitoxin", 4: "Throat Drops", 5: "Needle",
     6: "Flaming Arrows", 7: "Dancing Flames", 8: "Fire Wall", 9: "Kindness Drops", 10: "Protect Mist",
@@ -144,7 +153,7 @@ const GameData = {
     21: "Stone of Power", 22: "Stone of Magic", 23: "Stone of Defense", 24: "Stone of Magic-Defense",
     25: "Stone of Dexterity", 26: "Stone of Speed", 27: "Stone of Luck", 28: "Dragon Censer",
     29: "Blinking Mirror", 30: "Sacrifical Jizo", 31: "Chick (Bath Set)", 32: "Drinking Set", 33: "Toy Boat",
-    34: "Escape Talisman", 35: "Suiko Marp", 36: "Rag", 37: "Oily Rag", 38: "Rope", 39: "Flint Stone",
+    34: "Escape Talisman", 35: "Suiko Map", 36: "Rag", 37: "Oily Rag", 38: "Rope", 39: "Flint Stone",
     40: "Flint Stone", 41: "Flour", 42: "Wooden Amulet", 43: "Healing Herb", 44: "Reference Letter",
     45: "Highland Uniform", 46: "Listening Hood?", 47: "Iron Hammer", 48: "Copper Hammer", 49: "Silver Hammer",
     50: "Gold Hammer", 51: "Round Plate", 52: "Triangle Plate", 53: "Square Plate", 54: "Clay",
@@ -156,12 +165,12 @@ const GameData = {
     80: "Secret Writings", 81: "Millet Dumplings", 82: "Leisure Set", 83: "Invincible Smile",
     84: "Sexy Wink", 85: "Cup of the Oath"
   },
-  
+
   FARMING: { // use_cnt 48
     0: "None", 1: "Cabbage Seed", 2: "Potato Seed", 3: "Spinach Seed", 4: "Tomato Seed",
     5: "Chick", 6: "Piglet", 7: "Lamb", 8: "Calf"
   },
-  
+
   TRADE: { // use_cnt 64
     0: "None", 1: "Defective Urn", 2: "Octopus Pot", 3: "Flower Vase", 4: "Wide Urn",
     5: "Blue Dragon Urn", 6: "Celadon Urn", 7: "Black Urn", 8: "Fine China", 9: "Persian Lamp",
@@ -174,7 +183,7 @@ const GameData = {
     42: "Karen Painting A", 43: "Karen Painting B", 44: "Trio Painting", 45: "Karen Statue A",
     46: "Karen Statue B", 47: "Karen Statue C", 48: "Nanami's Vase", 49: "Large Vase", 50: "Genkaku's Vase"
   },
-  
+
   BASE_ITEM: { // use_cnt 80
     0: "None", 1: "Old book vol 1", 2: "Old book vol 2", 3: "Old book vol 3", 4: "Old book vol 4",
     5: "Old book vol 5", 6: "Old book vol 6", 7: "Old book vol 7", 8: "Old book vol 8", 9: "Old book vol 9",
@@ -191,7 +200,7 @@ const GameData = {
     60: "Recipe#18", 61: "Recipe#19", 62: "Recipe#20", 63: "Recipe#21", 64: "Recipe#22", 65: "Recipe#23",
     66: "Recipe#24"
   },
-  
+
   FOOD: { // use_cnt >= 99
     0: "None", 1: "Tamago-Yaki", 2: "Sweet Omelet", 3: "Adult Fried Egg", 4: "Fried Egg",
     5: "Egg Mayo Roll", 6: "Eggsplosive", 7: "Tomato Soup", 8: "Tomato Juice", 9: "Raw Tomato",
@@ -251,7 +260,7 @@ const GameData = {
     234: "Spicy Stew", 235: "Kaiseki Dinner", 236: "Candy House", 237: "Salt House",
     238: "Complete Kaiseki", 239: "Special Salad", 240: "Flaming Sea Special"
   },
-  
+
   RUNES: { // use_cnt 32
     0: { "name": "None", "attrs": [] },
     1: { "name": "Fire Orb", "attrs": ["N", "Wep"] },
@@ -342,9 +351,9 @@ const GameData = {
     102: { "name": "Kindness Orb", "attrs": ["Wep", "ExR"] },
     103: { "name": "Exertion Orb", "attrs": ["Wep", "ExR"] }
   },
-  
+
   HELMET: { // use_cnt 16
-    0: "None", 
+    0: "None",
     1: { "name": "Bandanna", "attrs": ["C"] },
     2: { "name": "Leather Hat", "attrs": ["C", "E"] },
     3: { "name": "Wind Feather Ornament", "attrs": ["C"] },
@@ -361,7 +370,7 @@ const GameData = {
 
   },
 
-  
+
   ARMOR: { // use_cnt 16
     0: "None",
     13: { "name": "Robe", "attrs": ["L", "V", "R"] },
@@ -392,12 +401,12 @@ const GameData = {
     86: { "name": "Mole Suit", "attrs": ["L", "H", "V", "R"] },
   },
 
-  
+
   SHIELD: { // use_cnt 16
     0: "None", 38: "Wooden Shield", 39: "Iron Shield", 40: "Kite Shield", 41: "Main-Gauche",
     42: "Silver Shield", 43: "Chaos Shield", 44: "Earth Shield", 87: "Mole Shield"
   },
-  
+
   OTHER_EQUIP_GEAR: { // use_cnt 16
     0: "None", 45: "Wooden Shoes", 46: "Boots", 47: "Toe Shoes", 48: "Winged Boots",
     49: "Iron Boots", 50: "Gloves", 51: "Gauntlet", 52: "Silverlet", 53: "Power Gloves",
@@ -410,7 +419,7 @@ const GameData = {
     79: "Guard Ring", 80: "Magic Ring", 81: "Speed Ring", 82: "Power Ring",
     83: "Skill Ring", 84: "Lucky Ring"
   },
-  
+
   // Beast/Monster characters that cannot equip any armor or accessories
   BEASTS: [26, 42, 48, 49, 50, 72, 74, 75, 76, 77, 78, 79]
   // 42: Gadget, 48: Mukumuku, 49: Abizboah, 50: Feather, 72: Siegfried,

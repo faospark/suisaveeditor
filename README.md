@@ -7,6 +7,17 @@ A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save fi
 
 ## Features
 
+- **Active Party Members Editor** - Manage your 6-character battle party and 2 convoy slots with character selection dropdowns
+- **Key Items Editor** - Dedicated section for story-critical items (event_item array) with 2-column grid layout
+- **Battle Characters Editor** - Organized sections for General stats, Magic (MP), Weapon, Runes, Equipment, and Accessories
+- **Magic Points (MP) System** - Visual representation with filled/empty squares (■/□) showing MP progress per level
+- **Smart Rune Filtering** - Slot-specific and character-specific rune restrictions with locked rune support
+- **Castle Editors** - Combined Greenhill Aliases and Food Menu editors in a single view
+- **Save File Indicator** - Badge showing which save file number you're currently editing
+- **Debug Mode** - Toggle with Ctrl+D to auto-load test save files (state persists across sessions)
+- **Offline Support** - Full PWA with service worker for offline editing after first visit
+- **Status Bar** - Visual indicators for Debug Mode (green), Offline Mode (orange), and combined states (purple)
+- **Tab Navigation** - Data Values, About, and Changelog accessible without loading save files
 - Edit character stats, equipment, runes, and recruitment flags
 - Manage item inventories (warehouse, party bag, bath items)
 - User-friendly interface with organized tabs
@@ -16,29 +27,34 @@ A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save fi
 
 ### Before You Start
 
-> [!IMPORTANT] It is highly recommended that you turn off cloud saving for the game before editing save files.
+> [!IMPORTANT] It is highly recommended that you turn off cloud saving for the game before editing save files and create your own back up
 
 ### Step-by-Step Guide
 
 1. **Decrypt your save file** using [SuikodenFix](https://github.com/d3xMachina/Suikoden-Fix)
-   - Look for files named `_decrypted_gsd2_Data*.json`
-   - **Always backup your original save files first!**
+
+- Look for files named `_decrypted_gsd2_Data*.json`
+  - **Always backup your original save files first!**
 
 2. **Upload your decrypted save**
-   - Click the upload button and select your `_decrypted_gsd2_Data*.json` file
+
+- Click the upload button and select your `_decrypted_gsd2_Data*.json` file
 
 3. **Edit your save data**
-   - Navigate through the tabs (General, Battle Characters, Warehouse, etc.)
-   - Modify values as needed
-   - Use the Data Values tab as a reference for item IDs and names
+
+- Navigate through the tabs (General, Battle Characters, Warehouse, etc.)
+- Modify values as needed
+- Use the Data Values tab as a reference for item IDs and names
 
 4. **Save your changes**
-   - Click the Save button to download the modified JSON file
+
+- Click the Save button to download the modified JSON file
 
 5. **Load in game**
-   - Place/overwrite the save file in the game directory
-   - Load the game
-   - **Note**: Sometimes you need to overwrite the save file twice, especially when modifying the most recent save
+
+- Place/overwrite the save file in the game directory
+- Load the game
+- **Note**: Sometimes you need to overwrite the save file twice, especially when modifying the most recent save
 
 ## Reference
 

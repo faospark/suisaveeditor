@@ -40,9 +40,10 @@
 <body>
   <main class="container">
     <header class="pads-1">
+      
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <h1 style="margin-bottom: 0.5rem;">Suikoden 2 Remaster Save Editor</h1>
+          <h1 style="margin-bottom: 0.5rem;">Suikoden 2 Remaster Save Editor <span id="app-version" style="font-size: 0.6em; color: var(--pico-muted-color); font-weight: normal;"></span></h1>
           <p style="margin: 0;">A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.</p>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
@@ -60,6 +61,7 @@
     </header>
     <article>
       <header>
+        <div class="status-bar"></div>
         <div class="grid">
           <div style="height: auto;">
             <label for="file-input">Load JSON File</label>
@@ -70,11 +72,17 @@
             <button id="save-btn" disabled>Save / Download JSON</button>
           </div>
         </div>
-        <div>
-          This Save Editor requires a JSON file from Suikoden 2 Remaster outputed by SuikodenFix . you need to enable save edit feature in SuikodenFix to use this editor.
+        <div class="grid-12 d-grid">
+          <blockquote class="g-span-9" style="font-size: smaller; margin:0;">
+            This Save Editor works only with JSON files generated from Suikoden II Remaster using SuikodenFix. To use the editor, make sure the save edit feature is enabled in SuikodenFix so it can produce the required JSON file or you can use <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter">SuikodenSaveDecrypter</a> to decrypt your save file.
+          </blockquote>
+          <div class="g-span-3">
+            <div class="tabs-right" style="display: flex; align-items: center; justify-content: end; height: 100%;"><button class="tab-button outline data-values-tab" id="tab-data-values" data-tab-name="Data Values">Data Values</button><button class="tab-button outline about-tab" id="tab-about" data-tab-name="About">About</button><button class="tab-button outline changelog-tab" id="tab-changelog" data-tab-name="Changelog">Changelog</button></div>
+          </div>
         </div>
       </header>
-
+      <div id="editor-tabs">
+      </div>
       <div id="editor-container">
         <p>Please load a JSON file to start editing.</p>
       </div>
@@ -83,28 +91,28 @@
           <p> Here are my other mods for Suikoden 1 and 2 HD Remaster</p>
           <ul class="tiles tiles-manage mods d-grid ls-none g-3-col">
             <li class="mod-tile" id="editable-mod-7402-6">
-              <a href="/suikoden1and2hdremaster/mods/6">Project Kyaro Mod</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/6">Project Kyaro Mod</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-16">
-              <a href="/suikoden1and2hdremaster/mods/16">Early Recruitment Patch</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/16">Early Recruitment Patch</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-18">
-              <a href="/suikoden1and2hdremaster/mods/18">Kraken Patch</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/18">Kraken Patch</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-17">
-              <a href="/suikoden1and2hdremaster/mods/17">Open Paths Mod</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/17">Open Paths Mod</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-14">
-              <a href="/suikoden1and2hdremaster/mods/14">True Matilda Glitch Restoration</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/14">True Matilda Glitch Restoration</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-12">
-              <a href="/suikoden1and2hdremaster/mods/12">Alternate Portraits</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/12">Alternate Portraits</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-5">
-              <a href="/suikoden1and2hdremaster/mods/5">Suikoden Reworded Plus</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/5">Suikoden Reworded Plus</a>
             </li>
             <li class="mod-tile" id="editable-mod-7402-2">
-              <a href="/suikoden1and2hdremaster/mods/2">Genso Force PSX Buttons</a>
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/2">Genso Force PSX Buttons</a>
             </li>
           </ul>
         </div>
@@ -112,6 +120,20 @@
     </article>
 
   </main>
+  <script>
+    // Register Service Worker for offline functionality
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
+          .then((registration) => {
+            console.log('✅ Service Worker registered successfully:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('❌ Service Worker registration failed:', error);
+          });
+      });
+    }
+  </script>
   <script src="./src/gamedata.js"></script>
   <script type="module" src="./src/main.js"></script>
 </body>
