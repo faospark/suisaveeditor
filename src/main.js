@@ -1,11 +1,12 @@
 // Main Application Logic
 
-// App Version
-const APP_VERSION = '1.2.0';
-
-// Debug Mode Configuration
-let DEBUG_MODE = localStorage.getItem('debugMode') === 'true'; // Load from localStorage
-const DEBUG_FILE_PATH = './debug/save.json'; // Path to debug save file
+// Import configurations and utilities
+import { APP_VERSION, FIELD_CONFIG, EDITOR_GROUPS, GROUP_PATHS } from './config/index.js';
+import { isDebugMode, loadDebugFile, setDebugMode, toggleDebugMode, initStatusBar, updateStatusBar, updateSaveFileIndicator, extractSaveNumber, markdownToHTML } from './utils/index.js';
+import GameData from './gamedata.js';
+import { createBattleCharactersEditor, createPartyMembersEditor, createKeyItemsEditor, createRecruitmentEditor, createTableEditor, createBathItemsEditor } from './editors/index.js';
+import { COOK_OFF_STAGES, EVENT_FLAG_INDEX } from './config/constants.js';
+import { createDataValuesViewer } from './renderers/index.js';
 
 const fileInput = document.getElementById('file-input');
 const saveBtn = document.getElementById('save-btn');
@@ -13,199 +14,285 @@ const editorContainer = document.getElementById('editor-container');
 
 let currentData = null;
 let currentFileName = 'save.json';
+let hasUnsavedChanges = false;
 
-// Status Bar Element
-const statusBar = document.querySelector('.status-bar');
+// Auto-save configuration
+const AUTO_SAVE_KEY = 'suikohd_autosave_data';
+const AUTO_SAVE_FILENAME_KEY = 'suikohd_autosave_filename';
+const AUTO_SAVE_TIMESTAMP_KEY = 'suikohd_autosave_timestamp';
 
-// Update Status Bar
-function updateStatusBar() {
-  if (!statusBar) return;
+// Initialize status bar
+initStatusBar();
 
-  // Check if offline
-  const isOffline = !navigator.onLine;
-  
-  if (DEBUG_MODE && isOffline) {
-    statusBar.className = 'status-bar active offline-debug-mode';
-    statusBar.textContent = '🐛📡 DEBUG MODE + OFFLINE - Using debug save file without internet';
-  } else if (DEBUG_MODE) {
-    statusBar.className = 'status-bar active debug-mode';
-    statusBar.textContent = '🐛 DEBUG MODE ACTIVE - Using debug save file';
-  } else if (isOffline) {
-    statusBar.className = 'status-bar active offline-mode';
-    statusBar.textContent = '📡 OFFLINE MODE - Working without internet connection';
-  } else {
-    statusBar.className = 'status-bar';
-    statusBar.textContent = '';
+// ============================================================================
+// DIALOG UTILITIES
+// ============================================================================
+
+/**
+ * Show a confirmation dialog using native HTML dialog element
+ * @param {string} title - Dialog title
+ * @param {string} message - Dialog message (supports HTML)
+ * @param {string} confirmText - Text for confirm button
+ * @param {string} cancelText - Text for cancel button
+ * @returns {Promise<boolean>} True if confirmed, false if cancelled
+ */
+function showConfirmDialog(title, message, confirmText = 'OK', cancelText = 'Cancel') {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.style.cssText = 'max-width: 500px; padding: 0; border: none; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+    
+    dialog.innerHTML = `
+      <article style="margin: 0; padding: 1.5rem;">
+        <header style="margin-bottom: 1rem;">
+          <h3 style="margin: 0; font-size: 1.25rem;">${title}</h3>
+        </header>
+        <div style="margin-bottom: 1.5rem; line-height: 1.6;">${message}</div>
+        <footer style="display: flex; gap: 0.5rem; justify-content: flex-end; margin: 0;">
+          <button class="outline" data-action="cancel">${cancelText}</button>
+          <button data-action="confirm">${confirmText}</button>
+        </footer>
+      </article>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    
+    const handleClose = (confirmed) => {
+      dialog.close();
+      setTimeout(() => dialog.remove(), 100);
+      resolve(confirmed);
+    };
+    
+    dialog.querySelector('[data-action="confirm"]').addEventListener('click', () => handleClose(true));
+    dialog.querySelector('[data-action="cancel"]').addEventListener('click', () => handleClose(false));
+    dialog.addEventListener('cancel', () => handleClose(false));
+  });
+}
+
+/**
+ * Show an alert dialog using native HTML dialog element
+ * @param {string} title - Dialog title
+ * @param {string} message - Dialog message (supports HTML)
+ * @param {string} buttonText - Text for close button
+ * @returns {Promise<void>}
+ */
+function showAlertDialog(title, message, buttonText = 'OK') {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.style.cssText = 'max-width: 500px; padding: 0; border: none; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+    
+    dialog.innerHTML = `
+      <article style="margin: 0; padding: 1.5rem;">
+        <header style="margin-bottom: 1rem;">
+          <h3 style="margin: 0; font-size: 1.25rem;">${title}</h3>
+        </header>
+        <div style="margin-bottom: 1.5rem; line-height: 1.6;">${message}</div>
+        <footer style="display: flex; justify-content: flex-end; margin: 0;">
+          <button data-action="close">${buttonText}</button>
+        </footer>
+      </article>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    
+    const handleClose = () => {
+      dialog.close();
+      setTimeout(() => dialog.remove(), 100);
+      resolve();
+    };
+    
+    dialog.querySelector('[data-action="close"]').addEventListener('click', handleClose);
+    dialog.addEventListener('cancel', handleClose);
+  });
+}
+
+// ============================================================================
+// AUTO-SAVE & RECOVERY
+// ============================================================================
+
+/**
+ * Save current data to localStorage for crash recovery
+ */
+function autoSaveToLocalStorage() {
+  if (!currentData) return;
+  try {
+    localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(currentData));
+    localStorage.setItem(AUTO_SAVE_FILENAME_KEY, currentFileName);
+    localStorage.setItem(AUTO_SAVE_TIMESTAMP_KEY, Date.now().toString());
+    console.log('Auto-saved to localStorage');
+  } catch (err) {
+    console.error('Failed to auto-save:', err);
   }
 }
 
-// Listen for online/offline events
-window.addEventListener('online', updateStatusBar);
-window.addEventListener('offline', updateStatusBar);
+/**
+ * Clear auto-save data from localStorage
+ */
+function clearAutoSave() {
+  localStorage.removeItem(AUTO_SAVE_KEY);
+  localStorage.removeItem(AUTO_SAVE_FILENAME_KEY);
+  localStorage.removeItem(AUTO_SAVE_TIMESTAMP_KEY);
+  hasUnsavedChanges = false;
+  console.log('Auto-save cleared');
+}
 
-// Initial status bar update
-updateStatusBar();
-
-// Auto-load debug file if DEBUG_MODE is enable0d
-if (DEBUG_MODE) {
-  fetch(DEBUG_FILE_PATH)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Failed to load debug file: ${response.statusText}`);
+/**
+ * Check for and offer to restore auto-saved data
+ */
+async function checkForAutoSave() {
+  const savedData = localStorage.getItem(AUTO_SAVE_KEY);
+  const savedFilename = localStorage.getItem(AUTO_SAVE_FILENAME_KEY);
+  const savedTimestamp = localStorage.getItem(AUTO_SAVE_TIMESTAMP_KEY);
+  
+  if (savedData && savedFilename && savedTimestamp) {
+    const saveDate = new Date(parseInt(savedTimestamp));
+    const timeAgo = Math.round((Date.now() - saveDate.getTime()) / 1000 / 60); // minutes
+    
+    const message = `
+      <p><strong>⚠️ An auto-saved editing session was found:</strong></p>
+      <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+        <li><strong>File:</strong> <code>${savedFilename}</code></li>
+        <li><strong>Last saved:</strong> ${timeAgo} minute(s) ago</li>
+      </ul>
+      <p>Would you like to restore this session?</p>
+    `;
+    
+    const restore = await showConfirmDialog('Unsaved Work Detected', message, 'Discard', 'Restore');
+    
+    if (!restore) {
+      try {
+        currentData = JSON.parse(savedData);
+        currentFileName = savedFilename;
+        renderEditor(editorContainer, currentData, (newData) => {
+          currentData = newData;
+          hasUnsavedChanges = true;
+          autoSaveToLocalStorage();
+        });
+        saveBtn.disabled = false;
+        updateSaveFileIndicator(currentFileName);
+        hasUnsavedChanges = true;
+        await showAlertDialog('Session Restored', '<p>✅ <strong>Session restored successfully!</strong></p><p>Remember to save your changes.</p>');
+      } catch (err) {
+        await showAlertDialog('Restore Failed', `<p>❌ <strong>Failed to restore session:</strong></p><p>${err.message}</p>`);
+        clearAutoSave();
       }
-      return response.json();
-    })
+    } else {
+      clearAutoSave();
+    }
+  }
+}
+
+// Check for auto-save on page load (after a short delay to let UI initialize)
+setTimeout(checkForAutoSave, 500);
+
+// Warn before leaving page if there are unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if (hasUnsavedChanges && currentData) {
+    e.preventDefault();
+    e.returnValue = ''; // Modern browsers show their own message
+    return ''; // Legacy browsers
+  }
+});
+
+// Auto-load debug file if DEBUG_MODE is enabled
+if (isDebugMode()) {
+  loadDebugFile()
     .then(data => {
       currentData = data;
       currentFileName = 'debug_save.json';
       renderEditor(editorContainer, currentData, (newData) => {
         currentData = newData;
+        hasUnsavedChanges = true;
+        autoSaveToLocalStorage();
       });
       saveBtn.disabled = false;
-      console.log('Debug mode: Auto-loaded save file from', DEBUG_FILE_PATH);
+      console.log('Debug mode: Auto-loaded save file');
     })
     .catch(err => {
-      console.error('Debug mode: Failed to load debug file:', err);
-      alert('Debug mode enabled but failed to load file from: ' + DEBUG_FILE_PATH + '\n\nError: ' + err.message);
+      showAlertDialog('Debug Mode Error', `<p>❌ Debug mode enabled but failed to load file.</p><p><strong>Error:</strong> ${err.message}</p>`);
     });
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// EDITOR FACTORY
+// Maps renderer types to their corresponding editor creation functions
 // ============================================================================
 
 /**
- * Extract save file number from filename
- * Examples: 
- *   "_decrypted_gsd2_Data1.json" -> "1"
- *   "gsd2_Data10.json" -> "10"
- *   "save_3.json" -> "3"
+ * Factory map for editor creation functions
+ * @type {Object<string, Function>}
  */
-function extractSaveNumber(filename) {
-  if (!filename) return null;
-  
-  // Match common save file patterns
-  const patterns = [
-    /Data(\d+)/i,           // _decrypted_gsd2_Data1.json
-    /save[_\s]*(\d+)/i,     // save_3.json or save 3.json
-    /slot[_\s]*(\d+)/i,     // slot_2.json
-    /file[_\s]*(\d+)/i      // file_1.json
-  ];
-  
-  for (const pattern of patterns) {
-    const match = filename.match(pattern);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-  
-  return null;
-}
-
-/**
- * Update the save file indicator in the editor tabs
- */
-function updateSaveFileIndicator() {
-  const indicator = document.getElementById('save-file-indicator');
-  if (indicator) {
-    const saveNumber = extractSaveNumber(currentFileName);
-    indicator.textContent = saveNumber ? `Save File #${saveNumber}` : `Editing: ${currentFileName}`;
-  }
-}
-
-// ============================================================================
-// SCHEMA DEFINITIONS
-// Defines labels, groupings, and rendering strategies for save file data
-// ============================================================================
-
-const Schema = {
-  labels: {
-    'bozu_name': 'Hero Name (Suikoden 2)',
-    'bozu_name2': 'Hero Name (Real)',
-    'macd_name': 'Hero Name (Suikoden 1)',
-    'base_name': 'Castle Name',
-    'm_base_name': 'Suikoden 1 HQ Name',
-    'kari_name': 'Greenhill Mission Aliases',
-    'food_menu': 'Castle Menu Orders',
-    'team_name': 'Army Name',
-    'play_time': 'Play Time',
-    'base_lv': 'Castle Level',
-    'furo_info': 'Bath House Level',
-    'kaji_lv': 'Blacksmith Level',
-    'ninki': 'Popularity',
-    'gold': 'Potch',
-    'money': 'Potch',
-    'base_item': 'Warehouse Items',
-    'furo_item': 'Bath Items',
-    'room_item': 'Room Items',
-    'version': 'Save Version',
-    'chara_data': 'Character Data',
-    'war_data': 'War Battle Data',
-    'nakam_1_num': 'Recruited Stars',
-    'nige_cnt': 'Escaped Battles',
-    'item_no': 'Item ID',
-    'use_cnt': 'Count',
-    'ckd_info': 'Character Status List',
-    'leader_no': 'War Leader IDs',
-    'sub_no': 'War Sub-Unit IDs',
-    'sub_to_leader': 'Sub-Unit Assignment',
-    'chara_flag': 'Recruited Characters',
-    'exit_member': 'Active Party Members',
-    'event_item': 'Key Items',
-    'party_item': 'Inventory',
-    'area_no': 'Area Location',
-    'town_no': 'Town No',
-    'map_no': 'Map No',
-    'px': 'Player X Coordinate',
-    'py': 'Player Y Coordinate',
-    'date_time_now': 'Last Modified (In-Game)',
-    'c_varia_dat': 'Battle Character Data',
-    'para': 'Stats',
-    'mon_eqp': 'Runes',
-    'item_eqp': 'Accessories',
-    'bogu_eqp': 'Equipment',
-    'level': 'Level',
-    'exp': 'Experience',
-    'now_hp': 'Current HP',
-    'max_hp': 'Max HP',
-    'now_mp': 'Current MP',
-    'max_mp': 'Max MP',
-    'buki_lv': 'Weapon Level',
-    'buki_mon': 'Weapon Rune',
-    'todome': 'Killed Enemies',
-    'mp': 'MP',
-  },
-  groups: {
-    'General': ['exit_member', 'location', 'play_time', 'date_time_now', 'bozu_name', 'bozu_name2', 'macd_name', 'base_name', 'm_base_name', 'team_name', 'base_lv', 'furo_info', 'kaji_lv', 'ninki', 'gold', 'kari_name', 'food_menu'],
-    'Battle Characters': ['c_varia_dat'],
-    'Party Bag': ['event_item', 'party_item'],
-    'Warehouse': ['base_item', 'room_item'],
-    'Bath': ['furo_item'],
-    'Recruited Characters': ['chara_flag'],
-    // 'System': ['version', 'win_typ', 'win_col', 'msg_spd', 'opt_bit']
-  },
-  renderers: {
-    'base_item': 'table',
-    'furo_item': 'bath_items',
-    'room_item': 'room_items',
-    'event_item': 'key_items',
-    'party_item': 'table',
-    'chara_flag': 'recruitment',
-    'c_varia_dat': 'battle_characters',
-    'play_time': 'play_time',
-    'furo_info': 'bath_level',
-    'exit_member': 'party_members',
-    'kari_name': 'castle_editors_combined',
-    'food_menu': 'skip', // Handled by combined renderer
-    'location': 'location'
-  },
-  tableColumns: {
-    'base_item': ['item_no', 'use_cnt'],
-    'furo_item': ['item_no', 'use_cnt'],
-    'room_item': ['item_no', 'use_cnt'],
-    'party_item': ['item_no', 'use_cnt']
-  }
+const editorFactories = {
+  table: createTableEditor,
+  bath_items: createBathItemsEditor,
+  recruitment: createRecruitmentEditor,
+  battle_characters: createBattleCharactersEditor,
+  play_time: null, // Defined later
+  bath_level: null, // Defined later
+  cook_off_progress: null, // Defined later
+  party_members: createPartyMembersEditor,
+  key_items: createKeyItemsEditor,
+  greenhill_aliases: null, // Defined later
+  food_menu: null, // Defined later
+  castle_editors_combined: null, // Defined later
+  location: null // Defined later
 };
+
+/**
+ * Creates an editor element using the factory pattern
+ * @param {string} renderer - The renderer type
+ * @param {*} value - The data value
+ * @param {Object} targetData - The target data object
+ * @param {Object} data - The full data object (for special cases)
+ * @param {string} key - The data key
+ * @param {string} label - The display label
+ * @param {Object} config - The field configuration
+ * @returns {HTMLElement} The created editor element
+ */
+function createEditorElement(renderer, value, targetData, data, key, label, config) {
+  const editorFactory = editorFactories[renderer];
+  
+  if (!editorFactory) {
+    // Default editor for unknown renderers
+    return createElementForValue(value, label, (newValue) => {
+      targetData[key] = newValue;
+    }, targetData);
+  }
+
+  // Create onChange callback
+  const onChange = (newValue) => {
+    targetData[key] = newValue;
+  };
+
+  // Handle special cases
+  switch (renderer) {
+    case 'table':
+      const columns = config.columns;
+      return editorFactory(value, label, onChange, columns);
+    
+    case 'battle_characters':
+      return editorFactory(value, label, onChange, createElementForValue, FIELD_CONFIG, data.chara_flag, data);
+    
+    case 'recruitment':
+      // Recruitment editor needs access to full game data for special logic
+      return editorFactory(value, label, onChange, data);
+    
+    case 'castle_editors_combined':
+      return editorFactory(data, targetData);
+    
+    case 'cook_off_progress':
+      // Cook-off progress needs access to root event_flag
+      return editorFactory(data, label, onChange);
+    
+    case 'location':
+      // Location editor updates directly, doesn't need onChange callback
+      return editorFactory(data, label, () => {});
+    
+    default:
+      return editorFactory(value, label, onChange);
+  }
+}
 
 // ============================================================================
 // MAIN EDITOR RENDERING
@@ -219,30 +306,28 @@ const Schema = {
  * @param {Function} onUpdate Callback when data changes
  */
 function renderEditor(container, data, onUpdate) {
-  container.innerHTML = '';
+  // Don't clear the entire container - preserve tab-panels-container and placeholder
+  // Only remove the placeholder text if it exists
+  const placeholder = container.querySelector('p');
+  if (placeholder && placeholder.textContent.includes('Please load a JSON file')) {
+    placeholder.remove();
+  }
 
   let rootData = data;
   let isGameData = false;
-
-  // Initialize group paths once
-  if (!Schema.groupPaths) {
-    Schema.groupPaths = {
-      'General': null,  // General has mixed sources: game_data + root level fields
-      'Warehouse': 'game_data',
-      'Bath': 'game_data',
-      'Party Bag': 'party_data',
-      'Recruited Characters': null,
-      'Battle Characters': 'chara_data',
-      'System': 'game_data'
-    };
-  }
 
   // Create Tabs with flexbox layout - use existing editor-tabs div or create new one
   let tabContainer = document.getElementById('editor-tabs');
   if (!tabContainer) {
     tabContainer = document.createElement('div');
     tabContainer.id = 'editor-tabs';
-    container.appendChild(tabContainer);
+    // Insert before tab-panels-container if it exists
+    const tabPanelsContainer = document.getElementById('tab-panels-container');
+    if (tabPanelsContainer) {
+      container.insertBefore(tabContainer, tabPanelsContainer);
+    } else {
+      container.appendChild(tabContainer);
+    }
   }
   
   // Clear existing tabs but keep the container
@@ -255,12 +340,43 @@ function renderEditor(container, data, onUpdate) {
   const tabsRight = document.createElement('div');
   tabsRight.className = 'tabs-right';
 
-  // Use the main editor-container instead of creating a new one
-  const contentContainer = container;
+  // Get or create tab panels container
+  let tabPanelsContainer = document.getElementById('tab-panels-container');
+  if (!tabPanelsContainer) {
+    tabPanelsContainer = document.createElement('div');
+    tabPanelsContainer.id = 'tab-panels-container';
+    tabPanelsContainer.className = 'tab-content';
+    container.appendChild(tabPanelsContainer);
+  } else {
+    // Clear only regular tab panels (keep special panels)
+    const regularPanels = tabPanelsContainer.querySelectorAll('.tab-panel:not(.special-panel)');
+    regularPanels.forEach(p => p.remove());
+  }
 
-  const groupKeys = Object.keys(Schema.groups);
+  const groupKeys = Object.keys(EDITOR_GROUPS);
   let activeTab = groupKeys[0];
   const tabButtons = {}; // Cache tab buttons for performance
+  const tabPanels = {}; // Cache tab panels
+  const specialPanels = container._specialPanels || {}; // Get existing special panels or create new object
+
+  // Create all tab panels upfront
+  groupKeys.forEach(groupName => {
+    const panel = document.createElement('div');
+    const panelClass = `${groupName.toLowerCase().replace(/\s+/g, '-')}-panel`;
+    panel.className = `tab-panel editor-panel ${panelClass}`;
+    panel.id = `panel-${groupName.toLowerCase().replace(/\s+/g, '-')}`;
+    panel.dataset.tabName = groupName;
+    
+    if (groupName === activeTab) {
+      panel.classList.add('active');
+    }
+    
+    tabPanelsContainer.appendChild(panel);
+    tabPanels[groupName] = panel;
+    
+    // Render content into panel
+    renderTabContent(panel, groupName, data, onUpdate);
+  });
 
   // Create regular data editing tabs (left side)
   groupKeys.forEach(groupName => {
@@ -275,19 +391,21 @@ function renderEditor(container, data, onUpdate) {
     tabButtons[groupName] = btn; // Cache button reference
 
     btn.addEventListener('click', () => {
-      // Optimize: only update changed buttons
+      // Update button styles
       Object.values(tabButtons).forEach(b => b.classList.add('outline'));
-
       btn.classList.remove('outline');
       
       // Deactivate header buttons (Data Values, About, Changelog)
       const headerButtons = document.querySelectorAll('.tabs-right .tab-button');
       headerButtons.forEach(b => b.classList.add('outline'));
 
-      // Update content container ID to reflect current tab
-      contentContainer.id = `content-${groupName.toLowerCase().replace(/\s+/g, '-')}`;
-
-      renderTabContent(contentContainer, groupName, data, onUpdate);
+      // Hide all children in container
+      Array.from(tabPanelsContainer.children).forEach(child => {
+        child.style.display = 'none';
+      });
+      
+      // Show selected tab panel
+      tabPanels[groupName].style.display = 'block';
     });
 
     tabsLeft.appendChild(btn);
@@ -308,15 +426,11 @@ function renderEditor(container, data, onUpdate) {
   
   tabsRight.appendChild(saveFileIndicator);
   tabContainer.appendChild(tabsRight);
-
-  // Don't append contentContainer - it's the main editor-container
-  // Just clear it and render first tab
-  contentContainer.innerHTML = '';
-  contentContainer.className = 'tab-content';
-
-  // Set initial content ID and render first tab
-  contentContainer.id = `content-${activeTab.toLowerCase().replace(/\s+/g, '-')}`;
-  renderTabContent(contentContainer, activeTab, data, onUpdate);
+  
+  // Store references for header buttons to access
+  container.dataset.editorInitialized = 'true';
+  container._specialPanels = specialPanels;
+  container._tabPanels = tabPanels;
 }
 
 function renderTabContent(container, group, data, onUpdate) {
@@ -330,7 +444,7 @@ function renderTabContent(container, group, data, onUpdate) {
     container.appendChild(title);
   }
 
-  const groupPath = Schema.groupPaths[group];
+  const groupPath = GROUP_PATHS[group];
   let targetData = data;
 
   if (groupPath) {
@@ -341,14 +455,24 @@ function renderTabContent(container, group, data, onUpdate) {
     }
   }
 
-  const keys = Schema.groups[group] || [];
+  const keys = EDITOR_GROUPS[group] || [];
 
   // RENDERS: General Tab - checks game_data, party_data, and root level for fields
   if (groupPath === null) {
     keys.forEach(key => {
+      const config = FIELD_CONFIG[key];
+      if (!config) return;
+
       // Special handling for location - it's a virtual grouping, not a real field
       if (key === 'location') {
         const element = createLocationEditor(data, 'Map Location', () => { });
+        container.appendChild(element);
+        return;
+      }
+
+      // Special handling for cook_off_progress - it's a virtual field based on event_flag
+      if (key === 'cook_off_progress') {
+        const element = createCookOffProgressEditor(data, 'Cook-Off Battles Won', () => { });
         container.appendChild(element);
         return;
       }
@@ -368,69 +492,19 @@ function renderTabContent(container, group, data, onUpdate) {
 
       if (value === undefined) return;
 
-      const label = Schema.labels[key] || key;
-      const renderer = Schema.renderers ? Schema.renderers[key] : null;
+      const label = config.label || key;
+      const renderer = config.renderer;
 
       // Skip if renderer is 'skip' (handled elsewhere)
       if (renderer === 'skip') return;
 
       let element;
-      if (renderer === 'table') {
-        const columns = Schema.tableColumns[key];
-        element = createTableEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        }, columns);
-      } else if (renderer === 'bath_items') {
-        element = createBathItemsEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'room_items') {
-        element = createRoomItemsEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'recruitment') {
-        element = createRecruitmentEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'battle_characters') {
-        element = createBattleCharactersEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'play_time') {
-        element = createPlayTimeEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'bath_level') {
-        element = createBathLevelEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'party_members') {
-        element = createPartyMembersEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'key_items') {
-        element = createKeyItemsEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'greenhill_aliases') {
-        element = createGreenhillAliasesEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'food_menu') {
-        element = createFoodMenuEditor(value, label, (newValue) => {
-          sourceData[key] = newValue;
-        });
-      } else if (renderer === 'castle_editors_combined') {
-        element = createCastleEditorsCombined(data, sourceData);
-      } else if (renderer === 'location') {
-        // Special handling for location - pass the entire data object
-        element = createLocationEditor(data, label, (newValue) => {
-          // Update callback not needed as location editor updates directly
-        });
+      if (renderer) {
+        element = createEditorElement(renderer, value, sourceData, data, key, label, config);
       } else {
         element = createElementForValue(value, label, (newValue) => {
           sourceData[key] = newValue;
-        }, sourceData);
+        }, sourceData, config);
       }
       container.appendChild(element);
     });
@@ -442,60 +516,18 @@ function renderTabContent(container, group, data, onUpdate) {
   keys.forEach(key => {
     if (targetData[key] === undefined) return;
 
-    const label = Schema.labels[key] || key;
-    const renderer = Schema.renderers ? Schema.renderers[key] : null;
+    const config = FIELD_CONFIG[key];
+    if (!config) return;
+
+    const label = config.label || key;
+    const renderer = config.renderer;
 
     // Skip if renderer is 'skip' (handled elsewhere)
     if (renderer === 'skip') return;
 
     let element;
-    if (renderer === 'table') {
-      const columns = Schema.tableColumns[key];
-      element = createTableEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      }, columns);
-    } else if (renderer === 'bath_items') {
-      element = createBathItemsEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'room_items') {
-      element = createRoomItemsEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'recruitment') {
-      element = createRecruitmentEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'battle_characters') {
-      element = createBattleCharactersEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'play_time') {
-      element = createPlayTimeEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'bath_level') {
-      element = createBathLevelEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'party_members') {
-      element = createPartyMembersEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'key_items') {
-      element = createKeyItemsEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'greenhill_aliases') {
-      element = createGreenhillAliasesEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'food_menu') {
-      element = createFoodMenuEditor(targetData[key], label, (newValue) => {
-        targetData[key] = newValue;
-      });
-    } else if (renderer === 'castle_editors_combined') {
-      element = createCastleEditorsCombined(data, targetData);
+    if (renderer) {
+      element = createEditorElement(renderer, targetData[key], targetData, data, key, label, config);
     } else {
       element = createElementForValue(targetData[key], label, (newValue) => {
         targetData[key] = newValue;
@@ -505,597 +537,6 @@ function renderTabContent(container, group, data, onUpdate) {
   });
 }
 
-// ============================================================================
-// TABLE EDITOR
-// RENDERS: Items tables (Warehouse, Bath, Room, Party Bag) with Item Type column
-// ============================================================================
-
-function createTableEditor(arr, key, updateCallback, columns) {
-  const container = document.createElement('div');
-  container.className = 'table-editor-section';
-
-  // Add title
-  const title = document.createElement('h3');
-  title.textContent = `${key} [${arr.length}]`;
-  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
-  container.appendChild(title);
-
-  // Add description for Party Bag and warehouse items explaining use_cnt classification
-  if (key.includes('Party Bag') || key.includes('Inventory') || key.includes('Warehouse')) {
-    const description = document.createElement('p');
-    description.id = `${key.toLowerCase().replace(/\s+/g, '-')}-description`;
-    description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
-    description.innerHTML = `<strong>Item Type Classification by Count:</strong><br>
-      • 0-9: Regular Items<br>
-      • 16: Equipment (Helmet, Armor, Shield, Accessories)<br>
-      • 32: Runes<br>
-      • 48: Farming Items<br>
-      • 64: Trade Items / Bath Items<br>
-      • 80: Base/Warehouse Items<br>
-      • 99+: Food Items [has specific values so be careful when it comes to use count]`;
-    container.appendChild(description);
-  }
-
-  const table = document.createElement('table');
-  table.className = 'striped';
-  table.id = `table-${key.toLowerCase().replace(/\s+/g, '-')}`;
-
-  const thead = document.createElement('thead');
-  const trHead = document.createElement('tr');
-
-  // Cache lookup table determination
-  let lookupTable = null;
-  if (typeof GameData !== 'undefined') {
-    if (key.includes('Warehouse')) lookupTable = GameData.BASE_ITEM;
-    else if (key.includes('Bath')) lookupTable = GameData.ITEMS;
-    else if (key.includes('Room')) lookupTable = GameData.ITEMS;
-  }
-
-  // Helper function to get the correct lookup table based on use_cnt
-  function getItemLookup(useCnt) {
-    if (!GameData) return null;
-    if (useCnt === 16) {
-      // use_cnt 16 is used for HELMET, ARMOR, SHIELD, and OTHER_EQUIP
-      // We need to check the item_no to determine which category
-      // For now, return a combined lookup (will be handled per item)
-      return null; // Will handle specially below
-    }
-    if (useCnt === 32) return GameData.RUNES;
-    if (useCnt === 48) return GameData.FARMING;
-    if (useCnt === 64) return GameData.TRADE;
-    if (useCnt === 80) return GameData.BASE_ITEM;
-    if (useCnt >= 99) return GameData.FOOD;
-    return GameData.ITEMS; // Default fallback for use_cnt 0-9
-  }
-
-  // Helper function to get item type name based on use_cnt
-  function getItemTypeName(useCnt) {
-    if (useCnt === 16) return 'Equipment';
-    if (useCnt === 32) return 'Rune';
-    if (useCnt === 48) return 'Farming';
-    if (useCnt === 64) return 'Trade';
-    if (useCnt === 80) return 'Base Item';
-    if (useCnt >= 99) return 'Food';
-    return 'Regular Item';
-  }
-
-  // Helper function to get equipment name based on item_no (for use_cnt 16)
-  function getEquipmentName(itemNo) {
-    if (!GameData) return null;
-
-    // Helper to extract name from either string or object format
-    const extractName = (value) => {
-      if (typeof value === 'string') return value;
-      if (typeof value === 'object' && value !== null && value.name) return value.name;
-      return null;
-    };
-
-    // Check each equipment category by item_no ranges
-    if (GameData.HELMET[itemNo]) return extractName(GameData.HELMET[itemNo]);
-    if (GameData.ARMOR[itemNo]) return extractName(GameData.ARMOR[itemNo]);
-    if (GameData.SHIELD[itemNo]) return extractName(GameData.SHIELD[itemNo]);
-    if (GameData.OTHER_EQUIP_GEAR && GameData.OTHER_EQUIP_GEAR[itemNo]) return extractName(GameData.OTHER_EQUIP_GEAR[itemNo]);
-    return null;
-  }
-
-  // Add Item Name column if we have a lookup
-  if (lookupTable || arr.length > 0) {
-    const th = document.createElement('th');
-    th.textContent = 'Item Name';
-    trHead.appendChild(th);
-  }
-
-  columns.forEach(col => {
-    const th = document.createElement('th');
-    th.textContent = Schema.labels[col] || col;
-    trHead.appendChild(th);
-
-    // Add Item Type column before use_cnt column
-    if (col === 'use_cnt') {
-      const typeHeader = document.createElement('th');
-      typeHeader.textContent = 'Item Type';
-      trHead.insertBefore(typeHeader, th);
-    }
-  });
-  thead.appendChild(trHead);
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-
-  // Optimize: limit rendering and use fragment for better performance
-  const fragment = document.createDocumentFragment();
-  const maxItems = Math.min(arr.length, 200);
-
-  for (let index = 0; index < maxItems; index++) {
-    const item = arr[index];
-    const tr = document.createElement('tr');
-    tr.id = `${key.toLowerCase().replace(/\s+/g, '-')}-row-${index}`;
-
-    // Cache values for performance
-    const itemUseCnt = item['use_cnt'] || 0;
-    const itemId = item['item_no'] || 0;
-    const itemLookup = getItemLookup(itemUseCnt);
-
-    // Add item name cell
-    const td = document.createElement('td');
-
-    let itemName;
-    if (itemUseCnt === 16) {
-      // Special handling for equipment (use_cnt 16)
-      itemName = getEquipmentName(itemId);
-      td.textContent = itemName ? `${itemId}: ${itemName}` : `Unknown Equipment (${itemId})`;
-    } else if (itemLookup) {
-      const lookupValue = itemLookup[itemId];
-      // Handle both string format and object format (for RUNES)
-      if (typeof lookupValue === 'object' && lookupValue !== null && lookupValue.name) {
-        td.textContent = `${itemId}: ${lookupValue.name}`;
-      } else if (typeof lookupValue === 'string') {
-        td.textContent = `${itemId}: ${lookupValue}`;
-      } else {
-        td.textContent = `Unknown (${itemId})`;
-      }
-    } else {
-      td.textContent = `ID: ${itemId}`;
-    }
-    td.style.fontStyle = 'italic';
-    td.style.color = 'var(--pico-muted-color)';
-    tr.appendChild(td);
-
-    columns.forEach(col => {
-      // Add Item Type column before use_cnt
-      if (col === 'use_cnt') {
-        const typeTd = document.createElement('td');
-        typeTd.textContent = getItemTypeName(item['use_cnt'] || 0);
-        typeTd.style.fontStyle = 'italic';
-        typeTd.style.fontSize = '0.85rem';
-        typeTd.id = `type-${index}`; // Add ID for updating
-        tr.appendChild(typeTd);
-      }
-
-      const td = document.createElement('td');
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.value = item[col];
-      input.style.marginBottom = '0';
-      input.style.padding = '0.25rem';
-      input.addEventListener('input', (e) => {
-        item[col] = parseFloat(e.target.value);
-        // Update item name display if this is the item_no or use_cnt column
-        if ((col === 'item_no' || col === 'use_cnt')) {
-          const nameCell = tr.cells[0];
-          const newId = item['item_no'] || 0;
-          const newUseCnt = item['use_cnt'] || 0;
-
-          // Update item type if use_cnt changed
-          if (col === 'use_cnt') {
-            const typeCell = document.getElementById(`type-${index}`);
-            if (typeCell) {
-              typeCell.textContent = getItemTypeName(newUseCnt);
-            }
-          }
-
-          if (newUseCnt === 16) {
-            // Special handling for equipment
-            const newName = getEquipmentName(newId);
-            nameCell.textContent = newName || `Unknown Equipment (${newId})`;
-          } else {
-            const newLookup = getItemLookup(newUseCnt);
-            if (newLookup) {
-              nameCell.textContent = newLookup[newId] || `Unknown (${newId})`;
-            } else {
-              nameCell.textContent = `ID: ${newId}`;
-            }
-          }
-        }
-      });
-      td.appendChild(input);
-      tr.appendChild(td);
-    });
-    fragment.appendChild(tr);
-  }
-
-  tbody.appendChild(fragment); // Batch DOM update
-
-  if (arr.length > 200) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = columns.length + 1; // +1 for item name column
-    td.textContent = `... and ${arr.length - 200} more items (hidden)`;
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-  }
-
-  table.appendChild(tbody);
-  container.appendChild(table);
-
-  return container;
-}
-
-// ============================================================================
-// BATH ITEMS EDITOR
-// RENDERS: Bath items with custom dropdowns and automatic use_cnt=64
-// ============================================================================
-
-function createBathItemsEditor(arr, key, updateCallback) {
-  const container = document.createElement('div');
-  container.className = 'bath-items-editor-section';
-
-  // Add title
-  const title = document.createElement('h3');
-  title.textContent = `${key} [${arr.length}]`;
-  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
-  container.appendChild(title);
-
-  // Add description
-  const description = document.createElement('p');
-  description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
-  description.innerHTML = `<strong>Bath Items:</strong> All items use Trade category (use_cnt: 64). Paintings for indices 2 & 5, ornaments for other slots.`;
-  container.appendChild(description);
-
-  // Define item groups
-  const paintingItems = [{ id: 0, name: 'None' }];
-
-  // Dynamically load paintings from GameData.TRADE
-  if (typeof GameData !== 'undefined' && GameData.TRADE) {
-    // Original paintings (18-22)
-    for (let id = 18; id <= 22; id++) {
-      if (GameData.TRADE[id]) {
-        paintingItems.push({ id: id, name: GameData.TRADE[id] });
-      }
-    }
-    // New Karen paintings (42-44)
-    for (let id = 42; id <= 44; id++) {
-      if (GameData.TRADE[id]) {
-        paintingItems.push({ id: id, name: GameData.TRADE[id] });
-      }
-    }
-  }
-
-  // Ornament items (exclude paintings 18-22, 42-44 and consumables 23-41)
-  const ornamentItems = [];
-  if (typeof GameData !== 'undefined' && GameData.TRADE) {
-    for (let id in GameData.TRADE) {
-      const numId = parseInt(id);
-      // Include: 0, 1-17 (ornaments), 45-50 (statues and vases)
-      if (numId === 0 || (numId >= 1 && numId <= 17) || (numId >= 45 && numId <= 50)) {
-        ornamentItems.push({ id: numId, name: GameData.TRADE[id] });
-      }
-    }
-  }
-
-  // Create grouped sections
-  const sections = [
-    { title: 'Paintings', indices: [2, 5], items: paintingItems, standalone: true },
-    { title: "Girl's Side (Left Ornaments)", indices: [0, 1, 3], items: ornamentItems, standalone: false },
-    { title: "Boy's Side (Right Ornaments)", indices: [4, 6, 7], items: ornamentItems, standalone: false }
-  ];
-
-  // Add Paintings section (standalone)
-  const paintingsSection = sections[0];
-  const paintingDiv = document.createElement('div');
-  paintingDiv.style.cssText = 'margin-bottom: 1.5rem; padding: 0.75rem; background: rgba(0,0,0,0.1); border-radius: 6px;';
-
-  const paintingTitle = document.createElement('h4');
-  paintingTitle.textContent = paintingsSection.title;
-  paintingTitle.style.cssText = 'margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--pico-primary);';
-  paintingDiv.appendChild(paintingTitle);
-
-  paintingsSection.indices.forEach(index => {
-    if (index >= arr.length) return;
-
-    const item = arr[index];
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'json-item';
-    itemDiv.style.cssText = 'margin-bottom: 0.5rem;';
-
-    const label = document.createElement('label');
-    label.textContent = `Slot ${index}`;
-    label.style.cssText = 'min-width: 80px; font-weight: 600;';
-    itemDiv.appendChild(label);
-
-    // Create dropdown
-    const select = document.createElement('select');
-    select.style.cssText = 'flex: 1; margin-bottom: 0;';
-
-    // Add options
-    paintingsSection.items.forEach(opt => {
-      const option = document.createElement('option');
-      option.value = opt.id;
-      option.textContent = `${opt.id}: ${opt.name}`;
-      if (item.item_no === opt.id) {
-        option.selected = true;
-      }
-      select.appendChild(option);
-    });
-
-    select.addEventListener('change', (e) => {
-      item.item_no = parseInt(e.target.value);
-      item.use_cnt = 64; // Automatically set use_cnt to 64
-    });
-
-    itemDiv.appendChild(select);
-    paintingDiv.appendChild(itemDiv);
-
-    // Ensure use_cnt is 64
-    if (item.use_cnt !== 64) {
-      item.use_cnt = 64;
-    }
-  });
-
-  container.appendChild(paintingDiv);
-
-  // Create container for Girl's and Boy's Side (responsive grid)
-  const ornamentsContainer = document.createElement('div');
-  ornamentsContainer.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;';
-  ornamentsContainer.className = 'bath-ornaments-grid';
-
-  // Add Girl's and Boy's Side sections
-  for (let i = 1; i < sections.length; i++) {
-    const section = sections[i];
-    const sectionDiv = document.createElement('div');
-    sectionDiv.style.cssText = 'padding: 0.75rem; background: rgba(0,0,0,0.1); border-radius: 6px;';
-
-    const sectionTitle = document.createElement('h4');
-    sectionTitle.textContent = section.title;
-    sectionTitle.style.cssText = 'margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--pico-primary);';
-    sectionDiv.appendChild(sectionTitle);
-
-    section.indices.forEach(index => {
-      if (index >= arr.length) return;
-
-      const item = arr[index];
-      const itemDiv = document.createElement('div');
-      itemDiv.className = 'json-item';
-      itemDiv.style.cssText = 'margin-bottom: 0.5rem;';
-
-      const label = document.createElement('label');
-      label.textContent = `Slot ${index}`;
-      label.style.cssText = 'min-width: 80px; font-weight: 600;';
-      itemDiv.appendChild(label);
-
-      // Create dropdown
-      const select = document.createElement('select');
-      select.style.cssText = 'flex: 1; margin-bottom: 0;';
-
-      // Add options
-      section.items.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt.id;
-        option.textContent = `${opt.id}: ${opt.name}`;
-        if (item.item_no === opt.id) {
-          option.selected = true;
-        }
-        select.appendChild(option);
-      });
-
-      select.addEventListener('change', (e) => {
-        item.item_no = parseInt(e.target.value);
-        item.use_cnt = 64; // Automatically set use_cnt to 64
-      });
-
-      itemDiv.appendChild(select);
-      sectionDiv.appendChild(itemDiv);
-
-      // Ensure use_cnt is 64
-      if (item.use_cnt !== 64) {
-        item.use_cnt = 64;
-      }
-    });
-
-    ornamentsContainer.appendChild(sectionDiv);
-  }
-
-  container.appendChild(ornamentsContainer);
-
-  return container;
-}
-
-// ============================================================================
-// ROOM ITEMS EDITOR
-// RENDERS: Room items with same structure as bath items (for testing)
-// ============================================================================
-
-function createRoomItemsEditor(arr, key, updateCallback) {
-  const details = document.createElement('details');
-  details.open = true;
-  details.className = 'json-array';
-
-  const summary = document.createElement('summary');
-  summary.textContent = key + ` [${arr.length}]`;
-  details.appendChild(summary);
-
-  // Add warning description
-  const description = document.createElement('p');
-  description.style.cssText = 'font-size: 0.85rem; color: var(--pico-color-amber-500); margin-bottom: 1rem; padding: 0.5rem; background: rgba(255, 193, 7, 0.1); border-left: 3px solid var(--pico-color-amber-500); border-radius: 4px;';
-  description.innerHTML = `<strong>⚠️ Testing Only:</strong> Room items functionality is experimental. We don't know how this affects the game, but these values exist in the save file. All items use Trade category (use_cnt: 64).`;
-  details.appendChild(description);
-
-  // Ornament items (exclude paintings 18-22 and consumables 23-41)
-  const ornamentItems = [];
-  if (typeof GameData !== 'undefined' && GameData.TRADE) {
-    for (let id in GameData.TRADE) {
-      const numId = parseInt(id);
-      if (numId === 0 || (numId >= 1 && numId <= 17) || (numId >= 42 && numId <= 50)) {
-        ornamentItems.push({ id: numId, name: GameData.TRADE[id] });
-      }
-    }
-  }
-
-  // Create grouped sections (for army leader room)
-  const sections = [
-    { title: "", indices: [0, 1, 3], items: ornamentItems },
-    { title: "", indices: [4, 6, 7], items: ornamentItems }
-  ];
-
-  // Create container for responsive grid
-  const ornamentsContainer = document.createElement('div');
-  ornamentsContainer.style.cssText = 'display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem;';
-  ornamentsContainer.className = 'bath-ornaments-grid';
-
-  // Add sections without titles
-  sections.forEach(section => {
-    const sectionDiv = document.createElement('div');
-    sectionDiv.style.cssText = 'padding: 0.75rem; background: rgba(0,0,0,0.1); border-radius: 6px;';
-
-    section.indices.forEach(index => {
-      if (index >= arr.length) return;
-
-      const item = arr[index];
-      const itemDiv = document.createElement('div');
-      itemDiv.className = 'json-item';
-      itemDiv.style.cssText = 'margin-bottom: 0.5rem;';
-
-      const label = document.createElement('label');
-      label.textContent = `Slot ${index}`;
-      label.style.cssText = 'min-width: 80px; font-weight: 600;';
-      itemDiv.appendChild(label);
-
-      // Create dropdown
-      const select = document.createElement('select');
-      select.style.cssText = 'flex: 1; margin-bottom: 0;';
-
-      // Add options
-      section.items.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt.id;
-        option.textContent = `${opt.id}: ${opt.name}`;
-        if (item.item_no === opt.id) {
-          option.selected = true;
-        }
-        select.appendChild(option);
-      });
-
-      select.addEventListener('change', (e) => {
-        item.item_no = parseInt(e.target.value);
-        item.use_cnt = 64; // Automatically set use_cnt to 64
-      });
-
-      itemDiv.appendChild(select);
-      sectionDiv.appendChild(itemDiv);
-
-      // Ensure use_cnt is 64
-      if (item.use_cnt !== 64) {
-        item.use_cnt = 64;
-      }
-    });
-
-    ornamentsContainer.appendChild(sectionDiv);
-  });
-
-  details.appendChild(ornamentsContainer);
-
-  return details;
-}
-
-// ============================================================================
-// RECRUITMENT EDITOR
-// RENDERS: Recruited Characters tab with character names and recruitment flags
-// ============================================================================
-
-function createRecruitmentEditor(arr, key, updateCallback) {
-  const container = document.createElement('div');
-  container.className = 'recruitment-editor-section';
-
-  // Add title
-  const title = document.createElement('h3');
-  title.textContent = `${key} [${arr.length} characters]`;
-  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
-  container.appendChild(title);
-
-  // Add description for recruitment status values
-  const description = document.createElement('p');
-  description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
-  description.innerHTML = `<strong>Recruitment Status Values:</strong><br>
-    • 1: Spoke to<br>
-    • 70: Auto Join<br>
-    • 71: Manual Recruit<br>
-    • 86: Event Locked Not Party<br>
-    • 212: Deceased<br>
-    • 213: On Leave`;
-  container.appendChild(description);
-
-  const table = document.createElement('table');
-  table.className = 'striped';
-  const thead = document.createElement('thead');
-  const trHead = document.createElement('tr');
-
-  const headers = ['Index', 'Character Name', 'Recruitment Flag'];
-  headers.forEach(h => {
-    const th = document.createElement('th');
-    th.textContent = h;
-    trHead.appendChild(th);
-  });
-  thead.appendChild(trHead);
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-
-  // Use character names for recruitment display to avoid redundant tables
-  const lookupTable = typeof GameData !== 'undefined' ? GameData.CHARACTERS : null;
-
-  arr.forEach((flagValue, index) => {
-    // Skip index 0 (not a valid character)
-    if (index === 0) return;
-
-    const tr = document.createElement('tr');
-
-    // Index column
-    const tdIndex = document.createElement('td');
-    tdIndex.textContent = index;
-    tdIndex.style.fontWeight = 'bold';
-    tdIndex.style.width = '60px';
-    tr.appendChild(tdIndex);
-
-    // Character name column
-    const tdName = document.createElement('td');
-    const charEntry = lookupTable && lookupTable[index];
-    tdName.textContent = charEntry ? (typeof charEntry === 'string' ? charEntry : (charEntry.name || `Character ${index}`)) : `Character ${index}`;
-    tdName.style.fontStyle = 'italic';
-    tdName.style.color = 'var(--pico-muted-color)';
-    tr.appendChild(tdName);
-
-    // Flag value input column
-    const tdFlag = document.createElement('td');
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.value = flagValue;
-    input.style.marginBottom = '0';
-    input.style.padding = '0.25rem';
-    input.style.width = '80px';
-    input.addEventListener('input', (e) => {
-      arr[index] = parseFloat(e.target.value);
-    });
-    tdFlag.appendChild(input);
-    tr.appendChild(tdFlag);
-
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(tbody);
-  container.appendChild(table);
-
-  return container;
-}
 
 // ============================================================================
 // PLAY TIME EDITOR
@@ -1179,6 +620,7 @@ function createBathLevelEditor(arr, key, updateCallback) {
 
   const input = document.createElement('input');
   input.type = 'number';
+  input.min = '0';
   input.value = arr[0] || 0;
   input.readOnly = true;
   input.style.opacity = '0.6';
@@ -1215,7 +657,7 @@ function createGreenhillAliasesEditor(arr, key, updateCallback) {
 
     const aliasLabel = document.createElement('label');
     aliasLabel.textContent = aliasLabels[i];
-    aliasLabel.style.cssText = 'min-width: 120px; margin-bottom: 0;';
+    aliasLabel.style.cssText = 'margin-bottom: 0;';
     aliasGroup.appendChild(aliasLabel);
 
     const input = document.createElement('input');
@@ -1272,172 +714,6 @@ function createCastleEditorsCombined(data, sourceData) {
   return wrapper;
 }
 
-// ============================================================================
-// ACTIVE PARTY MEMBERS EDITOR
-// RENDERS: exit_member array - current party composition (6 battle + 2 convoy)
-// ============================================================================
-
-function createPartyMembersEditor(arr, key, updateCallback) {
-  const container = document.createElement('div');
-  container.className = 'party-members-section';
-  // container.style.cssText = 'margin-bottom: 2rem; padding: 1rem; background: var(--pico-card-sectioning-background-color); border-radius: 6px;';
-
-  const title = document.createElement('h3');
-  title.textContent = key;
-  // title.style.cssText = 'margin-top: 0; margin-bottom: 0.5rem; color: var(--pico-primary);';
-  container.appendChild(title);
-
-  const description = document.createElement('p');
-  description.style.cssText = 'font-size: 0.875rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
-  description.textContent = 'First 6 slots are battle characters (0-83 only), last 2 slots are convoy members (full roster 0-124).';
-  container.appendChild(description);
-
-  const gridContainer = document.createElement('div');
-  gridContainer.className = 'party-members-grid';
-  // gridContainer.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;';
-
-  // Only show 8 slots (6 battle + 2 convoy)
-  for (let index = 0; index < Math.min(arr.length, 8); index++) {
-    const charId = arr[index];
-    const slotDiv = document.createElement('div');
-    slotDiv.className = 'json-item';
-    slotDiv.style.cssText = 'margin-bottom: 0;';
-
-    const label = document.createElement('label');
-    if (index < 6) {
-      label.textContent = `Battle Slot ${index + 1}`;
-    } else {
-      label.textContent = `Convoy ${index - 5}`;
-    }
-    label.style.cssText = 'min-width: 120px;';
-    slotDiv.appendChild(label);
-
-    // Dropdown for characters
-    const select = document.createElement('select');
-    select.style.cssText = 'flex: 1; margin-bottom: 0;';
-
-    // Add "None" option
-    const noneOption = document.createElement('option');
-    noneOption.value = 0;
-    noneOption.textContent = '0: None';
-    select.appendChild(noneOption);
-
-    // Build options based on slot type
-    if (index < 6) {
-      // Battle slots: 1-83 only (playable battle characters)
-      for (let id = 1; id <= 83; id++) {
-        const char = GameData && GameData.CHARACTERS && GameData.CHARACTERS[id];
-        if (char) {
-          const option = document.createElement('option');
-          option.value = id;
-          option.textContent = `${id}: ${char.name}`;
-          select.appendChild(option);
-        }
-      }
-    } else {
-      // Convoy slots: Full roster 0-124
-      if (GameData && GameData.CHARACTERS) {
-        Object.keys(GameData.CHARACTERS).forEach(id => {
-          const numId = parseInt(id);
-          const char = GameData.CHARACTERS[numId];
-          if (char && numId > 0) {
-            const option = document.createElement('option');
-            option.value = numId;
-            option.textContent = `${numId}: ${char.name}`;
-            select.appendChild(option);
-          }
-        });
-      }
-    }
-
-    select.value = charId;
-
-    select.addEventListener('change', (e) => {
-      arr[index] = parseInt(e.target.value);
-    });
-
-    slotDiv.appendChild(select);
-    gridContainer.appendChild(slotDiv);
-  }
-
-  container.appendChild(gridContainer);
-  return container;
-}
-
-// ============================================================================
-// KEY ITEMS EDITOR
-// RENDERS: event_item array - special quest/story items in 2-column grid
-// ============================================================================
-
-function createKeyItemsEditor(arr, key, updateCallback) {
-  const container = document.createElement('div');
-  container.className = ' key-items-editor';
-  container.id = 'key-items-editor';
-  container.style.cssText = 'padding: 1rem; background: rgba(0, 0, 0, 0.1); border-radius: 6px;';
-
-  const label = document.createElement('label');
-  label.textContent = key;
-  label.style.cssText = 'font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem;';
-  container.appendChild(label);
-
-  const gridContainer = document.createElement('div');
-  gridContainer.className='two-css-col w-100';
-
-  // Key item IDs: 29 (Blinking Mirror), 35-46, 51-55, 72-74
-  const keyItemIds = [
-    29, // Blinking Mirror
-    35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, // Range 35-46
-    51, 52, 53, 54, 55, // Range 51-55
-    72, 73, 74 // Range 72-74
-  ];
-
-  // Only show first 6 slots (rest might be unused)
-  for (let index = 0; index < Math.min(arr.length, 6); index++) {
-    const itemId = arr[index];
-    const slotDiv = document.createElement('div');
-    slotDiv.className = 'json-item';
-    slotDiv.style.cssText = 'margin-bottom: 0.5rem; display: flex; gap: 0.5rem; align-items: center;';
-
-    const slotLabel = document.createElement('label');
-    slotLabel.textContent = `Slot ${index + 1}`;
-    slotLabel.style.cssText = 'min-width: 60px; margin-bottom: 0;';
-    slotDiv.appendChild(slotLabel);
-
-    // Dropdown for key items
-    const select = document.createElement('select');
-    select.style.cssText = 'flex: 1; margin-bottom: 0;';
-
-    // Add "None" option
-    const noneOption = document.createElement('option');
-    noneOption.value = 0;
-    noneOption.textContent = '0: None';
-    select.appendChild(noneOption);
-
-    // Add key item options
-    keyItemIds.forEach(id => {
-      const itemName = GameData && GameData.ITEMS && GameData.ITEMS[id] 
-        ? GameData.ITEMS[id] 
-        : `Unknown Item ${id}`;
-      
-      const option = document.createElement('option');
-      option.value = id;
-      option.textContent = `${id}: ${itemName}`;
-      select.appendChild(option);
-    });
-
-    select.value = itemId;
-
-    select.addEventListener('change', (e) => {
-      arr[index] = parseInt(e.target.value);
-    });
-
-    slotDiv.appendChild(select);
-    gridContainer.appendChild(slotDiv);
-  }
-
-  container.appendChild(gridContainer);
-  return container;
-}
 
 // ============================================================================
 // FOOD MENU EDITOR
@@ -1550,6 +826,7 @@ function createLocationEditor(data, key, updateCallback) {
 
     const input = document.createElement('input');
     input.type = 'number';
+    input.min = '0';
     input.style.cssText = 'margin-bottom: 0;';
 
     // Get value from appropriate source
@@ -1578,6 +855,104 @@ function createLocationEditor(data, key, updateCallback) {
 }
 
 // ============================================================================
+// COOK-OFF PROGRESS EDITOR
+// RENDERS: Cook-Off Battle progress (event_flag[153-154])
+// ============================================================================
+
+function createCookOffProgressEditor(data, key, updateCallback) {
+  const container = document.createElement('div');
+  container.className = 'json-item';
+  container.id = 'cook-off-progress-editor';
+
+  const label = document.createElement('label');
+  label.textContent = 'Cook-Off Battles Won';
+  container.appendChild(label);
+
+  const select = document.createElement('select');
+  select.style.cssText = 'margin-bottom: 0;';
+
+  // Cook-off progress mapping: [matches won, byte152 value, byte153 value]
+  const cookOffStages = [
+    [0, 0, 32],    // No matches: 0x00 0x20
+    [1, 1, 32],    // 1st match: 0x01 0x20
+    [2, 3, 32],    // 2nd match: 0x03 0x20
+    [3, 7, 32],    // 3rd match: 0x07 0x20
+    [4, 15, 32],   // 4th match: 0x0F 0x20
+    [5, 31, 32],   // 5th match: 0x1F 0x20
+    [6, 63, 32],   // 6th match: 0x3F 0x20
+    [7, 127, 32],  // 7th match: 0x7F 0x20
+    [8, 255, 32],  // 8th match: 0xFF 0x20
+    [9, 255, 33],  // 9th match: 0xFF 0x21
+    [10, 255, 35], // 10th match: 0xFF 0x23
+    [11, 255, 39], // 11th match: 0xFF 0x27
+    [12, 255, 47]  // 12th match (final): 0xFF 0x2F
+  ];
+
+  // Get current values from event_flag
+  const currentByte152 = data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1] || 0;
+  const currentByte153 = data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2] || 32;
+
+  // Find current stage
+  let currentStage = 0;
+  for (let i = 0; i < cookOffStages.length; i++) {
+    const [matches, b152, b153] = cookOffStages[i];
+    if (currentByte152 === b152 && currentByte153 === b153) {
+      currentStage = matches;
+      break;
+    }
+  }
+
+  // Cook-off opponent names in order
+  const opponents = [
+    'Not started',
+    'Match 1: Ky Yun Defeated',
+    'Match 2: Goetsu Defeated',
+    'Match 3: Shinki Defeated',
+    'Match 4: Ryuki Defeated',
+    'Match 5: Bashok Defeated',
+    'Match 6: Ryuko Defeated',
+    'Match 7: Antoio Defeated',
+    'Match 8: Gyokuran Defeated',
+    'Match 9: Retso Defeated',
+    'Match 10: Lester Defeated',
+    'Match 11: Retso Defeated',
+    'Match 12: Jinkai Defeated (Complete!)'
+  ];
+
+  // Populate dropdown
+  cookOffStages.forEach(([matches, b153, b154]) => {
+    const option = document.createElement('option');
+    option.value = matches;
+    option.textContent = opponents[matches];
+    select.appendChild(option);
+  });
+
+  select.value = currentStage;
+
+  select.addEventListener('change', (e) => {
+    const selectedMatches = parseInt(e.target.value);
+    const stage = cookOffStages[selectedMatches];
+    
+    // Update event_flag bytes
+    data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1] = stage[1];
+    data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2] = stage[2];
+  });
+
+  container.appendChild(select);
+  return container;
+}
+
+// Register editor factories after functions are defined
+editorFactories.play_time = createPlayTimeEditor;
+editorFactories.bath_level = createBathLevelEditor;
+editorFactories.cook_off_progress = createCookOffProgressEditor;
+editorFactories.greenhill_aliases = createGreenhillAliasesEditor;
+
+editorFactories.food_menu = createFoodMenuEditor;
+editorFactories.castle_editors_combined = createCastleEditorsCombined;
+editorFactories.location = createLocationEditor;
+
+// ============================================================================
 // BATTLE CHARACTERS EDITOR
 // RENDERS: Battle Characters tab with stats, runes (dropdowns), equipment (dropdowns), and accessories
 // ============================================================================
@@ -1588,988 +963,6 @@ function createLocationEditor(data, key, updateCallback) {
  * @param {number} slotIndex - Equipment slot (0=Head, 1=Right Hand, 2=Left Hand)
  * @returns {Array} Array of allowed rune objects with id and name
  */
-function filterRunesForCharacter(characterIndex, slotIndex) {
-  if (!GameData || !GameData.RUNES) return [];
-
-  const slotTypes = ['HR', 'RH', 'LH']; // Head, Right Hand, Left Hand
-  const currentSlotType = slotTypes[slotIndex];
-
-  const allowedRunes = [];
-
-  Object.entries(GameData.RUNES).forEach(([id, runeData]) => {
-    // Handle both old string format and new object format
-    const runeName = typeof runeData === 'string' ? runeData : runeData.name;
-    const attrs = runeData.attrs || [];
-
-    // Always include "None" (ID 0)
-    if (id === '0') {
-      allowedRunes.push({ id: 0, name: runeName, attrs: attrs });
-      return;
-    }
-
-    // Exclude weapon-exclusive runes (ExR)
-    if (attrs.includes('ExR')) return;
-
-    // Check if rune has slot-specific attributes
-    const hasSlotAttr = attrs.includes('HR') || attrs.includes('RH') || attrs.includes('LH');
-
-    // Check if rune has the required slot type attribute
-    let passesSlotCheck = false;
-
-    if (slotIndex === 0) { // Head slot
-      // If it has any slot-specific attribute, it must have HR
-      if (hasSlotAttr) {
-        passesSlotCheck = attrs.includes('HR');
-      } else {
-        // No slot restrictions - allow for N or character-specific runes
-        passesSlotCheck = true;
-      }
-    } else if (slotIndex === 1) { // Right Hand
-      // If it has any slot-specific attribute, check for RH or Wep (but not LH exclusive)
-      if (hasSlotAttr) {
-        passesSlotCheck = (attrs.includes('RH') || attrs.includes('Wep')) && !attrs.includes('LH');
-      } else {
-        // No slot restrictions - allow for N or character-specific runes
-        passesSlotCheck = true;
-      }
-    } else if (slotIndex === 2) { // Left Hand
-      // If it has any slot-specific attribute, check for LH or Wep (but not RH exclusive)
-      if (hasSlotAttr) {
-        passesSlotCheck = (attrs.includes('LH') || attrs.includes('Wep')) && !attrs.includes('RH');
-      } else {
-        // No slot restrictions - allow for N or character-specific runes
-        passesSlotCheck = true;
-      }
-    }
-
-    if (!passesSlotCheck) return;
-
-    // Check character index match
-    const hasCharacterMatch = attrs.includes('N') ||
-      attrs.some(attr => {
-        const num = parseInt(attr);
-        return !isNaN(num) && num === characterIndex;
-      });
-
-    // For runes with character-specific attributes, only show if character matches
-    const hasCharacterSpecificAttr = attrs.some(attr => {
-      const num = parseInt(attr);
-      return !isNaN(num);
-    });
-
-    if (hasCharacterSpecificAttr && !hasCharacterMatch) return;
-
-    // If we got here, the rune passed all checks
-    allowedRunes.push({ id: parseInt(id), name: runeName, attrs: attrs });
-  });
-
-  return allowedRunes;
-}
-
-function createBattleCharactersEditor(arr, key, updateCallback) {
-  const container = document.createElement('div');
-  container.className = 'battle-characters-section';
-
-  // Add title
-  const title = document.createElement('h3');
-  title.textContent = `${key} [${Math.min(arr.length, 84)} playable characters]`;
-  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
-  container.appendChild(title);
-
-  const lookupTable = typeof GameData !== 'undefined' ? GameData.CHARACTERS : null;
-
-  // Add filter dropdown
-  const filterContainer = document.createElement('div');
-  filterContainer.style.cssText = 'margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 6px;';
-
-  const filterLabel = document.createElement('label');
-  filterLabel.textContent = 'Filter by Character Type:';
-  filterLabel.style.cssText = 'display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.75rem;';
-  filterContainer.appendChild(filterLabel);
-
-  const filterSelect = document.createElement('select');
-  filterSelect.style.cssText = 'width: 100%; max-width: 200px; margin-bottom: 0; font-size: 0.75rem;';
-  filterSelect.id = 'character-type-filter';
-
-  // Add filter options
-  const filterOptions = [
-    { value: 'all', label: 'All Characters' },
-    { value: 'M', label: 'Male' },
-    { value: 'F', label: 'Female' },
-    { value: 'K', label: 'Kobold' },
-    { value: 'W', label: 'Winger' },
-    { value: 'Z', label: 'Monster' },
-    { value: 'N', label: 'Noble' }
-  ];
-
-  filterOptions.forEach(opt => {
-    const option = document.createElement('option');
-    option.value = opt.value;
-    option.textContent = opt.label;
-    filterSelect.appendChild(option);
-  });
-
-  filterContainer.appendChild(filterSelect);
-  container.appendChild(filterContainer);
-
-  // Only show first 84 characters (1-83) as those are playable, skip index 0 (N/A)
-  const maxIndex = Math.min(arr.length, 84);
-
-  // Stat labels for para array
-  const statLabels = ['Strength', 'Dexterity', 'Protection', 'Magic', 'Magic Defense', 'Speed', 'Luck'];
-
-  // Equipment labels for mon_eqp array
-  const equipmentLabels = ['Head Rune', 'Right Hand Rune', 'Left Hand Rune'];
-
-  for (let index = 1; index < maxIndex; index++) {
-    const charData = arr[index];
-    const entry = lookupTable && lookupTable[index];
-    const charName = entry ? (typeof entry === 'string' ? entry : (entry.name || `Character ${index}`)) : `Character ${index}`;
-
-    // Skip characters with empty or N/A names
-    if (!charName || charName === 'N/A' || charName === '' || charName.trim() === '') {
-      continue;
-    }
-
-    // Get character attributes for filtering
-    const charAttrs = entry && entry.attrs ? entry.attrs : [];
-
-    const charDetails = document.createElement('details');
-    charDetails.open = false;
-    charDetails.className = 'json-object';
-
-    // Add data attributes for filtering
-    charDetails.dataset.charIndex = index;
-    if (charAttrs.includes('M')) charDetails.dataset.isMale = 'true';
-    if (charAttrs.includes('F')) charDetails.dataset.isFemale = 'true';
-    if (charAttrs.includes('K')) charDetails.dataset.isKobold = 'true';
-    if (charAttrs.includes('W')) charDetails.dataset.isWinger = 'true';
-    if (charAttrs.includes('Z')) charDetails.dataset.isMonster = 'true';
-    if (charAttrs.includes('N')) charDetails.dataset.isNoble = 'true';
-
-    const charSummary = document.createElement('summary');
-    charSummary.innerHTML = `<strong>${index}:</strong> ${charName}`;
-    charDetails.appendChild(charSummary);
-
-    // Create 2-column layout container
-    const columnsContainer = document.createElement('div');
-    //columnsContainer.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;';
-    columnsContainer.className = 'grid g-2-col';
-
-    // Left column: Stats and other properties
-    const leftColumn = document.createElement('div');
-    leftColumn.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
-
-    // Right column: Runes, Equipment, Accessories
-    const rightColumn = document.createElement('div');
-    rightColumn.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
-
-    // Create General section (Level, Experience, HP, Killed Enemies)
-    const generalContainer = document.createElement('div');
-    generalContainer.className = 'battle-character-general';
-    generalContainer.id = `char-${index}-general`;
-
-    const generalTitle = document.createElement('h4');
-    generalTitle.textContent = 'General';
-    generalTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-    generalContainer.appendChild(generalTitle);
-
-    // General fields to include
-    const generalFields = [
-      { prop: 'level', label: 'Level' },
-      { prop: 'exp', label: 'Experience' },
-      { prop: 'max_hp', label: 'Max HP' },
-      { prop: 'now_hp', label: 'Current HP' },
-      { prop: 'todome', label: 'Killed Enemies' }
-    ];
-
-    generalFields.forEach(field => {
-      if (charData[field.prop] !== undefined) {
-        const fieldDiv = document.createElement('div');
-        fieldDiv.className = 'json-item';
-        const label = document.createElement('label');
-        label.textContent = field.label;
-        fieldDiv.appendChild(label);
-
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.value = charData[field.prop];
-        input.addEventListener('input', (e) => {
-          charData[field.prop] = parseFloat(e.target.value);
-        });
-        fieldDiv.appendChild(input);
-        generalContainer.appendChild(fieldDiv);
-      }
-    });
-
-    leftColumn.appendChild(generalContainer);
-
-    // Create Magic section (MP Levels)
-    if (charData['mp'] && Array.isArray(charData['mp'])) {
-      const mpContainer = document.createElement('div');
-      mpContainer.className = 'battle-character-magic';
-      mpContainer.id = `char-${index}-magic`;
-
-      const mpTitle = document.createElement('h4');
-      mpTitle.textContent = 'Magic';
-      mpTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-      mpContainer.appendChild(mpTitle);
-
-      const mpLevels = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
-      const maxMP = 153;
-      const mpPerSquare = 17;
-
-      charData['mp'].forEach((value, i) => {
-        if (i < mpLevels.length) {
-          const mpDiv = document.createElement('div');
-          mpDiv.className = 'json-item mp-level gap-1';
-          mpDiv.style.cssText = 'display: flex; align-items: center;';
-
-          const label = document.createElement('label');
-          label.textContent = mpLevels[i];
-          mpDiv.appendChild(label);
-
-          const input = document.createElement('input');
-          input.type = 'number';
-          input.min = '0';
-          input.max = maxMP.toString();
-          input.value = value;
-          input.style.maxWidth = '80px';
-          input.addEventListener('input', (e) => {
-            const newValue = Math.min(maxMP, Math.max(0, parseFloat(e.target.value) || 0));
-            e.target.value = newValue;
-            charData['mp'][i] = newValue;
-            // Update squares display
-            updateSquares();
-          });
-          mpDiv.appendChild(input);
-
-          // Add squares display
-          const squaresDiv = document.createElement('div');
-          squaresDiv.className = 'mp-squares';
-          squaresDiv.style.cssText = 'display: flex; gap: 2px; font-size: 0.9rem; line-height: 1;';
-
-          const updateSquares = () => {
-            const currentValue = parseFloat(input.value) || 0;
-            const filledSquares = Math.floor(currentValue / mpPerSquare);
-            const totalSquares = Math.ceil(maxMP / mpPerSquare);
-            
-            squaresDiv.innerHTML = '';
-            for (let j = 0; j < totalSquares; j++) {
-              const square = document.createElement('span');
-              square.textContent = j < filledSquares ? '■' : '□';
-              square.style.color = j < filledSquares ? 'var(--pico-primary)' : 'var(--pico-muted-color)';
-              squaresDiv.appendChild(square);
-            }
-          };
-
-          updateSquares();
-          mpDiv.appendChild(squaresDiv);
-          mpContainer.appendChild(mpDiv);
-        }
-      });
-
-      leftColumn.appendChild(mpContainer);
-    }
-
-    // Create Weapon section (Weapon Level, Weapon Rune)
-    const weaponContainer = document.createElement('div');
-    weaponContainer.className = 'battle-character-weapon';
-    weaponContainer.id = `char-${index}-weapon`;
-
-    const weaponTitle = document.createElement('h4');
-    weaponTitle.textContent = 'Weapon';
-    weaponTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-    weaponContainer.appendChild(weaponTitle);
-
-    // Weapon Level
-    if (charData['buki_lv'] !== undefined) {
-      const weaponLvDiv = document.createElement('div');
-      weaponLvDiv.className = 'json-item';
-      const label = document.createElement('label');
-      label.textContent = 'Weapon Level';
-      weaponLvDiv.appendChild(label);
-
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.value = charData['buki_lv'];
-      input.addEventListener('input', (e) => {
-        charData['buki_lv'] = parseFloat(e.target.value);
-      });
-      weaponLvDiv.appendChild(input);
-      weaponContainer.appendChild(weaponLvDiv);
-    }
-
-    // Weapon Rune (will be added later in the loop)
-    rightColumn.appendChild(weaponContainer); // Add to right column above runes
-
-    // Render all properties of this character
-    Object.keys(charData).forEach(prop => {
-      // Skip properties already handled in General and Magic sections
-      if (['level', 'exp', 'max_hp', 'now_hp', 'todome', 'mp'].includes(prop)) return;
-
-      // Skip buki_lv as it's already in Weapon section
-      if (prop === 'buki_lv') return;
-
-      let el;
-
-      // Special handling for para (stats) array - NON-COLLAPSIBLE
-      if (prop === 'para' && Array.isArray(charData[prop])) {
-        const paraContainer = document.createElement('div');
-        paraContainer.className = 'battle-character-stats';
-        paraContainer.id = `char-${index}-stats`;
-
-        const statsTitle = document.createElement('h4');
-        statsTitle.textContent = 'Stats';
-        statsTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-        paraContainer.appendChild(statsTitle);
-
-        charData[prop].forEach((value, i) => {
-          if (i < statLabels.length) {
-            const statDiv = document.createElement('div');
-            statDiv.className = 'json-item';
-            const label = document.createElement('label');
-            label.textContent = statLabels[i];
-            statDiv.appendChild(label);
-
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.value = value;
-            input.addEventListener('input', (e) => {
-              charData[prop][i] = parseFloat(e.target.value);
-            });
-            statDiv.appendChild(input);
-            paraContainer.appendChild(statDiv);
-          }
-        });
-
-        leftColumn.appendChild(paraContainer);
-        return; // Don't add to el
-      }
-      // Special handling for mon_eqp (runes) array - NON-COLLAPSIBLE
-      else if (prop === 'mon_eqp' && Array.isArray(charData[prop])) {
-        const eqpContainer = document.createElement('div');
-        eqpContainer.className = 'runes-equiped-section';
-        eqpContainer.id = `char-${index}-runes`;
-
-        const runesTitle = document.createElement('h4');
-        runesTitle.textContent = 'Runes';
-        runesTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-        eqpContainer.appendChild(runesTitle);
-
-        charData[prop].forEach((value, i) => {
-          if (i < equipmentLabels.length) {
-            const eqpDiv = document.createElement('div');
-            eqpDiv.className = 'json-item runes';
-            eqpDiv.style.display = 'flex';
-            eqpDiv.style.gap = '1rem';
-            eqpDiv.style.alignItems = 'center';
-
-            const slotLabel = document.createElement('span');
-            slotLabel.textContent = `${equipmentLabels[i]}:`;
-            slotLabel.style.fontWeight = 'bold';
-            slotLabel.style.minWidth = '120px';
-            eqpDiv.appendChild(slotLabel);
-
-            // Create dropdown for rune selection
-            const select = document.createElement('select');
-            select.style.marginBottom = '0';
-            select.style.flex = '1';
-
-            // Get filtered runes for this character and slot
-            const allowedRunes = filterRunesForCharacter(index, i);
-
-            // Check if current rune has X (locked) attribute
-            let isLocked = false;
-            if (value && GameData && GameData.RUNES && GameData.RUNES[value]) {
-              const currentRuneData = GameData.RUNES[value];
-              const currentAttrs = currentRuneData.attrs || [];
-              isLocked = currentAttrs.includes('X');
-            }
-
-            // Populate dropdown with filtered runes
-            allowedRunes.forEach(rune => {
-              const option = document.createElement('option');
-              option.value = rune.id;
-              option.textContent = `${rune.id}: ${rune.name}`;
-              if (value === rune.id) {
-                option.selected = true;
-              }
-              select.appendChild(option);
-            });
-
-            // If rune is locked, disable the dropdown
-            if (isLocked && value !== 0) {
-              select.disabled = true;
-              select.style.opacity = '0.6';
-              select.style.cursor = 'not-allowed';
-              select.title = 'This rune is locked and cannot be changed';
-            } else {
-              // Set current value
-              select.value = value || 0;
-
-              // Update handler
-              select.addEventListener('change', (e) => {
-                charData[prop][i] = parseInt(e.target.value);
-              });
-            }
-
-            eqpDiv.appendChild(select);
-            eqpContainer.appendChild(eqpDiv);
-          }
-        });
-
-        rightColumn.appendChild(eqpContainer); // Add to right column
-        return; // Don't add to el
-      }
-      // Special handling for bogu_eqp (equipment worn) array - NON-COLLAPSIBLE
-      else if (prop === 'bogu_eqp' && Array.isArray(charData[prop])) {
-        const boguContainer = document.createElement('div');
-        boguContainer.className = 'equipment-worn-section';
-        boguContainer.id = `char-${index}-equipment`;
-
-        const equipmentTitle = document.createElement('h4');
-        equipmentTitle.textContent = 'Equipment';
-        equipmentTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-        boguContainer.appendChild(equipmentTitle);
-
-        // Check if this character is a beast/monster (cannot equip any armor)
-        const isBeast = GameData && GameData.BEASTS && GameData.BEASTS.includes(index);
-
-        // Equipment slot labels and corresponding GameData categories
-        const equipmentSlots = [
-          { label: 'Helmet', category: 'HELMET' },
-          { label: 'Armor', category: 'ARMOR' },
-          { label: 'Shield', category: 'SHIELD' }
-        ];
-
-        charData[prop].forEach((value, i) => {
-          if (i < equipmentSlots.length) {
-            const boguDiv = document.createElement('div');
-            boguDiv.className = 'json-item equipment';
-            boguDiv.style.display = 'flex';
-            boguDiv.style.gap = '1rem';
-            boguDiv.style.alignItems = 'center';
-
-            const slotLabel = document.createElement('span');
-            slotLabel.textContent = `${equipmentSlots[i].label}:`;
-            slotLabel.style.fontWeight = 'bold';
-            slotLabel.style.minWidth = '80px';
-            boguDiv.appendChild(slotLabel);
-
-            // Create dropdown for equipment selection
-            const select = document.createElement('select');
-            select.style.marginBottom = '0';
-            select.style.flex = '1';
-
-            // Get the appropriate equipment category
-            const categoryData = GameData && GameData[equipmentSlots[i].category] ? GameData[equipmentSlots[i].category] : {};
-
-            // Characters that can equip shields
-            const shieldUsers = [2, 5, 7, 9, 12, 13, 23, 28, 33, 35, 39, 64];
-            const isShieldSlot = i === 2; // Shield is the 3rd slot (index 2)
-            const canEquipShield = shieldUsers.includes(index);
-
-            // If character is a beast/monster, disable all equipment
-            if (isBeast) {
-              // Create disabled dropdown with only "None" option
-              const option = document.createElement('option');
-              option.value = 0;
-              option.textContent = '0: None (Beast/Monster - Cannot equip)';
-              option.selected = true;
-              select.appendChild(option);
-              select.disabled = true;
-              select.style.opacity = '0.6';
-              select.style.cursor = 'not-allowed';
-
-              // Force value to 0
-              charData[prop][i] = 0;
-            }
-            // If this is a shield slot and character can't equip shields, disable it
-            else if (isShieldSlot && !canEquipShield) {
-              // Create disabled dropdown with only "None" option
-              const option = document.createElement('option');
-              option.value = 0;
-              option.textContent = '0: None (Cannot equip shields)';
-              option.selected = true;
-              select.appendChild(option);
-              select.disabled = true;
-              select.style.opacity = '0.6';
-              select.style.cursor = 'not-allowed';
-
-              // Force value to 0
-              charData[prop][i] = 0;
-            } else {
-              // Get character attributes for equipment filtering
-              const charEntry = lookupTable && lookupTable[index];
-              const charAttrs = charEntry && charEntry.attrs ? charEntry.attrs : [];
-
-              Object.entries(categoryData).forEach(([id, itemData]) => {
-                let itemName, itemAttrs;
-                if (typeof itemData === 'string') {
-                  itemName = itemData;
-                  itemAttrs = null;
-                } else if (typeof itemData === 'object' && itemData.name) {
-                  itemName = itemData.name;
-                  itemAttrs = itemData.attrs || [];
-                } else {
-                  return;
-                }
-
-                // For armor slot, filter by character attributes
-                if (equipmentSlots[i].category === 'ARMOR' && itemAttrs && itemAttrs.length > 0) {
-                  const hasMatchingAttr = itemAttrs.some(attr => charAttrs.includes(attr));
-                  if (!hasMatchingAttr && id !== '0') {
-                    return;
-                  }
-                }
-                // For helmet slot, filter by character attributes
-                if (equipmentSlots[i].category === 'HELMET' && itemAttrs && itemAttrs.length > 0) {
-                  const hasMatchingAttr = itemAttrs.some(attr => charAttrs.includes(attr));
-                  if (!hasMatchingAttr && id !== '0') {
-                    return;
-                  }
-                }
-
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = itemName;
-                select.appendChild(option);
-              });
-
-              // Set current value
-              select.value = value || 0;
-
-              // Update handler
-              select.addEventListener('change', (e) => {
-                charData[prop][i] = parseInt(e.target.value);
-              });
-            }
-
-            boguDiv.appendChild(select);
-            boguContainer.appendChild(boguDiv);
-          }
-        });
-
-        rightColumn.appendChild(boguContainer); // Add to right column
-        return; // Don't add to el
-      }
-      // Special handling for item_eqp (accessories) array - NON-COLLAPSIBLE
-      else if (prop === 'item_eqp' && Array.isArray(charData[prop])) {
-        const itemContainer = document.createElement('div');
-        itemContainer.className = 'equip-accessories-section';
-        itemContainer.id = `char-${index}-accessories`;
-
-        // Check if this character is a beast/monster (cannot equip any accessories)
-        const isBeast = GameData && GameData.BEASTS && GameData.BEASTS.includes(index);
-
-        const accessoriesTitle = document.createElement('h4');
-        accessoriesTitle.textContent = `Accessories [${charData[prop].length}]`;
-        accessoriesTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-        itemContainer.appendChild(accessoriesTitle);
-
-        // If beast/monster, show a disabled message
-        if (isBeast) {
-          const disabledMsg = document.createElement('p');
-          disabledMsg.textContent = 'Beast/Monster character - Cannot equip accessories';
-          disabledMsg.style.cssText = 'color: var(--pico-muted-color); font-style: italic; margin: 0.5rem 0;';
-          itemContainer.appendChild(disabledMsg);
-          rightColumn.appendChild(itemContainer);
-          return;
-        }
-
-        // Add note about upcoming dropdown
-        const note = document.createElement('p');
-        note.textContent = 'A Smart dropdown will be added later. In the meantime, check the Data Values tab to guide you in editing the values below.';
-        note.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); font-style: italic; margin: 0.5rem 0;';
-        itemContainer.appendChild(note);
-
-        charData[prop].forEach((item, i) => {
-          const itemDiv = document.createElement('div');
-          itemDiv.className = 'json-item';
-          itemDiv.style.display = 'flex';
-          itemDiv.style.gap = '1rem';
-          itemDiv.style.alignItems = 'center';
-
-          const slotLabel = document.createElement('span');
-          slotLabel.textContent = `Slot ${i + 1}:`;
-          slotLabel.style.fontWeight = 'bold';
-          slotLabel.style.minWidth = '60px';
-          itemDiv.appendChild(slotLabel);
-
-          // Item name display - check different sources based on use_cnt
-          const itemName = document.createElement('span');
-          itemName.style.fontStyle = 'italic';
-          itemName.style.color = 'var(--pico-muted-color)';
-          itemName.style.minWidth = '150px';
-          const itemId = item.item_no || 0;
-          const useCnt = item.use_cnt || 0;
-
-          // Helper function to get item name based on use_cnt
-          const getItemName = (id, cnt) => {
-            if (cnt === 16 && GameData && GameData.OTHER_EQUIP_GEAR && GameData.OTHER_EQUIP_GEAR[id]) {
-              return GameData.OTHER_EQUIP_GEAR[id];
-            } else if (cnt <= 9 && GameData && GameData.ITEMS && GameData.ITEMS[id]) {
-              return GameData.ITEMS[id];
-            } else if (cnt >= 100 && GameData && GameData.FOOD && GameData.FOOD[id]) {
-              return GameData.FOOD[id];
-            }
-            return `Item ${id}`;
-          };
-
-          itemName.textContent = getItemName(itemId, useCnt);
-          itemDiv.appendChild(itemName);
-
-          // Item ID input
-          const idInput = document.createElement('input');
-          idInput.type = 'number';
-          idInput.value = item.item_no;
-          idInput.style.width = '80px';
-          idInput.style.marginBottom = '0';
-          idInput.addEventListener('input', (e) => {
-            item.item_no = parseFloat(e.target.value);
-            const newId = parseFloat(e.target.value);
-            itemName.textContent = getItemName(newId, item.use_cnt);
-          });
-          itemDiv.appendChild(idInput);
-
-          // Use count input
-          const cntLabel = document.createElement('label');
-          cntLabel.textContent = 'use_cnt';
-          cntLabel.style.marginBottom = '0';
-          cntLabel.style.fontSize = '0.85rem';
-          itemDiv.appendChild(cntLabel);
-
-          const cntInput = document.createElement('input');
-          cntInput.type = 'number';
-          cntInput.value = item.use_cnt;
-          cntInput.style.width = '60px';
-          cntInput.style.marginBottom = '0';
-          cntInput.addEventListener('input', (e) => {
-            item.use_cnt = parseFloat(e.target.value);
-            // Update item name display when use_cnt changes
-            itemName.textContent = getItemName(item.item_no, parseFloat(e.target.value));
-          });
-          itemDiv.appendChild(cntInput);
-
-          itemContainer.appendChild(itemDiv);
-        });
-
-        rightColumn.appendChild(itemContainer); // Add to right column
-        return; // Don't add to el
-      }
-      // Special handling for buki_mon (Weapon Runes) - DROPDOWN, add to Weapon section
-      else if (prop === 'buki_mon') {
-        const weaponRuneDiv = document.createElement('div');
-        weaponRuneDiv.className = 'json-item';
-
-        const label = document.createElement('label');
-        label.textContent = 'Weapon Rune';
-        weaponRuneDiv.appendChild(label);
-
-        // Check if this character is a beast/monster (cannot equip weapon runes)
-        const isBeast = GameData && GameData.BEASTS && GameData.BEASTS.includes(index);
-
-        const select = document.createElement('select');
-        select.style.marginBottom = '0';
-
-        if (isBeast) {
-          // Create disabled dropdown with only "None" option for beasts/monsters
-          const option = document.createElement('option');
-          option.value = 0;
-          option.textContent = '0: None (Beast/Monster - Cannot equip)';
-          option.selected = true;
-          select.appendChild(option);
-          select.disabled = true;
-          select.style.opacity = '0.6';
-          select.style.cursor = 'not-allowed';
-
-          // Force value to 0
-          charData[prop] = 0;
-        } else {
-          // Weapon rune options for normal characters
-          const weaponRunes = [
-            { id: 0, name: 'None' },
-            { id: 1, name: 'Fire Orb' },
-            { id: 2, name: 'Rage Orb' },
-            { id: 3, name: 'Water Orb' },
-            { id: 4, name: 'Flowing Orb' },
-            { id: 5, name: 'Wind Orb' },
-            { id: 6, name: 'Cyclone Orb' },
-            { id: 7, name: 'Earth Orb' },
-            { id: 8, name: 'Mother Earth Orb' },
-            { id: 9, name: 'Lightning Orb' },
-            { id: 10, name: 'Thunder Orb' },
-            { id: 94, name: 'Hunter Orb' },
-            { id: 95, name: 'Technique Orb' },
-            { id: 96, name: 'Silence Orb' },
-            { id: 97, name: 'Poison Orb' },
-            { id: 98, name: 'Knockdown Orb' },
-            { id: 99, name: 'Sleep Orb' },
-            { id: 100, name: 'Friendship Orb' },
-            { id: 101, name: 'Solitude Orb' },
-            { id: 102, name: 'Kindness Orb' },
-            { id: 103, name: 'Exertion Orb' }
-          ];
-
-          weaponRunes.forEach(rune => {
-            const option = document.createElement('option');
-            option.value = rune.id;
-            option.textContent = `${rune.id}: ${rune.name}`;
-            if (charData[prop] === rune.id) {
-              option.selected = true;
-            }
-            select.appendChild(option);
-          });
-
-          select.addEventListener('change', (e) => {
-            charData[prop] = parseInt(e.target.value);
-          });
-        }
-
-        weaponRuneDiv.appendChild(select);
-        weaponContainer.appendChild(weaponRuneDiv); // Add to Weapon section instead of leftColumn
-        return; // Don't add to el
-      }
-      else {
-        // Use schema label if available, otherwise use property name
-        const displayLabel = Schema.labels[prop] || prop;
-        el = createElementForValue(charData[prop], displayLabel, (newValue) => {
-          charData[prop] = newValue;
-        }, charData);
-
-        // Add to left column
-        leftColumn.appendChild(el);
-        return; // Don't add to el
-      }
-    });
-
-    // Add both columns to the container
-    columnsContainer.appendChild(leftColumn);
-    columnsContainer.appendChild(rightColumn);
-    charDetails.appendChild(columnsContainer);
-
-    container.appendChild(charDetails);
-  }
-
-  if (arr.length > 84) {
-    const note = document.createElement('p');
-    note.textContent = `Note: Showing only first 84 playable characters. ${arr.length - 84} non-playable characters hidden.`;
-    note.style.fontStyle = 'italic';
-    note.style.color = 'var(--pico-muted-color)';
-    container.appendChild(note);
-  }
-
-  // Add filter event listener
-  filterSelect.addEventListener('change', (e) => {
-    const filterValue = e.target.value;
-    const allCharDetails = container.querySelectorAll('.json-object');
-
-    allCharDetails.forEach(charDetail => {
-      if (filterValue === 'all') {
-        charDetail.style.display = '';
-      } else {
-        // Check if character has the selected attribute
-        let shouldShow = false;
-        if (filterValue === 'M' && charDetail.dataset.isMale === 'true') shouldShow = true;
-        if (filterValue === 'F' && charDetail.dataset.isFemale === 'true') shouldShow = true;
-        if (filterValue === 'K' && charDetail.dataset.isKobold === 'true') shouldShow = true;
-        if (filterValue === 'W' && charDetail.dataset.isWinger === 'true') shouldShow = true;
-        if (filterValue === 'Z' && charDetail.dataset.isMonster === 'true') shouldShow = true;
-        if (filterValue === 'N' && charDetail.dataset.isNoble === 'true') shouldShow = true;
-
-        charDetail.style.display = shouldShow ? '' : 'none';
-      }
-    });
-  });
-
-  return container;
-}
-
-// ============================================================================
-// DATA VALUES VIEWER
-// RENDERS: GameData reference tables for easy lookup with donate button
-// ============================================================================
-
-function createDataValuesViewer(container) {
-  container.innerHTML = '';
-  container.className = 'tab-content data-values-content';
-
-  if (typeof GameData === 'undefined') {
-    container.innerHTML = '<p>GameData not loaded.</p>';
-    return;
-  }
-
-  // Add intro text
-  const intro = document.createElement('p');
-  intro.style.cssText = 'margin-bottom: 1rem; color: var(--pico-muted-color);';
-  intro.innerHTML = '<strong>Reference Data:</strong> Item IDs, character names, and use_cnt classifications for the save file editor.';
-  container.appendChild(intro);
-
-  // Define categories with their use_cnt information
-  const categories = [
-    { name: 'CHARACTERS', data: GameData.CHARACTERS, info: 'Character names by index (0-125)' },
-    { name: 'ITEMS', data: GameData.ITEMS, info: 'Consumable items (use_cnt: 0-9)' },
-    { name: 'FARMING', data: GameData.FARMING, info: 'Farm items (use_cnt: 48)' },
-    { name: 'TRADE', data: GameData.TRADE, info: 'Trade goods (use_cnt: 64)' },
-    { name: 'BASE_ITEM', data: GameData.BASE_ITEM, info: 'Warehouse items (use_cnt: 80)' },
-    { name: 'FOOD', data: GameData.FOOD, info: 'Food recipes (use_cnt: 99+)' },
-    { name: 'RUNES', data: GameData.RUNES, info: 'Rune orbs (use_cnt: 32)' },
-    { name: 'HELMET', data: GameData.HELMET, info: 'Helmets (use_cnt: 16)' },
-    { name: 'ARMOR', data: GameData.ARMOR, info: 'Armor (use_cnt: 16)' },
-    { name: 'SHIELD', data: GameData.SHIELD, info: 'Shields (use_cnt: 16)' },
-    { name: 'OTHER_EQUIP_GEAR', data: GameData.OTHER_EQUIP_GEAR, info: 'Accessories (use_cnt: 16)' }
-  ];
-
-  categories.forEach(category => {
-    if (!category.data) return;
-
-    const details = document.createElement('details');
-    details.className = 'json-object';
-
-    const summary = document.createElement('summary');
-    summary.innerHTML = `<strong>${category.name}</strong> - ${category.info}`;
-    details.appendChild(summary);
-
-    const listContainer = document.createElement('div');
-    listContainer.className = 'data-values-list';
-
-    const entries = Object.entries(category.data);
-    entries.forEach(([id, itemData]) => {
-      const item = document.createElement('div');
-      item.className = 'data-values-item';
-
-      const idSpan = document.createElement('span');
-      idSpan.className = 'id';
-      idSpan.textContent = id + ':';
-
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'name';
-
-      // Handle both object format (CHARACTERS, ARMOR) and string format (other items)
-      if (typeof itemData === 'object' && itemData !== null && itemData.name) {
-        // Object format with name property
-        nameSpan.textContent = itemData.name;
-
-        // Optionally show attributes for CHARACTERS and ARMOR
-        if (itemData.attrs && itemData.attrs.length > 0) {
-          const attrsSpan = document.createElement('span');
-          attrsSpan.className = 'attrs';
-          attrsSpan.style.cssText = 'margin-left: 0.5rem; font-size: 0.85rem; color: var(--pico-muted-color); font-style: italic;';
-          attrsSpan.textContent = `[${itemData.attrs.join(', ')}]`;
-          nameSpan.appendChild(attrsSpan);
-        }
-      } else {
-        // Simple string format
-        nameSpan.textContent = itemData;
-      }
-
-      item.appendChild(idSpan);
-      item.appendChild(nameSpan);
-      listContainer.appendChild(item);
-    });
-
-    details.appendChild(listContainer);
-    container.appendChild(details);
-  });
-
-  // Add PayPal Donate Button at the bottom
-  const donateContainer = document.createElement('div');
-  donateContainer.style.cssText = 'text-align: center; margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #f5d020 0%, #f0b90b 100%); border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
-
-  const donateText = document.createElement('p');
-  donateText.style.cssText = 'margin: 0 0 1rem 0; font-size: 0.9rem; color: #000; font-weight: 600;';
-  donateText.textContent = '☕ Enjoying this editor? Support development!';
-  donateContainer.appendChild(donateText);
-
-  const donateButton = document.createElement('a');
-  donateButton.href = 'https://paypal.me/thefaospark?country.x=PH&locale.x=en_US';
-  donateButton.target = '_blank';
-  donateButton.rel = 'noopener noreferrer';
-  donateButton.textContent = '💛 Donate via PayPal';
-  donateButton.style.cssText = 'display: inline-block; padding: 0.75rem 2rem; background: #000; color: #f5d020; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 1rem; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);';
-
-  donateButton.addEventListener('mouseenter', () => {
-    donateButton.style.transform = 'translateY(-2px)';
-    donateButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
-  });
-
-  donateButton.addEventListener('mouseleave', () => {
-    donateButton.style.transform = 'translateY(0)';
-    donateButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-  });
-
-  donateContainer.appendChild(donateButton);
-  container.appendChild(donateContainer);
-}
-
-// MARKDOWN TO HTML CONVERTER
-// Converts basic markdown syntax to HTML for README display
-// ============================================================================
-
-function markdownToHTML(markdown) {
-  let html = markdown;
-
-  // Convert code blocks first (to avoid processing their content)
-  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-    return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
-  });
-
-  // Convert inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-  // Convert headers (must be at start of line)
-  html = html.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
-  html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-
-  // Convert bold and italic
-  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-
-  // Convert links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-  // Convert blockquotes (GitHub alerts) - handle single line format
-  html = html.replace(/^> \[!(\w+)\] (.+)$/gm, (match, type, content) => {
-    const alertClass = type.toLowerCase();
-    return `<div class="alert alert-${alertClass}"><strong>${type}:</strong> ${content}</div>`;
-  });
-
-  // Convert blockquotes (GitHub alerts) - handle multi-line format
-  html = html.replace(/^> \[!(\w+)\]\n((?:^> .*$\n?)*)/gm, (match, type, content) => {
-    const alertContent = content.replace(/^> /gm, '').trim();
-    const alertClass = type.toLowerCase();
-    return `<div class="alert alert-${alertClass}"><strong>${type}:</strong> ${alertContent}</div>`;
-  });
-
-  // Convert regular blockquotes
-  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
-
-  // Convert horizontal rules
-  html = html.replace(/^---$/gm, '<hr>');
-
-  // Add line break before list markers (-, *, +, 1., 2., etc.) for better spacing
-  html = html.replace(/^(\s*)([-*+]|\d+\.)\s+/gm, '<br>$1$2 ');
-
-  // Convert line breaks to paragraphs
-  html = html.split('\n\n').map(para => {
-    // Don't wrap if already wrapped in a tag
-    if (para.match(/^<(h[1-6]|ul|ol|pre|blockquote|hr|div)/)) {
-      return para;
-    }
-    // Don't wrap empty lines
-    if (para.trim() === '') {
-      return '';
-    }
-    return `<p>${para.replace(/\n/g, ' ')}</p>`;
-  }).join('\n');
-
-  return html;
-}
-
 
 // ============================================================================
 // ABOUT VIEWER
@@ -2578,7 +971,7 @@ function markdownToHTML(markdown) {
 
 function createAboutViewer(container) {
   container.innerHTML = '';
-  container.className = 'tab-content about-content';
+  container.classList.add('about-content');
 
   // Show loading state
   const loading = document.createElement('p');
@@ -2606,84 +999,6 @@ function createAboutViewer(container) {
       // Convert markdown to HTML
       const htmlContent = markdownToHTML(markdown);
       contentWrapper.innerHTML = htmlContent;
-
-      // Add some styling for the README content
-      const style = document.createElement('style');
-      style.textContent = `
-        .readme-content h1 {
-          border-bottom: 2px solid var(--pico-primary);
-          padding-bottom: 0.5rem;
-          margin-top: 1.5rem;
-        }
-        .readme-content h2 {
-          border-bottom: 1px solid var(--pico-muted-border-color);
-          padding-bottom: 0.3rem;
-          margin-top: 1.5rem;
-        }
-        .readme-content h3 {
-          margin-top: 1.25rem;
-        }
-        .readme-content ul {
-          margin-left: 1.5rem;
-        }
-        .readme-content li {
-          margin-bottom: 0.5rem;
-        }
-        .readme-content code {
-          background: rgba(0,0,0,0.2);
-          padding: 0.2rem 0.4rem;
-          border-radius: 3px;
-          font-size: 0.9em;
-        }
-        .readme-content pre {
-          background: rgba(0,0,0,0.3);
-          padding: 1rem;
-          border-radius: 6px;
-          overflow-x: auto;
-        }
-        .readme-content pre code {
-          background: none;
-          padding: 0;
-        }
-        .readme-content blockquote {
-          border-left: 4px solid var(--pico-primary);
-          padding-left: 1rem;
-          margin-left: 0;
-          color: var(--pico-muted-color);
-          font-style: italic;
-        }
-        .readme-content a {
-          color: var(--pico-primary);
-          text-decoration: none;
-        }
-        .readme-content a:hover {
-          text-decoration: underline;
-        }
-        .readme-content hr {
-          border: none;
-          border-top: 1px solid var(--pico-muted-border-color);
-          margin: 2rem 0;
-        }
-        .alert {
-          padding: 1rem;
-          margin: 1rem 0;
-          border-radius: 6px;
-          border-left: 4px solid;
-        }
-        .alert-important {
-          background: rgba(138, 43, 226, 0.1);
-          border-color: #8a2be2;
-        }
-        .alert-note {
-          background: rgba(59, 130, 246, 0.1);
-          border-color: #3b82f6;
-        }
-        .alert-warning {
-          background: rgba(245, 158, 11, 0.1);
-          border-color: #f59e0b;
-        }
-      `;
-      document.head.appendChild(style);
 
       container.appendChild(contentWrapper);
     })
@@ -2715,9 +1030,9 @@ function createChangelogViewer(container) {
       // Clear loading state
       container.innerHTML = '';
 
-      // Create content wrapper
+      // Create content wrapper with both tab-content and changelog-content classes
       const contentWrapper = document.createElement('div');
-      contentWrapper.className = 'changelog-content';
+      contentWrapper.className = 'tab-content changelog-content';
       contentWrapper.style.cssText = 'max-width: 800px; margin: 0 auto; padding: 1rem;';
 
       // Convert markdown to HTML
@@ -2741,7 +1056,7 @@ function createChangelogViewer(container) {
 // RENDERS: Primitive inputs, objects, and arrays for unspecialized fields
 // ============================================================================
 
-function createElementForValue(value, key, updateCallback, parentObject) {
+function createElementForValue(value, key, updateCallback, parentObject, config = {}) {
   const type = Array.isArray(value) ? 'array' : typeof value;
 
   if (value === null) {
@@ -2755,7 +1070,7 @@ function createElementForValue(value, key, updateCallback, parentObject) {
     case 'string':
     case 'number':
     case 'boolean':
-      return createPrimitiveInput(value, key, type, updateCallback);
+      return createPrimitiveInput(value, key, type, updateCallback, config);
     case 'object':
       return createObjectEditor(value, key, updateCallback);
     case 'array':
@@ -2767,7 +1082,7 @@ function createElementForValue(value, key, updateCallback, parentObject) {
   }
 }
 
-function createPrimitiveInput(value, key, type, updateCallback) {
+function createPrimitiveInput(value, key, type, updateCallback, config = {}) {
   const div = document.createElement('div');
   div.className = 'json-item ';
 
@@ -2780,6 +1095,9 @@ function createPrimitiveInput(value, key, type, updateCallback) {
     input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = value;
+    if (config.readonly) {
+      input.disabled = true;
+    }
     input.addEventListener('change', (e) => {
       updateCallback(e.target.checked);
     });
@@ -2789,7 +1107,11 @@ function createPrimitiveInput(value, key, type, updateCallback) {
     input.type = type === 'number' ? 'number' : 'text';
     input.value = value;
     if (type === 'number') {
+      input.min = '0';
       input.step = 'any';
+    }
+    if (config.readonly) {
+      input.readOnly = true;
     }
     input.addEventListener('input', (e) => {
       const val = type === 'number' ? parseFloat(e.target.value) : e.target.value;
@@ -2829,28 +1151,31 @@ function createArrayEditor(arr, key, updateCallback) {
   summary.textContent = key + ` [${arr.length}]`;
   details.appendChild(summary);
 
-  // Optimization: If array is huge, maybe don't render all?
-  // For now render all
+  // Create container with CSS columns for array items
+  const container = document.createElement('div');
+  container.className = 'three-css-col';
+
   arr.forEach((item, index) => {
     const el = createElementForValue(item, index, (newValue) => {
       arr[index] = newValue;
     }, arr);
-    details.appendChild(el);
+    container.appendChild(el);
   });
 
+  details.appendChild(container);
   return details;
 }
 
 // Exit debug mode when clicking the file input
 fileInput.addEventListener('click', (e) => {
-  if (DEBUG_MODE) {
+  if (isDebugMode()) {
     e.preventDefault();
     console.log('File input clicked - exiting debug mode...');
-    DEBUG_MODE = false;
-    localStorage.setItem('debugMode', 'false');
+    setDebugMode(false);
     updateStatusBar();
-    alert('🐛 Debug Mode DISABLED\n\nPage will refresh to exit debug mode. Then you can load your file.');
-    location.reload();
+    showAlertDialog('Debug Mode', '<p>🐛 <strong>Debug Mode DISABLED</strong></p><p>Page will refresh to exit debug mode. Then you can load your file.</p>').then(() => {
+      location.reload();
+    });
   }
 });
 
@@ -2865,13 +1190,19 @@ fileInput.addEventListener('change', (e) => {
       currentData = JSON.parse(event.target.result);
       renderEditor(editorContainer, currentData, (newData) => {
         currentData = newData;
+        hasUnsavedChanges = true;
+        autoSaveToLocalStorage();
       });
       saveBtn.disabled = false;
       
       // Update save file indicator
-      updateSaveFileIndicator();
+      updateSaveFileIndicator(currentFileName);
+      
+      // Initial auto-save
+      hasUnsavedChanges = false;
+      autoSaveToLocalStorage();
     } catch (err) {
-      alert('Error parsing JSON: ' + err.message);
+      showAlertDialog('Parse Error', `<p>❌ <strong>Error parsing JSON:</strong></p><p>${err.message}</p>`);
     }
   };
   reader.readAsText(file);
@@ -2889,30 +1220,27 @@ saveBtn.addEventListener('click', () => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  
+  // Clear auto-save since file was successfully saved
+  clearAutoSave();
+  showAlertDialog('File Saved', '<p>✅ <strong>File saved successfully!</strong></p><p>Auto-save backup has been cleared.</p>');
 });
 
-// Hotkey: Ctrl+T to toggle debug mode
+// Hotkey: Ctrl+D to toggle debug mode
 document.addEventListener('keydown', (e) => {
-  // Check for Ctrl+T (or Cmd+T on Mac)
+  // Check for Ctrl+D (or Cmd+D on Mac)
   if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-    e.preventDefault(); // Prevent default browser behavior (new tab)
+    e.preventDefault(); // Prevent default browser behavior
 
     // Toggle debug mode
-    DEBUG_MODE = !DEBUG_MODE;
-    localStorage.setItem('debugMode', DEBUG_MODE); // Save to localStorage
+    const newDebugMode = toggleDebugMode();
     updateStatusBar(); // Update status bar
 
-    if (DEBUG_MODE) {
+    if (newDebugMode) {
       console.log('Debug mode ENABLED - Loading debug file...');
 
       // Load debug file
-      fetch(DEBUG_FILE_PATH)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Failed to load debug file: ${response.statusText}`);
-          }
-          return response.json();
-        })
+      loadDebugFile()
         .then(data => {
           currentData = data;
           currentFileName = 'debug_save.json';
@@ -2920,22 +1248,22 @@ document.addEventListener('keydown', (e) => {
             currentData = newData;
           });
           saveBtn.disabled = false;
-          console.log('Debug mode: Auto-loaded save file from', DEBUG_FILE_PATH);
+          console.log('Debug mode: Auto-loaded save file');
 
           // Show notification
-          alert('🐛 Debug Mode ENABLED\n\nDebug save file loaded from:\n' + DEBUG_FILE_PATH);
+          showAlertDialog('Debug Mode Enabled', '<p>🐛 <strong>Debug Mode ENABLED</strong></p><p>Debug save file loaded successfully!</p>');
         })
         .catch(err => {
           console.error('Debug mode: Failed to load debug file:', err);
-          alert('Debug mode enabled but failed to load file from:\n' + DEBUG_FILE_PATH + '\n\nError: ' + err.message);
-          DEBUG_MODE = false; // Revert if loading fails
-          localStorage.setItem('debugMode', 'false'); // Update localStorage
+          showAlertDialog('Debug Mode Error', `<p>❌ Debug mode enabled but failed to load file.</p><p><strong>Error:</strong> ${err.message}</p>`);
+          setDebugMode(false); // Revert if loading fails
           updateStatusBar(); // Update status bar
         });
     } else {
       console.log('Debug mode DISABLED');
-      alert('🐛 Debug Mode DISABLED\n\nPage will refresh to return to normal mode.');
-      location.reload(); // Refresh the page
+      showAlertDialog('Debug Mode Disabled', '<p>🐛 <strong>Debug Mode DISABLED</strong></p><p>Page will refresh to return to normal mode.</p>').then(() => {
+        location.reload(); // Refresh the page
+      });
     }
   }
 });
@@ -2952,9 +1280,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const headerAboutBtn = document.getElementById('tab-about');
   const headerChangelogBtn = document.getElementById('tab-changelog');
   const editorContainer = document.getElementById('editor-container');
+  
+  // Get tab panels container (already exists in HTML)
+  const tabPanelsContainer = document.getElementById('tab-panels-container');
+  
+  // Initialize special panels storage
+  if (!editorContainer._specialPanels) {
+    editorContainer._specialPanels = {};
+  }
+  if (!editorContainer._tabPanels) {
+    editorContainer._tabPanels = {};
+  }
 
   if (headerDataValuesBtn) {
     headerDataValuesBtn.addEventListener('click', () => {
+      const tabPanelsContainer = document.getElementById('tab-panels-container');
+      if (!tabPanelsContainer) return;
+      
       // Deactivate all editor tab buttons
       document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
       
@@ -2963,16 +1305,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (headerChangelogBtn) headerChangelogBtn.classList.add('outline');
       headerDataValuesBtn.classList.remove('outline');
       
-      // Update content container
-      editorContainer.id = 'content-data-values';
+      // Hide all children in container
+      Array.from(tabPanelsContainer.children).forEach(child => {
+        child.style.display = 'none';
+      });
       
-      // Render Data Values viewer
-      createDataValuesViewer(editorContainer);
+      // Show or create Data Values
+      let dataValuesDiv = tabPanelsContainer.querySelector('.data-values-content');
+      if (!dataValuesDiv) {
+        dataValuesDiv = document.createElement('div');
+        dataValuesDiv.className = 'data-values-content';
+        tabPanelsContainer.appendChild(dataValuesDiv);
+        createDataValuesViewer(dataValuesDiv);
+      }
+      dataValuesDiv.style.display = 'block';
     });
   }
 
   if (headerAboutBtn) {
     headerAboutBtn.addEventListener('click', () => {
+      const tabPanelsContainer = document.getElementById('tab-panels-container');
+      if (!tabPanelsContainer) return;
+      
       // Deactivate all editor tab buttons
       document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
       
@@ -2981,16 +1335,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (headerChangelogBtn) headerChangelogBtn.classList.add('outline');
       headerAboutBtn.classList.remove('outline');
       
-      // Update content container
-      editorContainer.id = 'content-about';
+      // Hide all children in container
+      Array.from(tabPanelsContainer.children).forEach(child => {
+        child.style.display = 'none';
+      });
       
-      // Render About viewer
-      createAboutViewer(editorContainer);
+      // Show or create About
+      let aboutDiv = tabPanelsContainer.querySelector('.about-content');
+      if (!aboutDiv) {
+        aboutDiv = document.createElement('div');
+        aboutDiv.className = 'about-content';
+        tabPanelsContainer.appendChild(aboutDiv);
+        createAboutViewer(aboutDiv);
+      }
+      aboutDiv.style.display = 'block';
     });
   }
 
   if (headerChangelogBtn) {
     headerChangelogBtn.addEventListener('click', () => {
+      const tabPanelsContainer = document.getElementById('tab-panels-container');
+      if (!tabPanelsContainer) return;
+      
       // Deactivate all editor tab buttons
       document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
       
@@ -2999,11 +1365,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (headerAboutBtn) headerAboutBtn.classList.add('outline');
       headerChangelogBtn.classList.remove('outline');
       
-      // Update content container
-      editorContainer.id = 'content-changelog';
+      // Hide all children in container
+      Array.from(tabPanelsContainer.children).forEach(child => {
+        child.style.display = 'none';
+      });
       
-      // Render Changelog viewer
-      createChangelogViewer(editorContainer);
+      // Show or create Changelog
+      let changelogDiv = tabPanelsContainer.querySelector('.changelog-content');
+      if (!changelogDiv) {
+        changelogDiv = document.createElement('div');
+        changelogDiv.className = 'changelog-content';
+        tabPanelsContainer.appendChild(changelogDiv);
+        createChangelogViewer(changelogDiv);
+      }
+      changelogDiv.style.display = 'block';
     });
   }
 });

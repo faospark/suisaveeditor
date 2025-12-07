@@ -1,7 +1,7 @@
 // Service Worker for SuikoHDEditor
 // Enables offline functionality by caching all app assets
 
-const CACHE_NAME = 'suikohd-editor-v1.1.0';
+const CACHE_NAME = 'suikohd-editor-v1.3.0';
 
 // Install event - cache all assets
 self.addEventListener('install', (event) => {

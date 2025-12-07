@@ -7,8 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Primary Meta Tags -->
-  <title>SuikoHDEditor - Suikoden II HD Remaster Save Editor</title>
-  <meta name="title" content="SuikoHDEditor - Suikoden II HD Remaster Save Editor" />
+  <title>SuiSaveEditor - Suikoden II HD Remaster Save Editor</title>
+  <meta name="title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
   <meta name="description" content="A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files. Edit character stats, equipment, runes, recruitment flags, and manage inventories." />
   <meta name="keywords" content="Suikoden 2, Suikoden II, HD Remaster, save editor, JSON editor, game save, character editor, SuikodenFix, Suikoden save file" />
   <meta name="author" content="faospark" />
@@ -18,15 +18,15 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://faospark.github.io/suisaveeditor/" />
-  <meta property="og:title" content="SuikoHDEditor - Suikoden II HD Remaster Save Editor" />
+  <meta property="og:title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
   <meta property="og:description" content="A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files. Edit character stats, equipment, runes, recruitment flags, and manage inventories." />
   <meta property="og:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
-  <meta property="og:site_name" content="SuikoHDEditor" />
+  <meta property="og:site_name" content="SuiSaveEditor" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://faospark.github.io/suisaveeditor/" />
-  <meta property="twitter:title" content="SuikoHDEditor - Suikoden II HD Remaster Save Editor" />
+  <meta property="twitter:title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
   <meta property="twitter:description" content="A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files. Edit character stats, equipment, runes, recruitment flags, and manage inventories." />
   <meta property="twitter:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
 
@@ -65,7 +65,7 @@
         <div class="grid">
           <div style="height: auto;">
             <label for="file-input">Load JSON File</label>
-            <input type="file" id="file-input" accept=".json" style="height: auto;" />
+            <input type="file" id="file-input" accept=".json" style="height: auto; color: aquamarine;" />
           </div>
           <div style="height: 100%; display: flex; align-items: center;">
             <label for="save-btn">&nbsp;</label>
@@ -73,19 +73,19 @@
           </div>
         </div>
         <div class="grid-12 d-grid">
-          <blockquote class="g-span-9" style="font-size: smaller; margin:0;">
+          <blockquote class="g-span-8" style="font-size: smaller; margin:0;">
             This Save Editor works only with JSON files generated from Suikoden II Remaster using SuikodenFix. To use the editor, make sure the save edit feature is enabled in SuikodenFix so it can produce the required JSON file or you can use <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter">SuikodenSaveDecrypter</a> to decrypt your save file.
           </blockquote>
-          <div class="g-span-3">
+          <div class="g-span-4">
             <div class="tabs-right" style="display: flex; align-items: center; justify-content: end; height: 100%;"><button class="tab-button outline data-values-tab" id="tab-data-values" data-tab-name="Data Values">Data Values</button><button class="tab-button outline about-tab" id="tab-about" data-tab-name="About">About</button><button class="tab-button outline changelog-tab" id="tab-changelog" data-tab-name="Changelog">Changelog</button></div>
           </div>
         </div>
       </header>
       <div id="editor-tabs">
       </div>
-      <div id="editor-container">
-        <p>Please load a JSON file to start editing.</p>
-      </div>
+      <section id="editor-container">
+          <div id="tab-panels-container" class="tab-content"><p>Please load a JSON file to start editing.</p></div>
+      </section>
       <footer class="pads-1 b2">
         <div style="font-size: .75rem;">
           <p> Here are my other mods for Suikoden 1 and 2 HD Remaster</p>
@@ -134,7 +134,6 @@
       });
     }
   </script>
-  <script src="./src/gamedata.js"></script>
   <script type="module" src="./src/main.js"></script>
 </body>
 
