@@ -765,11 +765,13 @@ function createFoodMenuEditor(arr, key, updateCallback) {
 
     // Add all food recipes
     if (GameData && GameData.FOOD) {
-      Object.entries(GameData.FOOD).forEach(([id, name]) => {
+      Object.entries(GameData.FOOD).forEach(([id, foodItem]) => {
         if (id !== '0') {
           const option = document.createElement('option');
           option.value = id;
-          option.textContent = `${id}: ${name}`;
+          // Extract name from object format
+          const foodName = typeof foodItem === 'string' ? foodItem : (foodItem.name || `Food ${id}`);
+          option.textContent = `${id}: ${foodName}`;
           select.appendChild(option);
         }
       });
