@@ -13,24 +13,48 @@ self.addEventListener('install', (event) => {
             .then((cache) => {
                 console.log('[Service Worker] Caching app shell');
 
-                // Detect if running on localhost
-                const isLocalhost = self.location.hostname === 'localhost' ||
-                    self.location.hostname === '127.0.0.1';
-
-                // Use appropriate base path
-                const basePath = isLocalhost ? '/suisaveeditor' : '';
-
-                // Cache required files first
+                // Get the base path from the service worker's registration scope
+                const swPath = self.registration.scope;
+                
+                // Cache critical files for offline functionality
                 const requiredFiles = [
-                    `${basePath}/`,
-                    `${basePath}/index.html`,
-                    `${basePath}/css/pico.css`,
-                    `${basePath}/public/favicon.svg`
+                    swPath,
+                    `${swPath}index.html`,
+                    // Stylesheets
+                    `${swPath}css/pico.css`,
+                    `${swPath}css/vidi.css`,
+                    `${swPath}src/style.css`,
+                    // Core JavaScript modules
+                    `${swPath}src/main.js`,
+                    `${swPath}src/gamedata.js`,
+                    // Config modules
+                    `${swPath}src/config/constants.js`,
+                    `${swPath}src/config/schema.js`,
+                    // Editor modules
+                    `${swPath}src/editors/index.js`,
+                    `${swPath}src/editors/battleCharacters.js`,
+                    `${swPath}src/editors/partyMembers.js`,
+                    `${swPath}src/editors/keyItems.js`,
+                    `${swPath}src/editors/recruitment.js`,
+                    `${swPath}src/editors/tableEditor.js`,
+                    `${swPath}src/editors/bathItems.js`,
+                    `${swPath}src/editors/roomItems.js`,
+                    // Renderer modules
+                    `${swPath}src/renderers/dataValuesViewer.js`,
+                    // Utility modules
+                    `${swPath}src/utils/debugMode.js`,
+                    `${swPath}src/utils/autoSave.js`,
+                    // Assets
+                    `${swPath}public/favicon.svg`,
+                    // Documentation
+                    `${swPath}README.md`,
+                    `${swPath}CHANGELOG.md`
                 ];
 
                 // Optional files that will be cached on first access
                 const optionalFiles = [
-                    `${basePath}/debug/save.json`
+                    `${swPath}debug/save.json`,
+                    `${swPath}notes/testnotes.txt`
                 ];
 
                 // Cache required files one by one to see which fails
