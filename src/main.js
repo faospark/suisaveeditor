@@ -262,7 +262,10 @@ function createEditorElement(renderer, value, targetData, data, key, label, conf
 
   // Create onChange callback
   const onChange = (newValue) => {
-    targetData[key] = newValue;
+    // Only update if newValue is provided (some editors modify in-place)
+    if (newValue !== undefined) {
+      targetData[key] = newValue;
+    }
   };
 
   // Handle special cases
