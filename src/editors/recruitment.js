@@ -224,8 +224,104 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
       input.style.padding = '0.25rem';
       input.style.width = '80px';
       input.addEventListener('input', (e) => {
-        arr[index] = parseFloat(e.target.value);
-        rebuildTableBody(); // Rebuild to reflect changes
+        const newStatus = parseFloat(e.target.value) || 0;
+        arr[index] = newStatus;
+        
+        // Update current row's status span
+        const updateStatusSpan = (span, charIndex, status) => {
+          const betterLeonaEnabled = document.getElementById('better-leona-option')?.checked || false;
+          const krakenPatchEnabled = document.getElementById('kraken-patch')?.checked || false;
+          let isSpecialCase = false;
+          
+          // McDohl and Gremio: Available if Hero Name 1 is set
+          if ((charIndex === CHAR_INDEX.MCDOHL || charIndex === CHAR_INDEX.GREMIO) && hasMcDohl && (status === RECRUIT_STATUS.NOT_RECRUITED || status === RECRUIT_STATUS.SPOKE_TO)) {
+            span.textContent = '✓ Available (Import)';
+            span.style.color = 'var(--pico-ins-color)';
+            isSpecialCase = true;
+          }
+          
+          // Better Leona Option: Valeria or Kasumi
+          if (betterLeonaEnabled && !isSpecialCase) {
+            const valeriaFlag = arr[CHAR_INDEX.VALERIA];
+            const kasumiFlag = arr[CHAR_INDEX.KASUMI];
+            
+            if (charIndex === CHAR_INDEX.VALERIA && (kasumiFlag === RECRUIT_STATUS.AUTO_JOIN || kasumiFlag === RECRUIT_STATUS.MANUAL_RECRUIT) && status !== RECRUIT_STATUS.AUTO_JOIN && status !== RECRUIT_STATUS.MANUAL_RECRUIT) {
+              span.textContent = '✓ Recruited Via SFix';
+              span.style.color = 'var(--pico-ins-color)';
+              span.title = 'Automatically recruited via Better Leona Option';
+              isSpecialCase = true;
+            } else if (charIndex === CHAR_INDEX.KASUMI && (valeriaFlag === RECRUIT_STATUS.AUTO_JOIN || valeriaFlag === RECRUIT_STATUS.MANUAL_RECRUIT) && status !== RECRUIT_STATUS.AUTO_JOIN && status !== RECRUIT_STATUS.MANUAL_RECRUIT) {
+              span.textContent = '✓ Recruited Via SFix';
+              span.style.color = 'var(--pico-ins-color)';
+              span.title = 'Automatically recruited via Better Leona Option';
+              isSpecialCase = true;
+            }
+          }
+          
+          // Kraken Patch: Abizboah and Rulodia if Chuchara recruited
+          if (krakenPatchEnabled && !isSpecialCase) {
+            const chucharaFlag = arr[CHAR_INDEX.CHUCHARA];
+            
+            if ((charIndex === CHAR_INDEX.ABIZBOAH || charIndex === CHAR_INDEX.RULODIA) && (chucharaFlag === RECRUIT_STATUS.AUTO_JOIN || chucharaFlag === RECRUIT_STATUS.MANUAL_RECRUIT) && status !== RECRUIT_STATUS.AUTO_JOIN && status !== RECRUIT_STATUS.MANUAL_RECRUIT) {
+              span.textContent = '✓ Recruited Via Kraken';
+              span.style.color = 'var(--pico-ins-color)';
+              span.title = 'Automatically recruited via Kraken Patch';
+              isSpecialCase = true;
+            }
+          }
+          
+          // Normal recruitment status values if not a special case
+          if (!isSpecialCase) {
+            if (status === RECRUIT_STATUS.AUTO_JOIN || status === RECRUIT_STATUS.MANUAL_RECRUIT) {
+              span.textContent = '✓ Recruited';
+              span.style.color = 'var(--pico-ins-color)';
+            } else if (status === RECRUIT_STATUS.ON_LEAVE) {
+              span.textContent = '📋 On Leave';
+              span.style.color = '#f39c12';
+            } else if (status === RECRUIT_STATUS.DECEASED) {
+              span.textContent = '☠ Deceased';
+              span.style.color = 'var(--pico-del-color)';
+            } else if (status === RECRUIT_STATUS.EVENT_LOCKED) {
+              span.textContent = '🔒 Event Locked';
+              span.style.color = '#e67e22';
+            } else if (status === RECRUIT_STATUS.SPOKE_TO) {
+              span.textContent = '💬 Spoke To';
+              span.style.color = '#95a5a6';
+            } else {
+              span.textContent = '✗ Not Recruited';
+              span.style.color = 'var(--pico-muted-color)';
+            }
+          }
+        };
+        
+        // Update current row
+        updateStatusSpan(statusSpan, index, newStatus);
+        
+        // If editing Valeria or Kasumi, update the other's status
+        if (index === CHAR_INDEX.VALERIA || index === CHAR_INDEX.KASUMI) {
+          const otherIndex = index === CHAR_INDEX.VALERIA ? CHAR_INDEX.KASUMI : CHAR_INDEX.VALERIA;
+          const otherRow = tbody.querySelector(`tr:nth-child(${otherIndex})`);
+          if (otherRow) {
+            const otherStatusSpan = otherRow.querySelector('td:nth-child(2) > div > span:last-child');
+            if (otherStatusSpan) {
+              updateStatusSpan(otherStatusSpan, otherIndex, arr[otherIndex]);
+            }
+          }
+        }
+        
+        // If editing Chuchara, update Abizboah and Rulodia
+        if (index === CHAR_INDEX.CHUCHARA) {
+          [CHAR_INDEX.ABIZBOAH, CHAR_INDEX.RULODIA].forEach(relatedIndex => {
+            const relatedRow = tbody.querySelector(`tr:nth-child(${relatedIndex})`);
+            if (relatedRow) {
+              const relatedStatusSpan = relatedRow.querySelector('td:nth-child(2) > div > span:last-child');
+              if (relatedStatusSpan) {
+                updateStatusSpan(relatedStatusSpan, relatedIndex, arr[relatedIndex]);
+              }
+            }
+          });
+        }
+        
         if (updateCallback) updateCallback();
       });
       tdFlag.appendChild(input);

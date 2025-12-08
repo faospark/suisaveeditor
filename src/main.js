@@ -1267,6 +1267,7 @@ document.addEventListener('keydown', (e) => {
   );
   
   if (isTyping && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.stopPropagation(); // Prevent event from bubbling
     return; // Don't intercept normal typing
   }
 
