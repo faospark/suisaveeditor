@@ -22,7 +22,6 @@ self.addEventListener('install', (event) => {
                     `${swPath}index.html`,
                     // Stylesheets
                     `${swPath}css/pico.css`,
-                    `${swPath}css/vidi.css`,
                     `${swPath}src/style.css`,
                     // Core JavaScript modules
                     `${swPath}src/main.js`,
@@ -42,8 +41,11 @@ self.addEventListener('install', (event) => {
                     // Renderer modules
                     `${swPath}src/renderers/dataValuesViewer.js`,
                     // Utility modules
-                    `${swPath}src/utils/debugMode.js`,
-                    `${swPath}src/utils/autoSave.js`,
+                    `${swPath}src/utils/index.js`,
+                    `${swPath}src/utils/debug.js`,
+                    `${swPath}src/utils/helpers.js`,
+                    `${swPath}src/utils/markdown.js`,
+                    `${swPath}src/utils/statusBar.js`,
                     // Assets
                     `${swPath}public/favicon.svg`,
                     // Documentation
