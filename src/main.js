@@ -1211,7 +1211,31 @@ fileInput.addEventListener('change', (e) => {
 saveBtn.addEventListener('click', () => {
   if (!currentData) return;
 
-  const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: 'application/json' });
+  // Stringify with proper Unicode escaping and CRLF line endings
+  let jsonContent = JSON.stringify(currentData, (key, value) => {
+    // Ensure proper JSON serialization
+    return value;
+  }, 2);
+  
+  // Escape non-ASCII Unicode characters (for game compatibility)
+  jsonContent = jsonContent.replace(/[\u0080-\uFFFF]/g, (ch) => {
+    return '\\u' + ('0000' + ch.charCodeAt(0).toString(16).toUpperCase()).slice(-4);
+  });
+  
+  // Normalize to CRLF (Windows) line endings
+  jsonContent = jsonContent.replace(/\r?\n/g, '\r\n');
+  
+  // Add UTF-8 BOM (EF BB BF)
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const textEncoder = new TextEncoder();
+  const jsonBytes = textEncoder.encode(jsonContent);
+  
+  // Combine BOM + content
+  const fileContent = new Uint8Array(bom.length + jsonBytes.length);
+  fileContent.set(bom, 0);
+  fileContent.set(jsonBytes, bom.length);
+  
+  const blob = new Blob([fileContent], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
