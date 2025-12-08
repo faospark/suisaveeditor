@@ -25,13 +25,10 @@ self.addEventListener('install', (event) => {
                     `${basePath}/`,
                     `${basePath}/index.html`,
                     `${basePath}/css/pico.css`,
-                    `${basePath}/src/style.css`,
-                    `${basePath}/src/main.js`,
-                    `${basePath}/src/gamedata.js`,
                     `${basePath}/public/favicon.svg`
                 ];
 
-                // Cache optional files (like debug save)
+                // Optional files that will be cached on first access
                 const optionalFiles = [
                     `${basePath}/debug/save.json`
                 ];

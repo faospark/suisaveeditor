@@ -1257,6 +1257,19 @@ saveBtn.addEventListener('click', () => {
 
 // Hotkey: Ctrl+D to toggle debug mode
 document.addEventListener('keydown', (e) => {
+  // Ignore keyboard shortcuts when user is typing in input/textarea/select
+  const activeElement = document.activeElement;
+  const isTyping = activeElement && (
+    activeElement.tagName === 'INPUT' ||
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.tagName === 'SELECT' ||
+    activeElement.isContentEditable
+  );
+  
+  if (isTyping && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    return; // Don't intercept normal typing
+  }
+
   // Check for Ctrl+D (or Cmd+D on Mac)
   if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
     e.preventDefault(); // Prevent default browser behavior
