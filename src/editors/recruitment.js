@@ -39,7 +39,7 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
   optionsContainer.style.cssText = 'margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 6px;';
   
   const optionsTitle = document.createElement('h4');
-  optionsTitle.textContent = 'Recruitment Options';
+  optionsTitle.textContent = 'Recruitment Mods that you have on';
   optionsTitle.style.cssText = 'margin: 0 0 0.75rem 0; font-size: 1rem;';
   optionsContainer.appendChild(optionsTitle);
 
@@ -58,7 +58,7 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
   });
   leonaLabel.appendChild(leonaRadio);
   const leonaText = document.createElement('span');
-  leonaText.innerHTML = '<strong>Better Leona Option</strong> - If Valeria or Kasumi is recruited, recruit the other via SFix';
+  leonaText.innerHTML = '<strong>Better Leona Option Via SuikodenFix</strong> - Allows Recruitment of Both Valeria and Kasumi';
   leonaLabel.appendChild(leonaText);
   optionsContainer.appendChild(leonaLabel);
 
@@ -77,7 +77,7 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
   });
   krakenLabel.appendChild(krakenRadio);
   const krakenText = document.createElement('span');
-  krakenText.innerHTML = '<strong>Kraken Patch</strong> - If Chuchara is recruited, also recruit Abizaboah and Rulodia';
+  krakenText.innerHTML = '<strong>Kraken Patch</strong> - If Chuchara is recruited, also recruits Abizaboah and Rulodia';
   krakenLabel.appendChild(krakenText);
   optionsContainer.appendChild(krakenLabel);
 
@@ -86,13 +86,22 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
   // Add description for recruitment status values
   const description = document.createElement('p');
   description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
-  description.innerHTML = `<strong>Recruitment Status Values:</strong><br>
+  description.innerHTML = `<h4>Recruitment Flag</h4> <section class="major info grid-12 g-2-col"> 
+  <div class="right"><strong>Recruitment Status Values:</strong><br>
     • 1: Spoke to<br>
     • 70: Auto Join<br>
     • 71: Manual Recruit<br>
     • 86: Event Locked Not Party<br>
     • 212: Deceased<br>
-    • 213: On Leave`;
+    • 213: On Leave
+    </div>
+    <div class="left"><strong>Warning</strong>
+    ⚠️ Warning Do not use this tool as a method to recruit both Kasumi and Valeria simultaneously, or to recruit all of the Beasts at once. If you want those outcomes, please use SuikodenFix together with the Kraken Patch.
+
+    This tool is best suited for reviving characters that you may have lost during war battles. It also provides a convenient way to track and review your recruitment progress, giving you an overview of which characters have already joined and which ones are still pending.
+    </div></section>
+    
+    `;
   container.appendChild(description);
 
   const table = document.createElement('table');

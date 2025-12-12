@@ -66,7 +66,7 @@ export function createPartyMembersEditor(arr, key, updateCallback) {
         }
       }
     } else {
-      // Convoy slots: Full roster 0-124
+      // Convoy slots: Full roster 0-169
       if (GameData && GameData.CHARACTERS) {
         Object.keys(GameData.CHARACTERS).forEach(id => {
           const numId = parseInt(id);

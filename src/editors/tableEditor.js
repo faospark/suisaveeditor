@@ -512,7 +512,7 @@ export function createTableEditor(arr, key, updateCallback, columns) {
         item[col] = parseFloat(e.target.value);
         // Update item name display if this is the item_no or use_cnt column
         if ((col === 'item_no' || col === 'use_cnt')) {
-          const nameCell = tr.cells[0];
+          const nameCell = tr.cells[2]; // Item name is at index 2 (Slot, Actions, Name)
           const newId = item['item_no'] || 0;
           const newUseCnt = item['use_cnt'] || 0;
 
@@ -531,7 +531,15 @@ export function createTableEditor(arr, key, updateCallback, columns) {
           } else {
             const newLookup = getItemLookup(newUseCnt);
             if (newLookup) {
-              nameCell.textContent = newLookup[newId] || `Unknown (${newId})`;
+              const lookupValue = newLookup[newId];
+              // Handle both string format and object format
+              if (typeof lookupValue === 'object' && lookupValue !== null && lookupValue.name) {
+                nameCell.textContent = lookupValue.name;
+              } else if (typeof lookupValue === 'string') {
+                nameCell.textContent = lookupValue;
+              } else {
+                nameCell.textContent = `Unknown (${newId})`;
+              }
             } else {
               nameCell.textContent = `ID: ${newId}`;
             }

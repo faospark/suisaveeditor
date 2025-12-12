@@ -8,7 +8,7 @@
  */
 export const FIELD_CONFIG = {
   // General Tab
-  'exit_member': {
+  'party_cha_no': {
     label: 'Active Party Members',
     group: 'General',
     renderer: 'party_members'
@@ -269,7 +269,7 @@ export const FIELD_CONFIG = {
  * @type {Object<string, Array<string>>}
  */
 export const EDITOR_GROUPS = {
-  'General': ['exit_member', 'location', 'play_time', 'date_time_now', 'bozu_name', 'bozu_name2', 'macd_name', 'm_base_name', 'nakam_1_num', 'base_name', 'team_name', 'base_lv', 'furo_info', 'kaji_lv', 'ninki', 'gold', 'cook_off_progress', 'kari_name', 'food_menu'],
+  'General': ['party_cha_no', 'location', 'play_time', 'date_time_now', 'bozu_name', 'bozu_name2', 'macd_name', 'm_base_name', 'nakam_1_num', 'base_name', 'team_name', 'base_lv', 'furo_info', 'kaji_lv', 'ninki', 'gold', 'cook_off_progress', 'kari_name', 'food_menu'],
   'Battle Characters': ['c_varia_dat'],
   'Recruited Characters': ['chara_flag'],
   'Party Bag': ['event_item', 'party_item'],
