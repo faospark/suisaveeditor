@@ -40,7 +40,7 @@
 <body>
   <main class="container">
     <header class="pads-1">
-      
+
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
           <h1 style="margin-bottom: 0.5rem;">Suikoden 2 Remaster Save Editor <span id="app-version" style="font-size: 0.6em; color: var(--pico-muted-color); font-weight: normal;"></span></h1>
@@ -74,7 +74,9 @@
         </div>
         <div class="grid-12 d-grid">
           <blockquote class="g-span-8" style="font-size: smaller; margin:0;">
-            This Save Editor works only with JSON files generated from Suikoden II Remaster using SuikodenFix. To use the editor, make sure the save edit feature is enabled in SuikodenFix so it can produce the required JSON file or you can use <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter">SuikodenSaveDecrypter</a> to decrypt your save file.
+            This Save Editor works only with JSON files generated from Suikoden II Remaster using SuikodenFix. To use the editor, make sure the save edit feature is enabled in SuikodenFix so it can produce the required JSON file or you can use <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter">SuikodenSaveDecrypter</a> to decrypt your save file. As of the moment json save files are in the game root folder but a newer version of SuikodenFix will have (GAME_PATH)\SuikodenFix\Backup\gsd2\ folder where the JSON file will be generated.
+            <p style="margin: 0; color: #f0b90b;">Note: It is highly recommended that you turn off cloud saving for the game before editing save files and create your own back up</p>
+            <p style="margin: 0; color: crimson;">Warning: Always backup your original save files first!</p>
           </blockquote>
           <div class="g-span-4">
             <div class="tabs-right" style="display: flex; align-items: center; justify-content: end; height: 100%;"><button class="tab-button outline data-values-tab" id="tab-data-values" data-tab-name="Data Values">Data Values</button><button class="tab-button outline about-tab" id="tab-about" data-tab-name="About">About</button><button class="tab-button outline changelog-tab" id="tab-changelog" data-tab-name="Changelog">Changelog</button></div>
@@ -84,7 +86,9 @@
       <div id="editor-tabs">
       </div>
       <section id="editor-container">
-          <div id="tab-panels-container" class="tab-content"><p>Please load a JSON file to start editing.</p></div>
+        <div id="tab-panels-container" class="tab-content">
+          <p>Please load a JSON file to start editing.</p>
+        </div>
       </section>
       <footer class="pads-1 b2">
         <div style="font-size: .75rem;">
