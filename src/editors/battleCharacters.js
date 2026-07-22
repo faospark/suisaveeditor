@@ -348,7 +348,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
   const maxIndex = Math.min(arr.length, 84);
 
   // Stat labels for para array
-  const statLabels = ['Strength', 'Dexterity', 'Protection', 'Magic', 'Magic Defense', 'Speed', 'Luck'];
+  const statLabels = ['Strength', 'Magic', 'Protection', 'Magic Defence', 'Dexterity', 'Speed', 'Luck'];
 
   // Equipment labels for mon_eqp array
   const equipmentLabels = ['Head Rune', 'Right Hand Rune', 'Left Hand Rune'];
