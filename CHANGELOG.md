@@ -5,6 +5,18 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2026-10-26
+
+### Changed & Fixed
+
+- **Standardized Yam Koo's Fishing Minigame Table (`unlocksAndQuests.js`)**:
+  - Restyled the table to match standard application tables using Pico CSS `class="striped"`.
+  - Removed custom red, yellow, and green header inline color styles and removed the enclosing boxed background container, bringing the table into full visual harmony with the rest of the application.
+- **Relocated All 50 Castle Flag Bytes to Experimental Tab (`unlocksAndQuests.js`, `schema.js`, `main.js`)**:
+  - Moved **🏰 All 50 Castle Flag Bytes (`hon_flag[0–49] — Granular Bit & Byte Editor`)** back to the **Experimental** tab.
+  - Converted the 50-byte editor into a permanently open, **non-collapsible** card (`collapsible: false`) with header, count badge, search filter, and bulk Unlock/Reset buttons.
+  - The **Castle** tab now cleanly focuses on **🌱 Castle Farm Plots & Livestock (`hon_flag[30–32]`)**, Library Old Books, and Fishing Records.
+
 ## [1.4.3] - 2026-10-26
 
 ### Added & Fixed
