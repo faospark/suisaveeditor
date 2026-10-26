@@ -19,7 +19,7 @@ export const FIELD_CONFIG = {
     renderer: 'location'
   },
   'play_time': {
-    label: 'Play Time',
+    label: 'Play Time & Clive Quest Timer',
     group: 'General',
     renderer: 'play_time'
   },
@@ -79,20 +79,23 @@ export const FIELD_CONFIG = {
   },
   'cook_off_progress': {
     label: 'Cook-Off Battles Won',
-    group: 'General',
+    group: 'Cooking',
     renderer: 'cook_off_progress'
   },
-  'tantei_lv': {
-    label: "Richmond's Detective Clues (64 bytes, bit flags)",
-    group: 'Experimental'
+  'food_num': {
+    label: "🍲 Hai Yo's Kitchen Ingredient Stock (food_num[0..11] — Max 3 per Ingredient)",
+    group: 'Cooking',
+    renderer: 'kitchen_stock'
   },
-  'hon_flag': {
-    label: 'Castle Flags ([30-31]=Veggies 255=full, [32]=Animals)',
-    group: 'Experimental'
+  'tsuri_data': {
+    label: "Yam Koo's Fishing Records",
+    group: 'Castle',
+    renderer: 'fishing_records'
   },
-  't_box_flag': {
-    label: 'Treasure Chests (32 bytes, 256 chests total)',
-    group: 'Experimental'
+  'side_quests': {
+    label: 'Side-Quests, Beasts & Battle Counters',
+    group: 'General',
+    renderer: 'side_quests'
   },
   'kari_name': {
     label: 'Greenhill Mission Aliases',
@@ -100,9 +103,50 @@ export const FIELD_CONFIG = {
     renderer: 'castle_editors_combined'
   },
   'food_menu': {
-    label: 'Castle Menu Orders',
-    group: 'General',
-    renderer: 'skip'
+    label: 'Castle Restaurant Menu',
+    group: 'Cooking',
+    renderer: 'food_menu'
+  },
+  'food_resipi': {
+    label: 'Known Cooking Recipes (40 Recipes — Hai Yo)',
+    group: 'Cooking',
+    renderer: 'known_recipes'
+  },
+
+  // Investigations Tab
+  'tantei_lv': {
+    label: "Richmond's Detective Investigations (tantei_lv)",
+    group: 'Investigations',
+    renderer: 'richmond_detective'
+  },
+
+  // Castle Tab
+  'lib_flag': {
+    label: 'Castle Library Old Books (Vol. 1–12)',
+    group: 'Castle',
+    renderer: 'library_books'
+  },
+  'hon_flag': {
+    label: 'Castle Farm Plots & Livestock (hon_flag[30–32])',
+    group: 'Castle',
+    renderer: 'castle_flags'
+  },
+
+  // Experimental / Unlocks & Quests Tab
+  'hon_flag_raw': {
+    label: 'All 50 Castle Flag Bytes (hon_flag[0–49])',
+    group: 'Experimental',
+    renderer: 'castle_flags_raw'
+  },
+  't_box_flag': {
+    label: 'World Map Treasure Chests (256 Chests)',
+    group: 'Experimental',
+    renderer: 'treasure_chests'
+  },
+  'war_data': {
+    label: 'Major War Battle Units (war_data)',
+    group: 'Experimental',
+    renderer: 'war_room'
   },
 
   // Battle Characters Tab
@@ -241,9 +285,6 @@ export const FIELD_CONFIG = {
   'chara_data': {
     label: 'Character Data'
   },
-  'war_data': {
-    label: 'War Battle Data'
-  },
   'nige_cnt': {
     label: 'Escaped Battles'
   },
@@ -269,13 +310,16 @@ export const FIELD_CONFIG = {
  * @type {Object<string, Array<string>>}
  */
 export const EDITOR_GROUPS = {
-  'General': ['party_cha_no', 'location', 'play_time', 'date_time_now', 'bozu_name', 'bozu_name2', 'macd_name', 'm_base_name', 'nakam_1_num', 'base_name', 'team_name', 'base_lv', 'furo_info', 'kaji_lv', 'ninki', 'gold', 'cook_off_progress', 'kari_name', 'food_menu'],
+  'General': ['party_cha_no', 'location', 'play_time', 'date_time_now', 'bozu_name', 'bozu_name2', 'macd_name', 'm_base_name', 'nakam_1_num', 'base_name', 'team_name', 'base_lv', 'furo_info', 'kaji_lv', 'ninki', 'gold', 'side_quests', 'kari_name'],
   'Battle Characters': ['c_varia_dat'],
   'Recruited Characters': ['chara_flag'],
   'Party Bag': ['event_item', 'party_item'],
   'Warehouse': ['base_item', 'room_item'],
   'Bath': ['furo_item'],
-  'Experimental': ['tantei_lv', 'hon_flag', 't_box_flag']
+  'Cooking': ['cook_off_progress', 'food_num', 'food_menu', 'food_resipi'],
+  'Investigations': ['tantei_lv'],
+  'Castle': ['lib_flag', 'hon_flag', 'tsuri_data'],
+  'Experimental': ['hon_flag_raw', 't_box_flag', 'war_data']
 };
 
 /**
@@ -290,6 +334,9 @@ export const GROUP_PATHS = {
   'Recruited Characters': null,
   'Battle Characters': 'chara_data',
   'System': 'game_data',
+  'Cooking': null,
+  'Investigations': null,
+  'Castle': null,
   'Experimental': null
 };
 

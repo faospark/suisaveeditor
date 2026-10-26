@@ -2,7 +2,7 @@
 // Enables offline functionality by caching all app assets
 
 // Version must match APP_VERSION in src/config/constants.js
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.4.4';
 const CACHE_NAME = `suikohd-editor-v${APP_VERSION}`;
 
 // Install event - cache all assets
@@ -38,6 +38,7 @@ self.addEventListener('install', (event) => {
                     `${swPath}src/editors/tableEditor.js`,
                     `${swPath}src/editors/bathItems.js`,
                     `${swPath}src/editors/roomItems.js`,
+                    `${swPath}src/editors/unlocksAndQuests.js`,
                     // Renderer modules
                     `${swPath}src/renderers/dataValuesViewer.js`,
                     // Utility modules

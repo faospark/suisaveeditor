@@ -5,6 +5,81 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-10-26
+
+### Added & Fixed
+
+- **Recruitment Mods Honored in Battle Characters Tab (`battleCharacters.js`, `recruitment.js`)**:
+  - **Embedded Recruitment Mods Section**: Placed the "Recruitment Mods that you have on" box with "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Chuchara recruits Abizboah & Rulodia) directly at the top of the **Battle Characters** tab.
+  - **Two-Way Cross-Tab State Synchronization**: Toggling recruitment mods in either the Battle Characters tab or Recruited Characters tab automatically synchronizes checkboxes, updates `localStorage`, and instantly dispatches live refresh events.
+  - **Dynamic Recruitment Status & Filter Integration**:
+    - Character recruitment badges (`✓ Recruited Via SFix`, `✓ Recruited Via Kraken`) and `dataset.isRecruited` dynamically re-evaluate on the fly without page reloads.
+    - Selecting the "✓ Recruited Only" filter in Battle Characters now properly includes characters unlocked via Better Leona Option and Kraken Patch.
+  - **In-Place Recruitment Status Editor in Battle Characters**:
+    - Added an editable **Recruitment Status (`chara_flag`)** dropdown inside each character card's General section (allowing direct recruitment, revive from deceased, event-lock, or on-leave status editing right alongside character combat stats).
+- **Listening Crystal Beasts Selectors Fixed (`src/main.js`)**:
+  - Corrected monster IDs (49: Abizboah, 50: Feather, 72: Siegfried, 74: Rulodia, 79: Chuchara) with strict value-type matching and fallback option generation to prevent blank select controls.
+
+## [1.4.0] - 2026-10-26
+
+### Added
+
+- **Advanced Character Archetype Editor (`c_kotei_dat`) in Battle Characters**
+  - **Rune Slot Unlock Levels (`mon_kosu_type[0..2]`)**: Granular level inputs (`1–99` or `100` for never) for Head, Right Hand, and Left Hand rune slots, plus one-click "Unlock All 3 Slots at Lv 1" and "Restore Game Defaults" buttons.
+  - **Rune Elemental Affinities (`mon_zoku_aisyo[0..3]`)**: Granular dropdowns (`Rank A (+40%)` through `Rank E (-20% & Backfire)`) for all 8 elements (Fire, Water, Wind, Earth, Lightning, Resurrection, Darkness, Special), plus a "Set All to Rank A" button.
+  - **Slot Change Locks (`soubi_henkou`)**: 8 individual checkboxes for locking/unlocking Helmet, Armor, Shield, Head Rune, Right Hand Rune, Left Hand Rune, Accessories, and Weapon Rune slots.
+  - **Equippable Gear Classes (`soubi_kanou`)**: 6 individual checkboxes for Heavy Helmet, Cap/Hat, Heavy Armor, Light Armor, Robe, and Shield permissions.
+  - **Per-Character "Allow Locked / Any Rune" Toggle**: Bypass exclusive rune restrictions to equip any rune on any character slot.
+  - **Friendship / Affection (`suki_value`)**: Direct editor for each character's hidden affection stat in the General section.
+  - **Search Bar & Bulk Actions Toolbar**: Filter characters by name/ID or recruited status, and run bulk actions (Heal All HP & MP, Max All Weapons Lv 16, Unlock All 3 Rune Slots Lv 1, All Elemental Affinities Rank A).
+
+- **Investigation-Themed Redesign for General Tab (`src/main.js`)**
+  - Restructured the entire **General** tab to match the sleek card & chip visual aesthetic from the Investigations tab.
+  - Divided all general fields into 7 cohesive, permanent cards with dark translucent backdrops (`rgba(0,0,0,0.12)`), subtle borders, emoji titles, and header divider bars:
+    - **⚔️ Active Party Members & Convoy (`party_cha_no`)**: Responsive 8-slot card layout with distinct battle combatant (1–83) and convoy (1–124) roster dropdowns and slot badge.
+    - **🗺️ World & Map Location (`location`)**: Compact 5-field grid for Area, Town, Map, and X/Y coordinates.
+    - **⏱️ Play Time & Clive Quest Tracker (`play_time`, `date_time_now`)**: Hours/Minutes/Seconds inputs, in-game last saved timestamp, quick "Set Hours = 1" button, and live Clive Quest cutoffs checklist.
+    - **👤 Hero & Legacy Identifiers (`bozu_name`, `bozu_name2`, `macd_name`, `m_base_name`)**: Dedicated card for S2 Hero, Real Name, and S1 transferred Hero and HQ names.
+    - **🏰 Castle Headquarters, Army & Facilities (`base_name`, `team_name`, `base_lv`, `gold`, `ninki`, etc.)**: Integrated card with "Max Potch (999,999)" quick action, castle level, popularity, blacksmith level, bath level, and S1 stars.
+    - **🎓 Greenhill Mission Aliases (`kari_name`)**: Thematic cover names card for Hero, Nanami, and Flik.
+    - **🎖️ Side-Quests, Beasts & Battle Counters (`side_quests`)**: Grid of styled chips for Gordon's trading progress with 50k badge, Listening Crystal beasts selectors, escaped battles, and Luca Blight ambush HP with 0 HP kill button.
+
+- **Dedicated Castle Tab (`main.js`, `schema.js`, `unlocksAndQuests.js`)**
+  - Added dedicated **Castle** tab situated immediately before **Experimental**.
+  - Moved **Castle Library Old Books (Vol. 1–12)** (`lib_flag`), **Castle Farm Plots & Livestock** (`hon_flag[30–32]`), and **Yam Koo's Fishing Minigame Records** (`tsuri_data`) into the Castle tab.
+  - Converted these sections into non-collapsible, permanently open card groups for faster editing.
+
+- **Dedicated Cooking Tab (`main.js`, `schema.js`, `unlocksAndQuests.js`)**
+  - **Cook-Off Battles Won (`cook_off_progress`)**: Progress counter for Hai Yo's 16 culinary battles.
+  - **Hai Yo's Kitchen Stock & Seasonings (`food_num[0..11]`, `taste_flag`)**: Granular stock quantities for all 12 ingredients with one-click "Fill Max (3 Each)" button, plus granular seasoning unlocks (Mayonnaise, Red Pepper, Sugar, Soy Sauce, White Sauce).
+  - **Castle Restaurant Menu (`food_menu[0..6]`)**: Full interactive course slot dropdowns for all 7 restaurant menu items using the 240-dish recipe database, complete with a "Clear Menu" button.
+  - **Known Cooking Recipes (`food_resipi[0..4]`)**: 40 individual recipe checkboxes with dish names, search filtering, and "Unlock All 40" / "Clear All" buttons.
+
+- **Granular Unlocks, Collections & Side Quest Editors (`unlocksAndQuests.js`)**
+  - **Castle Library Old Books (`lib_flag`)**: 12 individual checkboxes for Old Book Vol. 1–12 with "Unlock All 12" / "Clear All" buttons.
+  - **Side Quests & Special Counters**:
+    - **Clive's Quest Time-Trial Tracker (`play_time`)**: Live milestone eligibility badges (`Elza at Lakewest < 11h` through `Sajah Village Finale < 20h`) and a one-click "Reset Timer for Clive's Quest" button.
+    - **Gordon's Trading Quest (`trade_transaction_total`)**: Edit cumulative trading profit with live `>= 50,000 Potch` recruitment badge and one-click "Set 50,000 Potch" button.
+    - **Listening Crystal Beasts (`l_mon_no[0..1]`)**: Dropdown selectors for the two Listening Crystal recruitment slots (Abizboah, Feather, Sieg, Rulodia, Chuchara).
+    - **Escaped Battles (`nige_cnt`) & Luca Blight Ambush HP (`luka_hp`)**: Direct editors in the General tab.
+  - **Castle Farm, Ranch & Facility Flags (`hon_flag[0..49]`)**: Granular bit checkboxes and preset buttons for Vegetable Seedlings Group A (`hon_flag[30]`), Group B (`hon_flag[31]`), and Yuzu's Ranch Livestock (`hon_flag[32]`), plus an expandable 50-byte bit/byte editor.
+  - **Richmond's Detective Investigations (`tantei_cano`, `tantei_ca_lv`, `tantei_lv[0..64]`)**: Active investigation target and stage selectors, plus a granular 65-byte clue bit/byte editor with bulk unlock/clear controls.
+  - **World Map Treasure Chests (`t_box_flag[0..31]`)**: 256 individual chest checkboxes across 32 byte groups with "Open All 256 Chests" and "Reset All" buttons.
+  - **Major War Battle Units (`war_data`)**: Granular dropdowns for all 14 Unit Commanders (`leader_no`), 28 Sub-Officers (`sub_no`), and unit assignments (`sub_to_leader`).
+
+### Fixed
+
+- **Packed-Nibble Magic Points (MP) Editor (`chara_data.c_varia_dat.mp[0..3]`)**:
+  - Properly decodes and encodes the high nibble (`Current MP`, `0–9`) and low nibble (`Max MP`, `0–9`) per spell level (`(cur << 4) | max`), with individual `Cur` / `Max` inputs, interactive `■/□` squares, and a "Max All (9/9)" button.
+- **Character Database (`src/gamedata.js`)**:
+  - Added missing entry `103: Taki` (fixing duplicate key `105` that overwrote Tetsu) and fixed duplicate key `127` (`126: NA-`).
+- **Auto-Save Recovery Dialog (`src/main.js`)**:
+  - Fixed inverted button action logic so clicking "Restore" restores the auto-save and clicking "Discard" discards it.
+
+### Removed
+
+- Removed legacy standalone `.exe` and `suisaveeditor-winui3/` desktop wrapper in favor of the unified web/PWA editor.
+
 ## [1.3.2] - 2025-12-12
 
 ### Fixed - IMPORTANT

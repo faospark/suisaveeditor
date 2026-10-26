@@ -938,3 +938,13 @@ details summary:hover {
     background: rgba(245, 11, 11, 0.1);
     border-color: #f50b0b;
 }
+
+
+/* Fix search input icon & text overlap for compact search fields */
+input[type="search"],
+input[type=search] {
+    background-position: center left 0.65rem !important;
+    background-size: 1rem auto !important;
+    padding-left: 2.1rem !important;
+    padding-inline-start: 2.1rem !important;
+}

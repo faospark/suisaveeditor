@@ -49,12 +49,14 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
   const leonaRadio = document.createElement('input');
   leonaRadio.type = 'checkbox';
   leonaRadio.id = 'better-leona-option';
+  leonaRadio.className = 'better-leona-checkbox';
   leonaRadio.style.cssText = 'margin: 0;';
-  // Load saved state from localStorage
   leonaRadio.checked = localStorage.getItem('recruitment_better_leona') === 'true';
-  // Save state when changed
   leonaRadio.addEventListener('change', (e) => {
     localStorage.setItem('recruitment_better_leona', e.target.checked);
+    document.querySelectorAll('.better-leona-checkbox').forEach(cb => { cb.checked = e.target.checked; });
+    window.dispatchEvent(new CustomEvent('recruitment-mods-changed'));
+    rebuildTableBody();
   });
   leonaLabel.appendChild(leonaRadio);
   const leonaText = document.createElement('span');
@@ -68,12 +70,14 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
   const krakenRadio = document.createElement('input');
   krakenRadio.type = 'checkbox';
   krakenRadio.id = 'kraken-patch';
+  krakenRadio.className = 'kraken-patch-checkbox';
   krakenRadio.style.cssText = 'margin: 0;';
-  // Load saved state from localStorage
   krakenRadio.checked = localStorage.getItem('recruitment_kraken_patch') === 'true';
-  // Save state when changed
   krakenRadio.addEventListener('change', (e) => {
     localStorage.setItem('recruitment_kraken_patch', e.target.checked);
+    document.querySelectorAll('.kraken-patch-checkbox').forEach(cb => { cb.checked = e.target.checked; });
+    window.dispatchEvent(new CustomEvent('recruitment-mods-changed'));
+    rebuildTableBody();
   });
   krakenLabel.appendChild(krakenRadio);
   const krakenText = document.createElement('span');
@@ -332,6 +336,7 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
         }
         
         if (updateCallback) updateCallback();
+        window.dispatchEvent(new CustomEvent('recruitment-flags-changed'));
       });
       tdFlag.appendChild(input);
       tr.appendChild(tdFlag);
@@ -342,9 +347,18 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
     table.appendChild(tbody);
   };
   
-  // Add event listeners to checkboxes to update display
-  leonaRadio.addEventListener('change', rebuildTableBody);
-  krakenRadio.addEventListener('change', rebuildTableBody);
+  // Sync with changes from Battle Characters tab or other editors
+  const onExternalModChange = () => {
+    leonaRadio.checked = localStorage.getItem('recruitment_better_leona') === 'true';
+    krakenRadio.checked = localStorage.getItem('recruitment_kraken_patch') === 'true';
+    rebuildTableBody();
+  };
+  window.addEventListener('recruitment-mods-changed', onExternalModChange);
+
+  const onExternalFlagChange = () => {
+    rebuildTableBody();
+  };
+  window.addEventListener('recruitment-flags-changed', onExternalFlagChange);
   table.className = 'striped';
   const thead = document.createElement('thead');
   const trHead = document.createElement('tr');

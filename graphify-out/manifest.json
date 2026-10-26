@@ -1,0 +1,236 @@
+{
+  "debug/save.json": {
+    "mtime": 1764127362.2408314,
+    "seen": 1793017508.5788112,
+    "ast_hash": "95b4e2b47c8a9d21686426e1de56ec10",
+    "semantic_hash": ""
+  },
+  "src/config/constants.js": {
+    "mtime": 1793017614.7362976,
+    "seen": 1793017886.589773,
+    "ast_hash": "730fbe7f18500ddc3ec394fbe0f9626b",
+    "semantic_hash": ""
+  },
+  "src/config/index.js": {
+    "mtime": 1764910544.4773862,
+    "seen": 1793017508.5788112,
+    "ast_hash": "65802cc9e5bddc1ed57fbf07f7717f45",
+    "semantic_hash": ""
+  },
+  "src/config/schema.js": {
+    "mtime": 1793005839.5151477,
+    "seen": 1793017508.5788112,
+    "ast_hash": "4196233bd906590bf451a1ba32fb0ea4",
+    "semantic_hash": ""
+  },
+  "src/config/schema.min.js": {
+    "mtime": 1793005955.3129392,
+    "seen": 1793017508.5788112,
+    "ast_hash": "7ce42d9b0bee4cd36c44540d1b6f78e7",
+    "semantic_hash": ""
+  },
+  "src/editors/bathItems.js": {
+    "mtime": 1764913465.4426937,
+    "seen": 1793017508.5788112,
+    "ast_hash": "86c72818a0ebb9266f39ac235523b655",
+    "semantic_hash": ""
+  },
+  "src/editors/battleCharacters.js": {
+    "mtime": 1793017369.8220954,
+    "seen": 1793017508.5788112,
+    "ast_hash": "77c8653f5746b5b61221a7df9cb97ea3",
+    "semantic_hash": ""
+  },
+  "src/editors/battleCharacters.min.js": {
+    "mtime": 1792991606.1682272,
+    "seen": 1793017508.5788112,
+    "ast_hash": "d9574cdc7b6d9aea6ea87aee09c1521f",
+    "semantic_hash": ""
+  },
+  "src/editors/index.js": {
+    "mtime": 1792984975.757124,
+    "seen": 1793017508.5788112,
+    "ast_hash": "3c4b31171969cadac39dce405a5a930b",
+    "semantic_hash": ""
+  },
+  "src/editors/keyItems.js": {
+    "mtime": 1765128444.7111163,
+    "seen": 1793017508.5788112,
+    "ast_hash": "a98c658a69b15a706da3d41fb5f925b6",
+    "semantic_hash": ""
+  },
+  "src/editors/partyMembers.js": {
+    "mtime": 1765230044.6375911,
+    "seen": 1793017508.5788112,
+    "ast_hash": "4c2e4ab66a4e11e87145c3e5f5ffa6eb",
+    "semantic_hash": ""
+  },
+  "src/editors/recruitment.js": {
+    "mtime": 1793017254.6235378,
+    "seen": 1793017508.5788112,
+    "ast_hash": "ba8cd4888cbbc4dde414d2187009be14",
+    "semantic_hash": ""
+  },
+  "src/editors/roomItems.js": {
+    "mtime": 1764919397.3560252,
+    "seen": 1793017508.5788112,
+    "ast_hash": "5453da2222658664b9d6dab1c3af1f6b",
+    "semantic_hash": ""
+  },
+  "src/editors/tableEditor.js": {
+    "mtime": 1765230044.6375911,
+    "seen": 1793017508.5788112,
+    "ast_hash": "18e9d4f8d5a7b27b67304c4d5fe14fbc",
+    "semantic_hash": ""
+  },
+  "src/editors/unlocksAndQuests.js": {
+    "mtime": 1793005927.2477293,
+    "seen": 1793017508.5788112,
+    "ast_hash": "67c0d913c8b15f15f02f59cd590e0ada",
+    "semantic_hash": ""
+  },
+  "src/editors/unlocksAndQuests.min.js": {
+    "mtime": 1793001885.2929058,
+    "seen": 1793017508.5788112,
+    "ast_hash": "bb7977e08c700f1d698e3eed8aacc0a9",
+    "semantic_hash": ""
+  },
+  "src/gamedata.js": {
+    "mtime": 1792984647.8639019,
+    "seen": 1793017508.5788112,
+    "ast_hash": "d2f1f7d5f2a9ce28b68c7ecc664f19c0",
+    "semantic_hash": ""
+  },
+  "src/gamedata.schema.js": {
+    "mtime": 1764929568.9262054,
+    "seen": 1793017508.5788112,
+    "ast_hash": "3aaa104b983783b685199f85fe78ae84",
+    "semantic_hash": ""
+  },
+  "src/main.js": {
+    "mtime": 1793017396.4752073,
+    "seen": 1793017508.5788112,
+    "ast_hash": "794a61580abd6e8c8e48c553a33ed82d",
+    "semantic_hash": ""
+  },
+  "src/main.min.js": {
+    "mtime": 1793015503.3110454,
+    "seen": 1793017508.5788112,
+    "ast_hash": "c6ab407e9c4364e86e9cd526c92ded3c",
+    "semantic_hash": ""
+  },
+  "src/renderers/dataValuesViewer.js": {
+    "mtime": 1764913242.0427034,
+    "seen": 1793017508.5788112,
+    "ast_hash": "d965e90779ff5cb30e6b0917189f5285",
+    "semantic_hash": ""
+  },
+  "src/renderers/index.js": {
+    "mtime": 1764922435.4868932,
+    "seen": 1793017508.5788112,
+    "ast_hash": "98b36d791624c58a361f6bb4ae74a39e",
+    "semantic_hash": ""
+  },
+  "src/utils/debug.js": {
+    "mtime": 1764910544.47336,
+    "seen": 1793017508.5788112,
+    "ast_hash": "876a31f71ba41a258e95e8a15b0c2f4e",
+    "semantic_hash": ""
+  },
+  "src/utils/helpers.js": {
+    "mtime": 1764910544.47336,
+    "seen": 1793017508.5788112,
+    "ast_hash": "c0fd4e879d445673cde42ff6c602b2cc",
+    "semantic_hash": ""
+  },
+  "src/utils/index.js": {
+    "mtime": 1764931068.518215,
+    "seen": 1793017508.5788112,
+    "ast_hash": "3b6e577edbd049dfe56fc76f4a091af1",
+    "semantic_hash": ""
+  },
+  "src/utils/markdown.js": {
+    "mtime": 1764948687.9267113,
+    "seen": 1793017508.5788112,
+    "ast_hash": "0f9be44af99ba2ae1195e68e27cc4beb",
+    "semantic_hash": ""
+  },
+  "src/utils/statusBar.js": {
+    "mtime": 1764910544.47336,
+    "seen": 1793017508.5788112,
+    "ast_hash": "5b5fc510fda844737f9a32b942cd2168",
+    "semantic_hash": ""
+  },
+  "sw.js": {
+    "mtime": 1793017436.7268605,
+    "seen": 1793017508.5788112,
+    "ast_hash": "4585a3a21728f497b052462034f9ab37",
+    "semantic_hash": ""
+  },
+  "sw.min.js": {
+    "mtime": 1765497824.6105106,
+    "seen": 1793017508.5788112,
+    "ast_hash": "00801ab54bfe5ac95df77e790157f108",
+    "semantic_hash": ""
+  },
+  ".github/FIELD_MAPPING.md": {
+    "mtime": 1765001558.9173093,
+    "seen": 1793017508.5788112,
+    "ast_hash": "51ac9fd7f08542d2e93ba07a7e48916e",
+    "semantic_hash": ""
+  },
+  "CHANGELOG.md": {
+    "mtime": 1793017614.636124,
+    "seen": 1793017886.5902717,
+    "ast_hash": "076ad03eb3ca36a4544c1d209e5f4d0a",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1793017614.6877077,
+    "seen": 1793017886.5902717,
+    "ast_hash": "99d155a4531f45b8955b91f74765e139",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1766453118.582807,
+    "seen": 1793017508.5788112,
+    "ast_hash": "673cfff0e1ecee96ee7e16597c88435e",
+    "semantic_hash": ""
+  },
+  "image/preview.png": {
+    "mtime": 1764373733.0238237,
+    "seen": 1793017508.5788112,
+    "ast_hash": "24b0857bd0be5f383690a208b7e372ac",
+    "semantic_hash": ""
+  },
+  "public/favicon.svg": {
+    "mtime": 1764103474.8289912,
+    "seen": 1793017508.5788112,
+    "ast_hash": "adcbabe62d329cee35f7540dd23c735d",
+    "semantic_hash": ""
+  },
+  "src/config/constants.min.js": {
+    "mtime": 1793017614.7623444,
+    "seen": 1793017886.589773,
+    "ast_hash": "0390c24905333457dbe5930cfdc731d8",
+    "semantic_hash": ""
+  },
+  "tools/symbol_indexer/indexer.py": {
+    "mtime": 1793017810.5923445,
+    "seen": 1793017886.5902717,
+    "ast_hash": "2614f9deb8995a35a9a5188cb2e04566",
+    "semantic_hash": ""
+  },
+  "tools/symbol_indexer/sym.py": {
+    "mtime": 1793017859.3740802,
+    "seen": 1793017886.5902717,
+    "ast_hash": "295ae0e1d5aba0ac6ddba4c4ddf0a6f4",
+    "semantic_hash": ""
+  },
+  ".agents/rules/sym.md": {
+    "mtime": 1793017877.7247481,
+    "seen": 1793017886.5902717,
+    "ast_hash": "155d5b8e0cff6d2c2e12ef55de20550e",
+    "semantic_hash": ""
+  }
+}

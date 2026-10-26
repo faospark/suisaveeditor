@@ -8,3 +8,4 @@ export * from './recruitment.js';
 export * from './tableEditor.js';
 export * from './bathItems.js';
 export * from './roomItems.js';
+export * from './unlocksAndQuests.js';

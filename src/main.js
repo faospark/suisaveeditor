@@ -4,7 +4,24 @@
 import { APP_VERSION, FIELD_CONFIG, EDITOR_GROUPS, GROUP_PATHS } from './config/index.js';
 import { isDebugMode, loadDebugFile, setDebugMode, toggleDebugMode, initStatusBar, updateStatusBar, updateSaveFileIndicator, extractSaveNumber, markdownToHTML } from './utils/index.js';
 import GameData from './gamedata.js';
-import { createBattleCharactersEditor, createPartyMembersEditor, createKeyItemsEditor, createRecruitmentEditor, createTableEditor, createBathItemsEditor } from './editors/index.js';
+import {
+  createBattleCharactersEditor,
+  createPartyMembersEditor,
+  createKeyItemsEditor,
+  createRecruitmentEditor,
+  createTableEditor,
+  createBathItemsEditor,
+  createKnownRecipesEditor,
+  createLibraryBooksEditor,
+  createCastleFlagsEditor,
+  createCastleFlagsRawEditor,
+  createRichmondDetectiveEditor,
+  createTreasureChestsEditor,
+  createWarRoomEditor,
+  createSideQuestsAndCountersEditor,
+  createFishingRecordsEditor,
+  createKitchenStockEditor
+} from './editors/index.js';
 import { COOK_OFF_STAGES, EVENT_FLAG_INDEX } from './config/constants.js';
 import { createDataValuesViewer } from './renderers/index.js';
 
@@ -158,9 +175,9 @@ async function checkForAutoSave() {
       <p>Would you like to restore this session?</p>
     `;
     
-    const restore = await showConfirmDialog('Unsaved Work Detected', message, 'Discard', 'Restore');
+    const restore = await showConfirmDialog('Unsaved Work Detected', message, 'Restore', 'Discard');
     
-    if (!restore) {
+    if (restore) {
       try {
         currentData = JSON.parse(savedData);
         currentFileName = savedFilename;
@@ -234,9 +251,19 @@ const editorFactories = {
   party_members: createPartyMembersEditor,
   key_items: createKeyItemsEditor,
   greenhill_aliases: null, // Defined later
-  food_menu: null, // Defined later
+  food_menu: createFoodMenuEditor,
   castle_editors_combined: null, // Defined later
-  location: null // Defined later
+  location: null, // Defined later
+  known_recipes: createKnownRecipesEditor,
+  library_books: createLibraryBooksEditor,
+  castle_flags: createCastleFlagsEditor,
+  castle_flags_raw: createCastleFlagsRawEditor,
+  richmond_detective: createRichmondDetectiveEditor,
+  treasure_chests: createTreasureChestsEditor,
+  war_room: createWarRoomEditor,
+  side_quests: createSideQuestsAndCountersEditor,
+  fishing_records: createFishingRecordsEditor,
+  kitchen_stock: createKitchenStockEditor
 };
 
 /**
@@ -254,43 +281,55 @@ function createEditorElement(renderer, value, targetData, data, key, label, conf
   const editorFactory = editorFactories[renderer];
   
   if (!editorFactory) {
-    // Default editor for unknown renderers
     return createElementForValue(value, label, (newValue) => {
       targetData[key] = newValue;
     }, targetData);
   }
 
-  // Create onChange callback
   const onChange = (newValue) => {
-    // Only update if newValue is provided (some editors modify in-place)
     if (newValue !== undefined) {
       targetData[key] = newValue;
     }
   };
 
-  // Handle special cases
   switch (renderer) {
     case 'table':
       const columns = config.columns;
       return editorFactory(value, label, onChange, columns);
     
     case 'battle_characters':
-      return editorFactory(value, label, onChange, createElementForValue, FIELD_CONFIG, data.chara_flag, data);
+      const charaFlag = data.chara_flag || data.game_data?.chara_flag;
+      return editorFactory(value, label, onChange, createElementForValue, FIELD_CONFIG, charaFlag, data);
     
     case 'recruitment':
-      // Recruitment editor needs access to full game data for special logic
       return editorFactory(value, label, onChange, data);
     
     case 'castle_editors_combined':
       return editorFactory(data, targetData);
     
     case 'cook_off_progress':
-      // Cook-off progress needs access to root event_flag
       return editorFactory(data, label, onChange);
     
     case 'location':
-      // Location editor updates directly, doesn't need onChange callback
       return editorFactory(data, label, () => {});
+
+    case 'library_books':
+      return editorFactory(value, label, onChange, targetData);
+
+    case 'richmond_detective':
+      return editorFactory(value, label, onChange, data);
+
+    case 'fishing_records':
+      return editorFactory(value, label, onChange, data);
+
+    case 'kitchen_stock':
+      return editorFactory(value, label, onChange, data);
+
+    case 'side_quests':
+      return editorFactory(data, onChange);
+
+    case 'castle_flags_raw':
+      return editorFactory(value, label, onChange);
     
     default:
       return editorFactory(value, label, onChange);
@@ -309,22 +348,15 @@ function createEditorElement(renderer, value, targetData, data, key, label, conf
  * @param {Function} onUpdate Callback when data changes
  */
 function renderEditor(container, data, onUpdate) {
-  // Don't clear the entire container - preserve tab-panels-container and placeholder
-  // Only remove the placeholder text if it exists
   const placeholder = container.querySelector('p');
   if (placeholder && placeholder.textContent.includes('Please load a JSON file')) {
     placeholder.remove();
   }
 
-  let rootData = data;
-  let isGameData = false;
-
-  // Create Tabs with flexbox layout - use existing editor-tabs div or create new one
   let tabContainer = document.getElementById('editor-tabs');
   if (!tabContainer) {
     tabContainer = document.createElement('div');
     tabContainer.id = 'editor-tabs';
-    // Insert before tab-panels-container if it exists
     const tabPanelsContainer = document.getElementById('tab-panels-container');
     if (tabPanelsContainer) {
       container.insertBefore(tabContainer, tabPanelsContainer);
@@ -333,7 +365,6 @@ function renderEditor(container, data, onUpdate) {
     }
   }
   
-  // Clear existing tabs but keep the container
   tabContainer.innerHTML = '';
   tabContainer.className = 'tabs';
 
@@ -343,7 +374,6 @@ function renderEditor(container, data, onUpdate) {
   const tabsRight = document.createElement('div');
   tabsRight.className = 'tabs-right';
 
-  // Get or create tab panels container
   let tabPanelsContainer = document.getElementById('tab-panels-container');
   if (!tabPanelsContainer) {
     tabPanelsContainer = document.createElement('div');
@@ -351,18 +381,16 @@ function renderEditor(container, data, onUpdate) {
     tabPanelsContainer.className = 'tab-content';
     container.appendChild(tabPanelsContainer);
   } else {
-    // Clear only regular tab panels (keep special panels)
     const regularPanels = tabPanelsContainer.querySelectorAll('.tab-panel:not(.special-panel)');
     regularPanels.forEach(p => p.remove());
   }
 
   const groupKeys = Object.keys(EDITOR_GROUPS);
   let activeTab = groupKeys[0];
-  const tabButtons = {}; // Cache tab buttons for performance
-  const tabPanels = {}; // Cache tab panels
-  const specialPanels = container._specialPanels || {}; // Get existing special panels or create new object
+  const tabButtons = {};
+  const tabPanels = {};
+  const specialPanels = container._specialPanels || {};
 
-  // Create all tab panels upfront
   groupKeys.forEach(groupName => {
     const panel = document.createElement('div');
     const panelClass = `${groupName.toLowerCase().replace(/\s+/g, '-')}-panel`;
@@ -377,60 +405,50 @@ function renderEditor(container, data, onUpdate) {
     tabPanelsContainer.appendChild(panel);
     tabPanels[groupName] = panel;
     
-    // Render content into panel
     renderTabContent(panel, groupName, data, onUpdate);
   });
 
-  // Create regular data editing tabs (left side)
   groupKeys.forEach(groupName => {
     const btn = document.createElement('button');
     btn.textContent = groupName;
     btn.className = 'tab-button outline';
-    btn.id = `tab-${groupName.toLowerCase().replace(/\s+/g, '-')}`; // Add unique ID
-    btn.dataset.tabName = groupName; // Store tab name for easy reference
+    btn.id = `tab-${groupName.toLowerCase().replace(/\s+/g, '-')}`;
+    btn.dataset.tabName = groupName;
 
     if (groupName === activeTab) btn.classList.remove('outline');
 
-    tabButtons[groupName] = btn; // Cache button reference
+    tabButtons[groupName] = btn;
 
     btn.addEventListener('click', () => {
-      // Update button styles
       Object.values(tabButtons).forEach(b => b.classList.add('outline'));
       btn.classList.remove('outline');
       
-      // Deactivate header buttons (Data Values, About, Changelog)
       const headerButtons = document.querySelectorAll('.tabs-right .tab-button');
       headerButtons.forEach(b => b.classList.add('outline'));
 
-      // Hide all children in container
       Array.from(tabPanelsContainer.children).forEach(child => {
         child.style.display = 'none';
       });
       
-      // Show selected tab panel
       tabPanels[groupName].style.display = 'block';
     });
 
     tabsLeft.appendChild(btn);
   });
 
-  // Assemble tab container
   tabContainer.appendChild(tabsLeft);
   
-  // Add save file indicator on the right
   const saveFileIndicator = document.createElement('div');
   saveFileIndicator.id = 'save-file-indicator';
   saveFileIndicator.className = 'save-file-indicator';
   saveFileIndicator.style.cssText = 'display: flex; align-items: center; padding: 0.4rem 0.8rem; font-size: 0.75rem; font-weight: 600; color: var(--pico-primary); background: rgba(var(--pico-primary-rgb, 52, 152, 219), 0.1); border-radius: 6px;';
   
-  // Extract save number from filename
   const saveNumber = extractSaveNumber(currentFileName);
   saveFileIndicator.textContent = saveNumber ? `Save File #${saveNumber}` : `Editing: ${currentFileName}`;
   
   tabsRight.appendChild(saveFileIndicator);
   tabContainer.appendChild(tabsRight);
   
-  // Store references for header buttons to access
   container.dataset.editorInitialized = 'true';
   container._specialPanels = specialPanels;
   container._tabPanels = tabPanels;
@@ -439,7 +457,6 @@ function renderEditor(container, data, onUpdate) {
 function renderTabContent(container, group, data, onUpdate) {
   container.innerHTML = '';
 
-  // Add section title for Party Bag
   if (group === 'Party Bag') {
     const title = document.createElement('h3');
     title.textContent = 'Party Items';
@@ -460,29 +477,39 @@ function renderTabContent(container, group, data, onUpdate) {
 
   const keys = EDITOR_GROUPS[group] || [];
 
-  // RENDERS: General Tab - checks game_data, party_data, and root level for fields
+  // RENDERS: General / Experimental Tabs - checks game_data, party_data, and root level for fields
   if (groupPath === null) {
+    if (group === 'General') {
+      renderGeneralTab(container, data);
+      return;
+    }
     keys.forEach(key => {
       const config = FIELD_CONFIG[key];
       if (!config) return;
 
-      // Special handling for location - it's a virtual grouping, not a real field
       if (key === 'location') {
         const element = createLocationEditor(data, 'Map Location', () => { });
         container.appendChild(element);
         return;
       }
 
-      // Special handling for cook_off_progress - it's a virtual field based on event_flag
       if (key === 'cook_off_progress') {
         const element = createCookOffProgressEditor(data, 'Cook-Off Battles Won', () => { });
         container.appendChild(element);
         return;
       }
 
-      // Check in game_data first, then party_data, then root level
+      if (key === 'side_quests') {
+        const element = createSideQuestsAndCountersEditor(data, () => { });
+        container.appendChild(element);
+        return;
+      }
+
       let value, sourceData;
-      if (data.game_data && data.game_data[key] !== undefined) {
+      if (key === 'hon_flag_raw') {
+        value = data.hon_flag || data.game_data?.hon_flag;
+        sourceData = data.hon_flag ? data : data.game_data;
+      } else if (data.game_data && data.game_data[key] !== undefined) {
         value = data.game_data[key];
         sourceData = data.game_data;
       } else if (data.party_data && data.party_data[key] !== undefined) {
@@ -498,7 +525,6 @@ function renderTabContent(container, group, data, onUpdate) {
       const label = config.label || key;
       const renderer = config.renderer;
 
-      // Skip if renderer is 'skip' (handled elsewhere)
       if (renderer === 'skip') return;
 
       let element;
@@ -514,8 +540,6 @@ function renderTabContent(container, group, data, onUpdate) {
     return;
   }
 
-  // RENDERS: Other tabs (Items, Party Bag, Battle Characters, etc.) - uses specific data paths
-
   keys.forEach(key => {
     if (targetData[key] === undefined) return;
 
@@ -525,7 +549,6 @@ function renderTabContent(container, group, data, onUpdate) {
     const label = config.label || key;
     const renderer = config.renderer;
 
-    // Skip if renderer is 'skip' (handled elsewhere)
     if (renderer === 'skip') return;
 
     let element;
@@ -542,23 +565,612 @@ function renderTabContent(container, group, data, onUpdate) {
 
 
 // ============================================================================
-// PLAY TIME EDITOR
-// RENDERS: Play time as 3 side-by-side fields (Hours, Minutes, Seconds)
+// GENERAL TAB - INVESTIGATION STYLE & THEME
+// RENDERS: Unified cohesive card layouts matching the Investigations tab aesthetic
+// ============================================================================
+
+function renderGeneralTab(container, data) {
+  const gd = data.game_data || {};
+  const pd = data.party_data || {};
+
+  const getFieldInfo = (key) => {
+    if (gd && gd[key] !== undefined) return { obj: gd, val: gd[key] };
+    if (pd && pd[key] !== undefined) return { obj: pd, val: pd[key] };
+    if (data && data[key] !== undefined) return { obj: data, val: data[key] };
+    return { obj: gd, val: undefined };
+  };
+
+  const CARD_STYLE = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
+  const HEADER_STYLE = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem; flex-wrap: wrap; gap: 0.5rem;';
+  const CHIP_STYLE = 'padding: 0.45rem 0.65rem; background: rgba(0,0,0,0.15); border-radius: 4px; border: 1px solid var(--pico-muted-border-color); display: flex; flex-direction: column; gap: 0.25rem;';
+  const LABEL_STYLE = 'font-size: 0.73rem; font-weight: bold; margin-bottom: 0; color: var(--pico-color);';
+  const INPUT_STYLE = 'margin-bottom: 0; font-size: 0.8rem; padding: 0.25rem 0.45rem;';
+
+  const createCard = (titleHtml, rightElement = null) => {
+    const card = document.createElement('div');
+    card.className = 'json-object general-card';
+    card.style.cssText = CARD_STYLE;
+
+    const header = document.createElement('div');
+    header.style.cssText = HEADER_STYLE;
+
+    const title = document.createElement('strong');
+    title.style.fontSize = '0.85rem';
+    title.innerHTML = titleHtml;
+    header.appendChild(title);
+
+    if (rightElement) {
+      header.appendChild(rightElement);
+    }
+
+    card.appendChild(header);
+    return card;
+  };
+
+  const createChip = (labelStr, inputEl) => {
+    const chip = document.createElement('div');
+    chip.style.cssText = CHIP_STYLE;
+
+    const lbl = document.createElement('label');
+    lbl.textContent = labelStr;
+    lbl.style.cssText = LABEL_STYLE;
+    chip.appendChild(lbl);
+
+    chip.appendChild(inputEl);
+    return chip;
+  };
+
+  // 1. Party Members Card
+  const partyInfo = getFieldInfo('party_cha_no');
+  const partyArr = partyInfo.val;
+  if (Array.isArray(partyArr)) {
+    const badge = document.createElement('span');
+    badge.style.cssText = 'font-size: 0.8rem; color: var(--pico-primary); font-weight: bold; margin-left: auto;';
+    badge.textContent = '6 Battle + 2 Convoy Slots';
+
+    const card = createCard('⚔️ Active Party Members & Convoy (party_cha_no)', badge);
+
+    const desc = document.createElement('div');
+    desc.style.cssText = 'font-size: 0.75rem; color: var(--pico-muted-color); margin-bottom: 0.6rem;';
+    desc.textContent = 'First 6 slots are battle combatants (IDs 1–83); last 2 slots are convoy members (full roster IDs 1–124).';
+    card.appendChild(desc);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.6rem;';
+
+    const maxSlots = Math.min(partyArr.length, 8);
+    for (let i = 0; i < maxSlots; i++) {
+      const isBattle = i < 6;
+      const slotTitle = isBattle ? `⚔️ Battle Slot ${i + 1}` : `🛡️ Convoy Slot ${i - 5}`;
+
+      const sel = document.createElement('select');
+      sel.style.cssText = INPUT_STYLE;
+
+      const noneOpt = document.createElement('option');
+      noneOpt.value = 0;
+      noneOpt.textContent = '0: None';
+      sel.appendChild(noneOpt);
+
+      if (GameData && GameData.CHARACTERS) {
+        const maxId = isBattle ? 83 : 124;
+        for (let id = 1; id <= maxId; id++) {
+          const char = GameData.CHARACTERS[id];
+          if (char) {
+            const opt = document.createElement('option');
+            opt.value = id;
+            const name = typeof char === 'string' ? char : (char.name || `Char ${id}`);
+            opt.textContent = `${id}: ${name}`;
+            sel.appendChild(opt);
+          }
+        }
+      }
+
+      sel.value = partyArr[i] || 0;
+      sel.addEventListener('change', (e) => {
+        partyArr[i] = parseInt(e.target.value) || 0;
+      });
+
+      grid.appendChild(createChip(slotTitle, sel));
+    }
+
+    card.appendChild(grid);
+    container.appendChild(card);
+  }
+
+  // 2. World Location Card
+  const locCard = createCard('🗺️ World & Map Location');
+  const locGrid = document.createElement('div');
+  locGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.6rem;';
+
+  const locFields = [
+    { label: 'Area Location', key: 'area_no' },
+    { label: 'Town No', key: 'town_no' },
+    { label: 'Map No', key: 'map_no' },
+    { label: 'Player X Coord', key: 'px' },
+    { label: 'Player Y Coord', key: 'py' }
+  ];
+
+  locFields.forEach(f => {
+    const fInfo = getFieldInfo(f.key);
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.value = fInfo.val !== undefined ? fInfo.val : 0;
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => {
+      fInfo.obj[f.key] = parseFloat(e.target.value) || 0;
+    });
+    locGrid.appendChild(createChip(f.label, inp));
+  });
+
+  locCard.appendChild(locGrid);
+  container.appendChild(locCard);
+
+  // 3. Play Time & Clive Quest Card
+  const timeInfo = getFieldInfo('play_time');
+  const timeArr = timeInfo.val;
+  if (Array.isArray(timeArr)) {
+    const resetCliveBtn = document.createElement('button');
+    resetCliveBtn.type = 'button';
+    resetCliveBtn.className = 'outline';
+    resetCliveBtn.textContent = '⏱️ Set Hours = 1 (Unlock All Clive Cutoffs)';
+    resetCliveBtn.style.cssText = 'font-size: 0.72rem; padding: 0.25rem 0.55rem; margin-bottom: 0;';
+
+    const timeCard = createCard('⏱️ Play Time & Clive Quest Tracker', resetCliveBtn);
+
+    const timeGrid = document.createElement('div');
+    timeGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.6rem; margin-bottom: 0.6rem;';
+
+    const timeLabels = ['Hours (0–999)', 'Minutes (0–59)', 'Seconds (0–59)'];
+    const timeInputs = [];
+
+    const cliveBox = document.createElement('div');
+    cliveBox.style.cssText = 'display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; font-size: 0.72rem; padding: 0.4rem 0.6rem; background: rgba(0,0,0,0.15); border-radius: 4px; border: 1px solid var(--pico-muted-border-color);';
+
+    const cliveMilestones = [
+      { name: 'Muse (<3h)', limit: 3 },
+      { name: 'Lakewest (<11h)', limit: 11 },
+      { name: 'Forest Village (<13h)', limit: 13 },
+      { name: 'Radat (<14h)', limit: 14 },
+      { name: 'Muse Hill (<15h)', limit: 15 },
+      { name: 'Sajah Finale (<20h)', limit: 20 }
+    ];
+
+    const updateCliveBadges = () => {
+      const hrs = timeArr[0] || 0;
+      cliveBox.innerHTML = '<strong style="margin-right: 0.25rem;">⏱️ Clive Quest Cutoffs:</strong>';
+      cliveMilestones.forEach(m => {
+        const ok = hrs < m.limit;
+        const badge = document.createElement('span');
+        badge.textContent = `${ok ? '✓' : '✗'} ${m.name}`;
+        badge.style.cssText = `padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600; background: rgba(0,0,0,0.2); color: ${ok ? 'var(--pico-ins-color)' : 'var(--pico-del-color)'};`;
+        cliveBox.appendChild(badge);
+      });
+    };
+
+    timeLabels.forEach((labelStr, i) => {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.min = '0';
+      if (i > 0) inp.max = '59';
+      inp.value = timeArr[i] || 0;
+      inp.style.cssText = INPUT_STYLE;
+      inp.addEventListener('input', (e) => {
+        timeArr[i] = Math.max(0, parseInt(e.target.value) || 0);
+        updateCliveBadges();
+      });
+      timeInputs.push(inp);
+      timeGrid.appendChild(createChip(labelStr, inp));
+    });
+
+    const dateInfo = getFieldInfo('date_time_now');
+    if (dateInfo.val !== undefined) {
+      const dateInp = document.createElement('input');
+      dateInp.type = 'text';
+      dateInp.value = dateInfo.val || '';
+      dateInp.style.cssText = INPUT_STYLE;
+      dateInp.addEventListener('input', (e) => {
+        dateInfo.obj['date_time_now'] = e.target.value;
+      });
+      timeGrid.appendChild(createChip('Last Saved (In-Game)', dateInp));
+    }
+
+    resetCliveBtn.addEventListener('click', () => {
+      timeArr[0] = 1;
+      if (timeInputs[0]) timeInputs[0].value = 1;
+      updateCliveBadges();
+    });
+
+    updateCliveBadges();
+    timeCard.appendChild(timeGrid);
+    timeCard.appendChild(cliveBox);
+    container.appendChild(timeCard);
+  }
+
+  // 4. Hero & Legacy Names Card
+  const namesCard = createCard('👤 Hero & Legacy Identifiers');
+  const namesGrid = document.createElement('div');
+  namesGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem;';
+
+  const nameFields = [
+    { label: 'Hero Name (Suikoden II)', key: 'bozu_name' },
+    { label: 'Hero Real Name', key: 'bozu_name2' },
+    { label: 'Hero Name (Suikoden I)', key: 'macd_name' },
+    { label: 'HQ Name (Suikoden I)', key: 'm_base_name' }
+  ];
+
+  nameFields.forEach(f => {
+    const fInfo = getFieldInfo(f.key);
+    if (fInfo.val !== undefined) {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = fInfo.val || '';
+      inp.style.cssText = INPUT_STYLE;
+      inp.addEventListener('input', (e) => {
+        fInfo.obj[f.key] = e.target.value;
+      });
+      namesGrid.appendChild(createChip(f.label, inp));
+    }
+  });
+
+  namesCard.appendChild(namesGrid);
+  container.appendChild(namesCard);
+
+  // 5. Castle Headquarters, Army & Facilities Card
+  const maxPotchBtn = document.createElement('button');
+  maxPotchBtn.type = 'button';
+  maxPotchBtn.className = 'outline';
+  maxPotchBtn.textContent = '💰 Max Potch (999,999)';
+  maxPotchBtn.style.cssText = 'font-size: 0.72rem; padding: 0.25rem 0.55rem; margin-bottom: 0;';
+
+  const castleCard = createCard('🏰 Castle Headquarters, Army & Finances', maxPotchBtn);
+  const castleGrid = document.createElement('div');
+  castleGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem;';
+
+  let goldInputRef = null;
+
+  const baseNameInfo = getFieldInfo('base_name');
+  if (baseNameInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = baseNameInfo.val || '';
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => { baseNameInfo.obj.base_name = e.target.value; });
+    castleGrid.appendChild(createChip('Castle Name', inp));
+  }
+
+  const teamNameInfo = getFieldInfo('team_name');
+  if (teamNameInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = teamNameInfo.val || '';
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => { teamNameInfo.obj.team_name = e.target.value; });
+    castleGrid.appendChild(createChip('Army / Unit Name', inp));
+  }
+
+  const goldInfo = getFieldInfo('gold');
+  if (goldInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.max = '999999';
+    inp.value = goldInfo.val || 0;
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => { goldInfo.obj.gold = Math.max(0, parseInt(e.target.value) || 0); });
+    goldInputRef = inp;
+    castleGrid.appendChild(createChip('Potch (Gold)', inp));
+  }
+
+  const baseLvInfo = getFieldInfo('base_lv');
+  if (baseLvInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '1';
+    inp.max = '4';
+    inp.value = baseLvInfo.val || 1;
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => { baseLvInfo.obj.base_lv = parseInt(e.target.value) || 1; });
+    castleGrid.appendChild(createChip('Castle Level (1–4)', inp));
+  }
+
+  const ninkiInfo = getFieldInfo('ninki');
+  if (ninkiInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.value = ninkiInfo.val || 0;
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => {
+      ninkiInfo.obj.ninki = parseInt(e.target.value) || 0;
+    });
+    castleGrid.appendChild(createChip('Popularity (ninki)', inp));
+  }
+
+  const furoInfo = getFieldInfo('furo_info');
+  if (Array.isArray(furoInfo.val)) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.value = furoInfo.val[0] || 0;
+    inp.readOnly = true;
+    inp.style.cssText = INPUT_STYLE + ' opacity: 0.65; cursor: not-allowed;';
+    inp.title = 'Bath House Level is derived from game data';
+    castleGrid.appendChild(createChip('Bath House Level (furo_info)', inp));
+  }
+
+  const kajiInfo = getFieldInfo('kaji_lv');
+  if (kajiInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '1';
+    inp.max = '16';
+    inp.value = kajiInfo.val || 1;
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => {
+      kajiInfo.obj.kaji_lv = parseInt(e.target.value) || 1;
+    });
+    castleGrid.appendChild(createChip('Blacksmith Level (kaji_lv)', inp));
+  }
+
+  const nakamInfo = getFieldInfo('nakam_1_num');
+  if (nakamInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.value = nakamInfo.val || 0;
+    inp.readOnly = true;
+    inp.style.cssText = INPUT_STYLE + ' opacity: 0.65; cursor: not-allowed;';
+    inp.title = 'Suikoden 1 Stars count loaded from transferred save';
+    castleGrid.appendChild(createChip('S1 Stars Recruited ⭐', inp));
+  }
+
+  maxPotchBtn.addEventListener('click', () => {
+    goldInfo.obj.gold = 999999;
+    if (goldInputRef) goldInputRef.value = 999999;
+  });
+
+  castleCard.appendChild(castleGrid);
+  container.appendChild(castleCard);
+
+  // 6. Greenhill Mission Aliases Card
+  const aliasesInfo = getFieldInfo('kari_name');
+  const aliasesArr = aliasesInfo.val;
+  if (Array.isArray(aliasesArr) && aliasesArr.length > 0) {
+    const aliasesCard = createCard('🎓 Greenhill Mission Aliases (kari_name)');
+
+    const desc = document.createElement('div');
+    desc.style.cssText = 'font-size: 0.75rem; color: var(--pico-muted-color); margin-bottom: 0.6rem;';
+    desc.textContent = 'Cover names used during the Greenhill Academy infiltration mission.';
+    aliasesCard.appendChild(desc);
+
+    const aliasesGrid = document.createElement('div');
+    aliasesGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem;';
+
+    const aliasLabels = ["Hero's Alias", "Nanami's Alias", "Flik's Alias (Fixed)"];
+    for (let i = 0; i < Math.min(aliasesArr.length, 3); i++) {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = aliasesArr[i] || '';
+      inp.style.cssText = INPUT_STYLE;
+
+      if (i === 2) {
+        inp.readOnly = true;
+        inp.style.cssText += ' opacity: 0.65; cursor: not-allowed;';
+        inp.title = "Flik's alias is hardcoded/read-only in game";
+      } else {
+        inp.addEventListener('input', (e) => {
+          aliasesArr[i] = e.target.value;
+        });
+      }
+
+      aliasesGrid.appendChild(createChip(aliasLabels[i] || `Alias ${i + 1}`, inp));
+    }
+
+    aliasesCard.appendChild(aliasesGrid);
+    container.appendChild(aliasesCard);
+  }
+
+  // 7. Side-Quests, Beasts & Battle Counters Card
+  const sideCard = createCard('🎖️ Side-Quests, Beasts & Battle Counters');
+  const sideGrid = document.createElement('div');
+  sideGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.6rem;';
+
+  const gordonInfo = getFieldInfo('trade_transaction_total');
+  if (gordonInfo.val !== undefined) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display: flex; gap: 0.4rem; align-items: center;';
+
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.value = gordonInfo.val || 0;
+    inp.style.cssText = INPUT_STYLE + ' flex: 1;';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'outline';
+    btn.textContent = 'Set 50k';
+    btn.style.cssText = 'font-size: 0.7rem; padding: 0.25rem 0.5rem; margin-bottom: 0; white-space: nowrap;';
+
+    const badge = document.createElement('span');
+    badge.style.cssText = 'font-size: 0.7rem; font-weight: bold; white-space: nowrap;';
+
+    const updateGordon = () => {
+      const val = gordonInfo.obj.trade_transaction_total || 0;
+      if (val >= 50000) {
+        badge.textContent = '✓ Eligible';
+        badge.style.color = 'var(--pico-ins-color)';
+      } else {
+        badge.textContent = `${val.toLocaleString()} / 50k`;
+        badge.style.color = '#f39c12';
+      }
+    };
+
+    inp.addEventListener('input', (e) => {
+      gordonInfo.obj.trade_transaction_total = Math.max(0, parseInt(e.target.value) || 0);
+      updateGordon();
+    });
+
+    btn.addEventListener('click', () => {
+      gordonInfo.obj.trade_transaction_total = 50000;
+      inp.value = 50000;
+      updateGordon();
+    });
+
+    updateGordon();
+    wrap.appendChild(inp);
+    wrap.appendChild(btn);
+    wrap.appendChild(badge);
+    sideGrid.appendChild(createChip("Gordon's Trading Volume", wrap));
+  }
+
+  const beastsInfo = getFieldInfo('l_mon_no');
+  if (Array.isArray(beastsInfo.val)) {
+    const beastOptions = [
+      { id: 0, name: '0: None' },
+      { id: 49, name: '49: Abizboah (Kraken)' },
+      { id: 50, name: '50: Feather (Griffin)' },
+      { id: 72, name: '72: Siegfried (Unicorn)' },
+      { id: 74, name: '74: Rulodia (Kraken Wife)' },
+      { id: 79, name: '79: Chuchara (Baby Kraken)' }
+    ];
+
+    for (let slot = 0; slot < Math.min(beastsInfo.val.length, 2); slot++) {
+      const sel = document.createElement('select');
+      sel.style.cssText = INPUT_STYLE;
+
+      beastOptions.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = String(opt.id);
+        option.textContent = opt.name;
+        sel.appendChild(option);
+      });
+
+      const currentVal = beastsInfo.val[slot] || 0;
+      if (currentVal && !beastOptions.some(b => b.id === currentVal)) {
+        const extraOpt = document.createElement('option');
+        extraOpt.value = String(currentVal);
+        const charName = GameData?.CHARACTERS?.[currentVal]?.name || 'Unknown Monster';
+        extraOpt.textContent = ${currentVal}: ;
+        sel.appendChild(extraOpt);
+      }
+      sel.value = String(currentVal);
+      sel.addEventListener('change', (e) => {
+        beastsInfo.val[slot] = parseInt(e.target.value) || 0;
+      });
+
+      sideGrid.appendChild(createChip(`Listening Crystal Beast #${slot + 1}`, sel));
+    }
+  }
+
+  const nigeInfo = getFieldInfo('nige_cnt');
+  if (nigeInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.value = nigeInfo.val || 0;
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => {
+      nigeInfo.obj.nige_cnt = Math.max(0, parseInt(e.target.value) || 0);
+    });
+    sideGrid.appendChild(createChip('Escaped Battles (nige_cnt)', inp));
+  }
+
+  const suriInfo = getFieldInfo('suri_potch');
+  if (suriInfo.val !== undefined) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.value = suriInfo.val || 0;
+    inp.style.cssText = INPUT_STYLE;
+    inp.addEventListener('input', (e) => {
+      suriInfo.obj.suri_potch = Math.max(0, parseInt(e.target.value) || 0);
+    });
+    sideGrid.appendChild(createChip('Pickpocketed Potch (suri_potch)', inp));
+  }
+
+  const lukaInfo = getFieldInfo('luka_hp');
+  if (lukaInfo.val !== undefined) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display: flex; gap: 0.4rem; align-items: center;';
+
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.value = lukaInfo.val || 0;
+    inp.style.cssText = INPUT_STYLE + ' flex: 1;';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'outline';
+    btn.textContent = 'Set 0 (Instant Kill)';
+    btn.style.cssText = 'font-size: 0.7rem; padding: 0.25rem 0.5rem; margin-bottom: 0; white-space: nowrap;';
+
+    inp.addEventListener('input', (e) => {
+      lukaInfo.obj.luka_hp = Math.max(0, parseInt(e.target.value) || 0);
+    });
+
+    btn.addEventListener('click', () => {
+      lukaInfo.obj.luka_hp = 0;
+      inp.value = 0;
+    });
+
+    wrap.appendChild(inp);
+    wrap.appendChild(btn);
+    sideGrid.appendChild(createChip('Luca Blight Ambush HP (luka_hp)', wrap));
+  }
+
+  sideCard.appendChild(sideGrid);
+  container.appendChild(sideCard);
+}
+
+// ============================================================================
+// PLAY TIME & CLIVE QUEST TIMER EDITOR
+// RENDERS: Play time (Hours, Minutes, Seconds) + Live Clive Quest Milestone Badges
 // ============================================================================
 
 function createPlayTimeEditor(arr, key, updateCallback) {
   const div = document.createElement('div');
   div.className = 'json-item';
   div.id = 'play-time-editor';
+  div.style.cssText = 'display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 6px; margin-bottom: 1rem;';
+
+  const topRow = document.createElement('div');
+  topRow.style.cssText = 'display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;';
 
   const label = document.createElement('label');
   label.textContent = key;
-  div.appendChild(label);
+  label.style.cssText = 'font-weight: bold; margin-bottom: 0;';
+  topRow.appendChild(label);
 
   const fieldsContainer = document.createElement('div');
-  fieldsContainer.style.cssText = 'display: flex; gap: 1rem; align-items: center;';
+  fieldsContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;';
 
   const timeLabels = ['Hours', 'Minutes', 'Seconds'];
+  const inputs = [];
+
+  // Clive Quest Milestone Status Strip
+  const cliveBox = document.createElement('div');
+  cliveBox.style.cssText = 'display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; font-size: 0.72rem; padding-top: 0.5rem; border-top: 1px solid var(--pico-muted-border-color);';
+
+  const cliveMilestones = [
+    { name: 'Muse (<3h)', limit: 3 },
+    { name: 'Lakewest (<11h)', limit: 11 },
+    { name: 'Forest Village (<13h)', limit: 13 },
+    { name: 'Radat (<14h)', limit: 14 },
+    { name: 'Muse Hill (<15h)', limit: 15 },
+    { name: 'Sajah Finale (<20h)', limit: 20 }
+  ];
+
+  const updateCliveStatus = () => {
+    const hrs = arr[0] || 0;
+    cliveBox.innerHTML = '<strong style="margin-right: 0.25rem;">⏱️ Clive Quest Cutoffs:</strong>';
+    cliveMilestones.forEach(m => {
+      const ok = hrs < m.limit;
+      const badge = document.createElement('span');
+      badge.textContent = `${ok ? '✓' : '✗'} ${m.name}`;
+      badge.style.cssText = `padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600; background: rgba(0,0,0,0.2); color: ${ok ? 'var(--pico-ins-color)' : 'var(--pico-del-color)'};`;
+      cliveBox.appendChild(badge);
+    });
+  };
 
   timeLabels.forEach((timeLabel, i) => {
     const fieldGroup = document.createElement('div');
@@ -566,21 +1178,18 @@ function createPlayTimeEditor(arr, key, updateCallback) {
 
     const fieldLabel = document.createElement('label');
     fieldLabel.textContent = timeLabel;
-    fieldLabel.style.cssText = 'font-size: 0.85rem; margin-bottom: 0;';
+    fieldLabel.style.cssText = 'font-size: 0.8rem; margin-bottom: 0;';
     fieldGroup.appendChild(fieldLabel);
 
     const input = document.createElement('input');
     input.type = 'number';
     input.value = arr[i] || 0;
-    input.style.cssText = 'width: 80px; margin-bottom: 0;';
+    input.style.cssText = 'width: 85px; margin-bottom: 0;';
 
-    // Set min/max based on field type
     if (i === 0) {
-      // Hours: 0-999
       input.min = '0';
       input.max = '999';
     } else {
-      // Minutes and Seconds: 0-59
       input.min = '0';
       input.max = '59';
     }
@@ -589,21 +1198,34 @@ function createPlayTimeEditor(arr, key, updateCallback) {
       let value = parseFloat(e.target.value) || 0;
       const min = parseFloat(input.min);
       const max = parseFloat(input.max);
-
-      // Clamp value within min/max range
       if (value < min) value = min;
       if (value > max) value = max;
-
-      // Update the input display and data
       e.target.value = value;
       arr[i] = value;
+      if (i === 0) updateCliveStatus();
     });
-    fieldGroup.appendChild(input);
 
+    inputs.push(input);
+    fieldGroup.appendChild(input);
     fieldsContainer.appendChild(fieldGroup);
   });
 
-  div.appendChild(fieldsContainer);
+  const resetCliveBtn = document.createElement('button');
+  resetCliveBtn.type = 'button';
+  resetCliveBtn.className = 'outline';
+  resetCliveBtn.textContent = '⏱️ Set Hours = 1 (Unlock All Clive Cutoffs)';
+  resetCliveBtn.style.cssText = 'font-size: 0.75rem; padding: 0.4rem 0.75rem; margin-bottom: 0;';
+  resetCliveBtn.addEventListener('click', () => {
+    arr[0] = 1;
+    if (inputs[0]) inputs[0].value = 1;
+    updateCliveStatus();
+  });
+  fieldsContainer.appendChild(resetCliveBtn);
+
+  updateCliveStatus();
+  topRow.appendChild(fieldsContainer);
+  div.appendChild(topRow);
+  div.appendChild(cliveBox);
   return div;
 }
 
@@ -653,7 +1275,6 @@ function createGreenhillAliasesEditor(arr, key, updateCallback) {
 
   const aliasLabels = ["Hero's Alias", "Nanami's Alias", "Flik's Alias"];
 
-  // Only show first 3 items
   for (let i = 0; i < 3 && i < arr.length; i++) {
     const aliasGroup = document.createElement('div');
     aliasGroup.style.cssText = 'display: flex; gap: 1rem; align-items: center;';
@@ -668,7 +1289,6 @@ function createGreenhillAliasesEditor(arr, key, updateCallback) {
     input.value = arr[i] || '';
     input.style.cssText = 'flex: 1; margin-bottom: 0;';
 
-    // Make Flik's name (index 2) read-only
     if (i === 2) {
       input.readOnly = true;
       input.style.opacity = '0.6';
@@ -696,22 +1316,13 @@ function createGreenhillAliasesEditor(arr, key, updateCallback) {
 function createCastleEditorsCombined(data, sourceData) {
   const wrapper = document.createElement('div');
   wrapper.className = 'castle-editors-combined';
-  wrapper.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1rem; margin-top: 1rem;';
+  wrapper.style.cssText = 'margin-bottom: 1rem; margin-top: 1rem;';
 
-  // Create Greenhill Aliases section
   if (sourceData['kari_name']) {
     const aliasesSection = createGreenhillAliasesEditor(sourceData['kari_name'], 'Greenhill Mission Aliases', (newValue) => {
       sourceData['kari_name'] = newValue;
     });
     wrapper.appendChild(aliasesSection);
-  }
-
-  // Create Food Menu section
-  if (sourceData['food_menu']) {
-    const foodSection = createFoodMenuEditor(sourceData['food_menu'], 'Castle Restaurant Menu', (newValue) => {
-      sourceData['food_menu'] = newValue;
-    });
-    wrapper.appendChild(foodSection);
   }
 
   return wrapper;
@@ -720,56 +1331,59 @@ function createCastleEditorsCombined(data, sourceData) {
 
 // ============================================================================
 // FOOD MENU EDITOR
-// RENDERS: Castle Menu Orders - recipes available at the castle restaurant
+// RENDERS: Castle Restaurant Menu (food_menu) on Cooking Tab
 // ============================================================================
 
 function createFoodMenuEditor(arr, key, updateCallback) {
-  const div = document.createElement('div');
-  div.className = 'json-item';
-  div.id = 'food-menu-editor';
+  const card = document.createElement('div');
+  card.className = 'json-object food-menu-editor';
+  card.style.cssText = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
 
-  const label = document.createElement('label');
-  label.textContent = key;
-  div.appendChild(label);
+  const header = document.createElement('div');
+  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
+
+  const title = document.createElement('strong');
+  title.style.fontSize = '0.85rem';
+  title.textContent = '📋 ' + (key || 'Castle Restaurant Menu (food_menu)');
+  header.appendChild(title);
+
+  const clearAllBtn = document.createElement('button');
+  clearAllBtn.type = 'button';
+  clearAllBtn.className = 'secondary outline';
+  clearAllBtn.textContent = '✗ Clear Menu (All None)';
+  clearAllBtn.style.cssText = 'font-size: 0.72rem; padding: 0.25rem 0.55rem; margin-bottom: 0;';
+  header.appendChild(clearAllBtn);
+  card.appendChild(header);
 
   const menuContainer = document.createElement('div');
-  menuContainer.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem;';
+  menuContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem;';
 
-  // Add description
-  /* const description = document.createElement('p');
-  description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin: 0.5rem 0; font-style: italic;';
-  description.textContent = 'Recipes available to order at the castle restaurant. Select from dropdown or use 0 for empty slots.';
-  menuContainer.appendChild(description); */
+  const selects = [];
+  const slotCount = (arr && Array.isArray(arr) && arr.length > 0) ? arr.length : 7;
 
-  // Only show first 6 slots (7th is hidden/unused in-game)
-  for (let index = 0; index < Math.min(arr.length, 6); index++) {
-    const recipeId = arr[index];
+  for (let index = 0; index < slotCount; index++) {
+    const recipeId = (arr && arr[index] !== undefined) ? arr[index] : 0;
     const menuGroup = document.createElement('div');
-    menuGroup.className = 'json-item';
-    menuGroup.style.cssText = 'margin-bottom: 0;';
+    menuGroup.style.cssText = 'display: flex; flex-direction: column; gap: 0.25rem; padding: 0.4rem 0.6rem; background: rgba(0,0,0,0.15); border-radius: 4px;';
 
     const slotLabel = document.createElement('label');
-    slotLabel.textContent = `Slot ${index + 1}`;
-    slotLabel.style.cssText = 'min-width: 80px;';
+    slotLabel.textContent = `Course Slot ${index + 1}:`;
+    slotLabel.style.cssText = 'font-size: 0.73rem; font-weight: bold; margin-bottom: 0;';
     menuGroup.appendChild(slotLabel);
 
-    // Recipe ID dropdown
     const select = document.createElement('select');
-    select.style.cssText = 'margin-bottom: 0;';
+    select.style.cssText = 'margin-bottom: 0; font-size: 0.75rem; padding: 0.3rem 0.5rem;';
 
-    // Add "None" option
     const noneOption = document.createElement('option');
     noneOption.value = 0;
     noneOption.textContent = '0: None';
     select.appendChild(noneOption);
 
-    // Add all food recipes
     if (GameData && GameData.FOOD) {
       Object.entries(GameData.FOOD).forEach(([id, foodItem]) => {
         if (id !== '0') {
           const option = document.createElement('option');
           option.value = id;
-          // Extract name from object format
           const foodName = typeof foodItem === 'string' ? foodItem : (foodItem.name || `Food ${id}`);
           option.textContent = `${id}: ${foodName}`;
           select.appendChild(option);
@@ -780,16 +1394,30 @@ function createFoodMenuEditor(arr, key, updateCallback) {
     select.value = recipeId;
 
     select.addEventListener('change', (e) => {
-      const newId = parseInt(e.target.value);
-      arr[index] = newId;
+      const newId = parseInt(e.target.value) || 0;
+      if (arr) {
+        arr[index] = newId;
+        if (updateCallback) updateCallback(arr);
+      }
     });
 
+    selects.push(select);
     menuGroup.appendChild(select);
     menuContainer.appendChild(menuGroup);
   }
 
-  div.appendChild(menuContainer);
-  return div;
+  clearAllBtn.addEventListener('click', () => {
+    if (arr) {
+      for (let i = 0; i < slotCount; i++) {
+        arr[i] = 0;
+        if (selects[i]) selects[i].value = 0;
+      }
+      if (updateCallback) updateCallback(arr);
+    }
+  });
+
+  card.appendChild(menuContainer);
+  return card;
 }
 
 // ============================================================================
@@ -810,7 +1438,6 @@ function createLocationEditor(data, key, updateCallback) {
   const fieldsContainer = document.createElement('div');
   fieldsContainer.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 6px; width:100%';
 
-  // Define location fields with their sources
   const locationFields = [
     { key: 'area_no', label: 'Area Location', source: 'game_data' },
     { key: 'town_no', label: 'Town No', source: 'game_data' },
@@ -834,7 +1461,6 @@ function createLocationEditor(data, key, updateCallback) {
     input.min = '0';
     input.style.cssText = 'margin-bottom: 0;';
 
-    // Get value from appropriate source
     let value, sourceData;
     if (field.source === 'game_data') {
       sourceData = data.game_data;
@@ -861,7 +1487,7 @@ function createLocationEditor(data, key, updateCallback) {
 
 // ============================================================================
 // COOK-OFF PROGRESS EDITOR
-// RENDERS: Cook-Off Battle progress (event_flag[153-154])
+// RENDERS: Cook-Off Battle progress (event_flag[152-153])
 // ============================================================================
 
 function createCookOffProgressEditor(data, key, updateCallback) {
@@ -876,28 +1502,25 @@ function createCookOffProgressEditor(data, key, updateCallback) {
   const select = document.createElement('select');
   select.style.cssText = 'margin-bottom: 0;';
 
-  // Cook-off progress mapping: [matches won, byte152 value, byte153 value]
   const cookOffStages = [
-    [0, 0, 32],    // No matches: 0x00 0x20
-    [1, 1, 32],    // 1st match: 0x01 0x20
-    [2, 3, 32],    // 2nd match: 0x03 0x20
-    [3, 7, 32],    // 3rd match: 0x07 0x20
-    [4, 15, 32],   // 4th match: 0x0F 0x20
-    [5, 31, 32],   // 5th match: 0x1F 0x20
-    [6, 63, 32],   // 6th match: 0x3F 0x20
-    [7, 127, 32],  // 7th match: 0x7F 0x20
-    [8, 255, 32],  // 8th match: 0xFF 0x20
-    [9, 255, 33],  // 9th match: 0xFF 0x21
-    [10, 255, 35], // 10th match: 0xFF 0x23
-    [11, 255, 39], // 11th match: 0xFF 0x27
-    [12, 255, 47]  // 12th match (final): 0xFF 0x2F
+    [0, 0, 32],
+    [1, 1, 32],
+    [2, 3, 32],
+    [3, 7, 32],
+    [4, 15, 32],
+    [5, 31, 32],
+    [6, 63, 32],
+    [7, 127, 32],
+    [8, 255, 32],
+    [9, 255, 33],
+    [10, 255, 35],
+    [11, 255, 39],
+    [12, 255, 47]
   ];
 
-  // Get current values from event_flag
   const currentByte152 = data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1] || 0;
   const currentByte153 = data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2] || 32;
 
-  // Find current stage
   let currentStage = 0;
   for (let i = 0; i < cookOffStages.length; i++) {
     const [matches, b152, b153] = cookOffStages[i];
@@ -907,7 +1530,6 @@ function createCookOffProgressEditor(data, key, updateCallback) {
     }
   }
 
-  // Cook-off opponent names in order
   const opponents = [
     'Not started',
     'Match 1: Ky Yun Defeated',
@@ -924,8 +1546,7 @@ function createCookOffProgressEditor(data, key, updateCallback) {
     'Match 12: Jinkai Defeated (Complete!)'
   ];
 
-  // Populate dropdown
-  cookOffStages.forEach(([matches, b153, b154]) => {
+  cookOffStages.forEach(([matches]) => {
     const option = document.createElement('option');
     option.value = matches;
     option.textContent = opponents[matches];
@@ -937,8 +1558,6 @@ function createCookOffProgressEditor(data, key, updateCallback) {
   select.addEventListener('change', (e) => {
     const selectedMatches = parseInt(e.target.value);
     const stage = cookOffStages[selectedMatches];
-    
-    // Update event_flag bytes
     data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1] = stage[1];
     data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2] = stage[2];
   });
@@ -952,22 +1571,9 @@ editorFactories.play_time = createPlayTimeEditor;
 editorFactories.bath_level = createBathLevelEditor;
 editorFactories.cook_off_progress = createCookOffProgressEditor;
 editorFactories.greenhill_aliases = createGreenhillAliasesEditor;
-
 editorFactories.food_menu = createFoodMenuEditor;
 editorFactories.castle_editors_combined = createCastleEditorsCombined;
 editorFactories.location = createLocationEditor;
-
-// ============================================================================
-// BATTLE CHARACTERS EDITOR
-// RENDERS: Battle Characters tab with stats, runes (dropdowns), equipment (dropdowns), and accessories
-// ============================================================================
-
-/**
- * Filters runes based on character index and equipment slot
- * @param {number} characterIndex - Index of the character
- * @param {number} slotIndex - Equipment slot (0=Head, 1=Right Hand, 2=Left Hand)
- * @returns {Array} Array of allowed rune objects with id and name
- */
 
 // ============================================================================
 // ABOUT VIEWER
@@ -978,13 +1584,11 @@ function createAboutViewer(container) {
   container.innerHTML = '';
   container.classList.add('about-content');
 
-  // Show loading state
   const loading = document.createElement('p');
   loading.textContent = 'Loading README...';
   loading.style.cssText = 'color: var(--pico-muted-color); text-align: center; padding: 2rem;';
   container.appendChild(loading);
 
-  // Fetch README.md
   fetch('./README.md')
     .then(response => {
       if (!response.ok) {
@@ -993,18 +1597,12 @@ function createAboutViewer(container) {
       return response.text();
     })
     .then(markdown => {
-      // Clear loading state
       container.innerHTML = '';
-
-      // Create content wrapper
       const contentWrapper = document.createElement('div');
       contentWrapper.className = 'readme-content';
       contentWrapper.style.cssText = 'max-width: 800px; margin: 0 auto; padding: 1rem;';
-
-      // Convert markdown to HTML
       const htmlContent = markdownToHTML(markdown);
       contentWrapper.innerHTML = htmlContent;
-
       container.appendChild(contentWrapper);
     })
     .catch(error => {
@@ -1032,18 +1630,12 @@ function createChangelogViewer(container) {
       return response.text();
     })
     .then(markdown => {
-      // Clear loading state
       container.innerHTML = '';
-
-      // Create content wrapper with both tab-content and changelog-content classes
       const contentWrapper = document.createElement('div');
       contentWrapper.className = 'tab-content changelog-content';
       contentWrapper.style.cssText = 'max-width: 800px; margin: 0 auto; padding: 1rem;';
-
-      // Convert markdown to HTML
       const htmlContent = markdownToHTML(markdown);
       contentWrapper.innerHTML = htmlContent;
-
       container.appendChild(contentWrapper);
     })
     .catch(error => {
@@ -1130,7 +1722,7 @@ function createPrimitiveInput(value, key, type, updateCallback, config = {}) {
 
 function createObjectEditor(obj, key, updateCallback) {
   const details = document.createElement('details');
-  details.open = false; // Closed by default to save space
+  details.open = false;
   details.className = 'json-object';
 
   const summary = document.createElement('summary');
@@ -1156,7 +1748,6 @@ function createArrayEditor(arr, key, updateCallback) {
   summary.textContent = key + ` [${arr.length}]`;
   details.appendChild(summary);
 
-  // Create container with CSS columns for array items
   const container = document.createElement('div');
   container.className = 'three-css-col';
 
@@ -1199,11 +1790,7 @@ fileInput.addEventListener('change', (e) => {
         autoSaveToLocalStorage();
       });
       saveBtn.disabled = false;
-      
-      // Update save file indicator
       updateSaveFileIndicator(currentFileName);
-      
-      // Initial auto-save
       hasUnsavedChanges = false;
       autoSaveToLocalStorage();
     } catch (err) {
@@ -1216,26 +1803,20 @@ fileInput.addEventListener('change', (e) => {
 saveBtn.addEventListener('click', () => {
   if (!currentData) return;
 
-  // Stringify with proper Unicode escaping and CRLF line endings
   let jsonContent = JSON.stringify(currentData, (key, value) => {
-    // Ensure proper JSON serialization
     return value;
   }, 2);
   
-  // Escape non-ASCII Unicode characters (for game compatibility)
   jsonContent = jsonContent.replace(/[\u0080-\uFFFF]/g, (ch) => {
     return '\\u' + ('0000' + ch.charCodeAt(0).toString(16).toUpperCase()).slice(-4);
   });
   
-  // Normalize to CRLF (Windows) line endings
   jsonContent = jsonContent.replace(/\r?\n/g, '\r\n');
   
-  // Add UTF-8 BOM (EF BB BF)
   const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
   const textEncoder = new TextEncoder();
   const jsonBytes = textEncoder.encode(jsonContent);
   
-  // Combine BOM + content
   const fileContent = new Uint8Array(bom.length + jsonBytes.length);
   fileContent.set(bom, 0);
   fileContent.set(jsonBytes, bom.length);
@@ -1250,14 +1831,12 @@ saveBtn.addEventListener('click', () => {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   
-  // Clear auto-save since file was successfully saved
   clearAutoSave();
   showAlertDialog('File Saved', '<p>✅ <strong>File saved successfully!</strong></p><p>Auto-save backup has been cleared.</p>');
 });
 
 // Hotkey: Ctrl+D to toggle debug mode
 document.addEventListener('keydown', (e) => {
-  // Ignore keyboard shortcuts when user is typing in input/textarea/select
   const activeElement = document.activeElement;
   const isTyping = activeElement && (
     activeElement.tagName === 'INPUT' ||
@@ -1267,22 +1846,17 @@ document.addEventListener('keydown', (e) => {
   );
   
   if (isTyping && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    e.stopPropagation(); // Prevent event from bubbling
-    return; // Don't intercept normal typing
+    e.stopPropagation();
+    return;
   }
 
-  // Check for Ctrl+D (or Cmd+D on Mac)
   if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-    e.preventDefault(); // Prevent default browser behavior
-
-    // Toggle debug mode
+    e.preventDefault();
     const newDebugMode = toggleDebugMode();
-    updateStatusBar(); // Update status bar
+    updateStatusBar();
 
     if (newDebugMode) {
       console.log('Debug mode ENABLED - Loading debug file...');
-
-      // Load debug file
       loadDebugFile()
         .then(data => {
           currentData = data;
@@ -1292,20 +1866,18 @@ document.addEventListener('keydown', (e) => {
           });
           saveBtn.disabled = false;
           console.log('Debug mode: Auto-loaded save file');
-
-          // Show notification
           showAlertDialog('Debug Mode Enabled', '<p>🐛 <strong>Debug Mode ENABLED</strong></p><p>Debug save file loaded successfully!</p>');
         })
         .catch(err => {
           console.error('Debug mode: Failed to load debug file:', err);
           showAlertDialog('Debug Mode Error', `<p>❌ Debug mode enabled but failed to load file.</p><p><strong>Error:</strong> ${err.message}</p>`);
-          setDebugMode(false); // Revert if loading fails
-          updateStatusBar(); // Update status bar
+          setDebugMode(false);
+          updateStatusBar();
         });
     } else {
       console.log('Debug mode DISABLED');
       showAlertDialog('Debug Mode Disabled', '<p>🐛 <strong>Debug Mode DISABLED</strong></p><p>Page will refresh to return to normal mode.</p>').then(() => {
-        location.reload(); // Refresh the page
+        location.reload();
       });
     }
   }
@@ -1313,7 +1885,6 @@ document.addEventListener('keydown', (e) => {
 
 // Header button functionality - Data Values, About, Changelog
 document.addEventListener('DOMContentLoaded', () => {
-  // Display version number
   const versionElement = document.getElementById('app-version');
   if (versionElement) {
     versionElement.textContent = `v${APP_VERSION}`;
@@ -1324,10 +1895,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const headerChangelogBtn = document.getElementById('tab-changelog');
   const editorContainer = document.getElementById('editor-container');
   
-  // Get tab panels container (already exists in HTML)
-  const tabPanelsContainer = document.getElementById('tab-panels-container');
-  
-  // Initialize special panels storage
   if (!editorContainer._specialPanels) {
     editorContainer._specialPanels = {};
   }
@@ -1340,20 +1907,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const tabPanelsContainer = document.getElementById('tab-panels-container');
       if (!tabPanelsContainer) return;
       
-      // Deactivate all editor tab buttons
       document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
-      
-      // Deactivate other header buttons and activate this one
       if (headerAboutBtn) headerAboutBtn.classList.add('outline');
       if (headerChangelogBtn) headerChangelogBtn.classList.add('outline');
       headerDataValuesBtn.classList.remove('outline');
       
-      // Hide all children in container
       Array.from(tabPanelsContainer.children).forEach(child => {
         child.style.display = 'none';
       });
       
-      // Show or create Data Values
       let dataValuesDiv = tabPanelsContainer.querySelector('.data-values-content');
       if (!dataValuesDiv) {
         dataValuesDiv = document.createElement('div');
@@ -1370,20 +1932,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const tabPanelsContainer = document.getElementById('tab-panels-container');
       if (!tabPanelsContainer) return;
       
-      // Deactivate all editor tab buttons
       document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
-      
-      // Deactivate other header buttons and activate this one
       if (headerDataValuesBtn) headerDataValuesBtn.classList.add('outline');
       if (headerChangelogBtn) headerChangelogBtn.classList.add('outline');
       headerAboutBtn.classList.remove('outline');
       
-      // Hide all children in container
       Array.from(tabPanelsContainer.children).forEach(child => {
         child.style.display = 'none';
       });
       
-      // Show or create About
       let aboutDiv = tabPanelsContainer.querySelector('.about-content');
       if (!aboutDiv) {
         aboutDiv = document.createElement('div');
@@ -1400,20 +1957,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const tabPanelsContainer = document.getElementById('tab-panels-container');
       if (!tabPanelsContainer) return;
       
-      // Deactivate all editor tab buttons
       document.querySelectorAll('.tabs .tab-button').forEach(b => b.classList.add('outline'));
-      
-      // Deactivate other header buttons and activate this one
       if (headerDataValuesBtn) headerDataValuesBtn.classList.add('outline');
       if (headerAboutBtn) headerAboutBtn.classList.add('outline');
       headerChangelogBtn.classList.remove('outline');
       
-      // Hide all children in container
       Array.from(tabPanelsContainer.children).forEach(child => {
         child.style.display = 'none';
       });
       
-      // Show or create Changelog
       let changelogDiv = tabPanelsContainer.querySelector('.changelog-content');
       if (!changelogDiv) {
         changelogDiv = document.createElement('div');

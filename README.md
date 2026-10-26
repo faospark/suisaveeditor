@@ -8,8 +8,11 @@ A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save fi
 ## Features
 
 - **Active Party Members Editor** - Manage your 6-character battle party and 2 convoy slots with character selection dropdowns
+- **Recruitment Mods Integration** - Built-in support for "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Chuchara, Abizboah, Rulodia) honored across both Recruited Characters and Battle Characters tabs with live status synchronization and inline recruitment flags editor
 - **Key Items Editor** - Dedicated section for story-critical items (event_item array) with 2-column grid layout
-- **Battle Characters Editor** - Organized sections for General stats, Magic (MP), Weapon, Runes, Equipment, and Accessories
+- **Battle Characters Editor** - Organized sections for General stats (including Friendship `suki_value`), Magic (MP), Weapon, Runes, Equipment, Accessories, and **Advanced Archetype (`c_kotei_dat`)**
+- **Advanced Character Archetype (`c_kotei_dat`)** - Granular per-character controls for Rune Slot Unlock levels (`mon_kosu_type`), 8 Elemental Affinities (`mon_zoku_aisyo`), 8 Equipment/Rune Slot Locks (`soubi_henkou`), and 6 Equippable Gear Classes (`soubi_kanou`), plus search & bulk actions
+- **Granular Collection & Side-Quest Unlocks** - Individual checkboxes and bulk unlock/clear controls for all 40 Cooking Recipes (`food_resipi`), 12 Library Old Books (`lib_flag`), Castle Farm & Livestock flags (`hon_flag`), 256 Treasure Chests (`t_box_flag`), Richmond's Detective Investigations (`tantei_lv`), Major War Battle Units (`war_data`), Clive's Quest Time-Trial tracker (`play_time`), and Gordon's Trading Quest (`trade_transaction_total`)
 - **Magic Points (MP) System** - Visual representation with filled/empty squares (■/□) showing MP progress per level
 - **Smart Rune Filtering** - Slot-specific and character-specific rune restrictions with locked rune support
 - **Castle Editors** - Combined Greenhill Aliases and Food Menu editors in a single view
