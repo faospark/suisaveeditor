@@ -5,6 +5,24 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.6] - 2026-10-26
+
+### Changed
+
+- **Disabled Collapsible Groups in Cooking Tab (`unlocksAndQuests.js`, `main.js`)**:
+  - Converted **Known Cooking Recipes (Hai Yo)** (`food_resipi`) from a `<details>` collapsible into a permanent, non-collapsible card with header and recipe count badge.
+  - Converted **Hai Yo's Kitchen Ingredient Stock** (`food_num[0..11]`) and **Seasonings** (`taste_flag`) into permanently open, non-collapsible cards.
+  - Converted **Cook-Off Battles Won** (`cook_off_progress`) into a styled non-collapsible card matching the rest of the tab.
+  - All sections on the **Cooking** tab now remain permanently visible and accessible without collapsing or accordion state.
+
+## [1.4.5] - 2026-10-26
+
+### Fixed
+
+- **Fixed Syntax Error in General Tab (`src/main.js`)**:
+  - Corrected `extraOpt.textContent` string assignment for custom Listening Crystal Beast fallback options to eliminate `SyntaxError: Unexpected token '{'`.
+  - Synced `src/main.min.js`.
+
 ## [1.4.4] - 2026-10-26
 
 ### Changed & Fixed

@@ -1049,7 +1049,7 @@ function renderGeneralTab(container, data) {
         const extraOpt = document.createElement('option');
         extraOpt.value = String(currentVal);
         const charName = GameData?.CHARACTERS?.[currentVal]?.name || 'Unknown Monster';
-        extraOpt.textContent = ${currentVal}: ;
+        extraOpt.textContent = String(currentVal) + ': ' + String(charName);
         sel.appendChild(extraOpt);
       }
       sel.value = String(currentVal);
@@ -1492,11 +1492,21 @@ function createLocationEditor(data, key, updateCallback) {
 
 function createCookOffProgressEditor(data, key, updateCallback) {
   const container = document.createElement('div');
-  container.className = 'json-item';
+  container.className = 'json-object cook-off-progress-card';
   container.id = 'cook-off-progress-editor';
+  container.style.cssText = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
+
+  const header = document.createElement('div');
+  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
+  const title = document.createElement('strong');
+  title.style.fontSize = '0.85rem';
+  title.textContent = '🍳 Hai Yo\'s Cook-Off Battles Won (cook_off_progress)';
+  header.appendChild(title);
+  container.appendChild(header);
 
   const label = document.createElement('label');
-  label.textContent = 'Cook-Off Battles Won';
+  label.textContent = 'Current Match Status:';
+  label.style.cssText = 'font-size: 0.75rem; font-weight: bold; margin-bottom: 0.35rem;';
   container.appendChild(label);
 
   const select = document.createElement('select');

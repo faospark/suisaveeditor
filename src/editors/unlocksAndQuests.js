@@ -20,22 +20,22 @@ function getRecipeDishName(recipeNum) {
  * Granular 40 individual recipe checkboxes + search + Unlock All / Clear All
  */
 export function createKnownRecipesEditor(arr, key, updateCallback) {
-  const container = document.createElement('details');
-  container.className = 'json-object';
-  container.open = true;
+  const container = document.createElement('div');
+  container.className = 'json-object known-recipes-editor';
+  container.style.cssText = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
 
-  const summary = document.createElement('summary');
-  summary.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: bold;';
+  const header = document.createElement('div');
+  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
   const titleSpan = document.createElement('span');
   titleSpan.textContent = labelOrDefault(key, 'Known Cooking Recipes (Hai Yo)');
   const countBadge = document.createElement('span');
   countBadge.style.cssText = 'font-size: 0.8rem; color: var(--pico-primary); margin-left: auto; padding-left: 1rem;';
-  summary.appendChild(titleSpan);
-  summary.appendChild(countBadge);
-  container.appendChild(summary);
+  header.appendChild(titleSpan);
+  header.appendChild(countBadge);
+  container.appendChild(header);
 
   const body = document.createElement('div');
-  body.style.cssText = 'padding: 0.75rem 0;';
+  body.style.cssText = 'padding: 0.5rem 0;';
 
   // Toolbar: Search + Unlock All + Clear All
   const toolbar = document.createElement('div');
@@ -1198,19 +1198,11 @@ export function createFishingRecordsEditor(arr, key, updateCallback, fullData) {
  * Creates Hai Yo's Kitchen Ingredient Stock (food_num[0..11]) & Seasonings (taste_flag) editor
  */
 export function createKitchenStockEditor(arr, key, updateCallback, fullData) {
-  const details = document.createElement('details');
-  details.className = 'json-object kitchen-stock-editor';
-  details.open = true;
+  const container = document.createElement('div');
+  container.className = 'kitchen-stock-editor';
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem;';
 
-  const summary = document.createElement('summary');
-  summary.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: bold;';
-  const titleSpan = document.createElement('span');
-  titleSpan.textContent = "🍲 Hai Yo's Kitchen Ingredient Stock (food_num[0..11] — Max 3 per Ingredient)";
-  summary.appendChild(titleSpan);
-  details.appendChild(summary);
-
-  const body = document.createElement('div');
-  body.style.cssText = 'padding: 0.75rem 0; display: flex; flex-direction: column; gap: 1rem;';
+  const body = container;
 
   // Hai Yo's Kitchen Ingredient Stock (food_num[0..11])
   const foodNumArr = Array.isArray(arr) ? arr : fullData?.game_data?.food_num;
@@ -1402,8 +1394,7 @@ export function createKitchenStockEditor(arr, key, updateCallback, fullData) {
     body.appendChild(tasteCard);
   }
 
-  details.appendChild(body);
-  return details;
+  return container;
 }
 
 function labelOrDefault(key, fallback) {

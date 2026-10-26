@@ -2,7 +2,7 @@
 // Enables offline functionality by caching all app assets
 
 // Version must match APP_VERSION in src/config/constants.js
-const APP_VERSION = '1.4.4';
+const APP_VERSION = '1.4.6';
 const CACHE_NAME = `suikohd-editor-v${APP_VERSION}`;
 
 // Install event - cache all assets
