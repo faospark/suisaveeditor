@@ -92,6 +92,7 @@ const GameData = {
     81: { name: "Jowy 2", attrs: ["C", "L", "M"] },
     82: { name: "McDohl", attrs: ["C", "L", "M"] },
     83: { name: "Milie Sans Bonapart", attrs: ["C", "V", "F", "Y"] },
+    84: { name: "Bonaparte", attrs: ["Z"] },
     85: { name: "Apple", attrs: ["NP"] },
     86: { name: "Templton", attrs: ["NP"] },
     87: { name: "Kiba", attrs: ["NP"] },
@@ -419,7 +420,7 @@ const GameData = {
 
   FOOD: {
     // use_cnt >= 99 // 1 to 80 : use_cnt = 101 // 81 to 160 : use_count = 102 // 161 to 240 : use_cnt = 10
-    0: { name: "None", attrs: [105] },
+    0: { name: "None", attrs: [0] },
     1: { name: "Tamago-Yaki", attrs: [101] },
     2: { name: "Sweet Omelet", attrs: [101] },
     3: { name: "Adult Fried Egg", attrs: [101] },
@@ -499,7 +500,7 @@ const GameData = {
     77: { name: "Mayonnaise Pie", attrs: [102] },
     78: { name: "Chili Pie", attrs: [102] },
     79: { name: "Simmered Fish", attrs: [102] },
-    80: { name: "Simmered Carp", attrs: [103] },
+    80: { name: "Simmered Carp", attrs: [102] },
     81: { name: "Tai-Chili Style", attrs: [103] },
     82: { name: "Sole", attrs: [103] },
     83: { name: "Fish with Sauce", attrs: [103] },
@@ -521,7 +522,7 @@ const GameData = {
     99: { name: "Nanami Cake", attrs: [103] },
     100: { name: "Black Cake", attrs: [103] },
     101: { name: "Cheesecake", attrs: [103] },
-    103: { name: "Fire Cake", attrs: [103] },
+    102: { name: "Fire Cake", attrs: [103] },
     103: { name: "Croquettes", attrs: [103] },
     104: { name: "Sweet Croquettes", attrs: [103] },
     105: { name: "Eilie Croquettes", attrs: [103] },
@@ -871,9 +872,9 @@ const GameData = {
   },
 
   // Beast/Monster characters that cannot equip any armor or accessories
-  BEASTS: [26, 42, 48, 49, 50, 72, 74, 75, 76, 77, 78, 79],
+  BEASTS: [26, 42, 48, 49, 50, 72, 74, 75, 76, 77, 78, 79, 84],
   // 42: Gadget, 48: Mukumuku, 49: Abizboah, 50: Feather, 72: Siegfried,
-  // 74: Rulodia, 75: Makumaku, 76: Mikumiku, 77: Mekumeku, 78: Mokumoku, 79: Chuchara
+  // 74: Rulodia, 75: Makumaku, 76: Mikumiku, 77: Mekumeku, 78: Mokumoku, 79: Chuchara, 84: Bonaparte
 };
 
 export default GameData;
