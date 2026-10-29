@@ -14,5 +14,6 @@
   "12": "sw.min.js",
   "13": "gamedata.js",
   "14": "guardianDeity.js",
-  "15": "gamedata.min.js"
+  "15": "gamedata.min.js",
+  "16": "Symbol Indexer (`tools\\sym.bat`) — use BEFORE grep"
 }
