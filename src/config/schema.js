@@ -195,10 +195,10 @@ export const FIELD_CONFIG = {
     warning: '⚠️ Experimental feature - Room items are unused in the game. Purpose unknown. Edit at your own risk.'
   },
 
-  // Bath Tab
+  // Castle Facility: Bath House Items
   'furo_item': {
-    label: 'Bath Items',
-    group: 'Bath',
+    label: 'Castle Bath House Items',
+    group: 'Castle',
     renderer: 'bath_items',
     path: 'game_data'
   },
@@ -321,10 +321,9 @@ export const EDITOR_GROUPS = {
   'Recruited Characters': ['chara_flag'],
   'Party Bag': ['event_item', 'party_item'],
   'Warehouse': ['base_item', 'room_item'],
-  'Bath': ['furo_item'],
   'Cooking': ['cook_off_progress', 'food_num', 'food_menu', 'food_resipi'],
   'Investigations': ['tantei_lv'],
-  'Castle': ['parts_no', 'lib_flag', 'hon_flag', 'tsuri_data'],
+  'Castle': ['parts_no', 'furo_item', 'lib_flag', 'hon_flag', 'tsuri_data'],
   'Experimental': ['hon_flag_raw', 't_box_flag', 'war_data']
 };
 
@@ -335,7 +334,6 @@ export const EDITOR_GROUPS = {
 export const GROUP_PATHS = {
   'General': null,
   'Warehouse': 'game_data',
-  'Bath': 'game_data',
   'Party Bag': 'party_data',
   'Recruited Characters': null,
   'Battle Characters': 'chara_data',

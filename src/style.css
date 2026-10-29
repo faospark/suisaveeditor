@@ -1012,3 +1012,245 @@ input[type=search] {
     padding-left: 2.1rem !important;
     padding-inline-start: 2.1rem !important;
 }
+
+/* 3-Column Item Layout for Inventory & Warehouse */
+.items-3col-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 1200px) {
+    .items-3col-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .items-3col-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.item-slot-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.5rem;
+    background: var(--pico-card-background-color, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--pico-muted-border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 6px;
+    font-size: 0.75rem;
+    min-height: 38px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.item-slot-chip:hover {
+    border-color: var(--pico-primary);
+}
+
+.item-slot-chip.empty-slot {
+    opacity: 0.65;
+}
+
+.item-slot-chip.empty-slot:hover {
+    opacity: 1;
+}
+
+/* Character Portrait Wrapper */
+.character-portrait-wrapper {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.character-portrait-wrapper:hover {
+    transform: scale(1.03);
+    border-color: var(--pico-primary) !important;
+}
+
+/* Magic MP Levels alignment grid */
+.mp-level-row {
+    display: grid;
+    grid-template-columns: 56px 48px 12px 48px auto;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.4rem;
+}
+
+.mp-level-row input[type="number"] {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    padding: 0.2rem 0.25rem !important;
+    font-size: 0.78rem !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    flex: none !important;
+}
+
+.mp-level-row .mp-slash {
+    font-weight: bold;
+    text-align: center;
+    color: var(--pico-muted-color);
+    font-size: 0.8rem;
+    user-select: none;
+}
+
+.mp-level-row .mp-squares {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.95rem;
+    line-height: 1;
+    user-select: none;
+}
+
+.mp-level-row .mp-square {
+    display: inline-block;
+    width: 13px;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Castle Bath House Layout */
+@media (max-width: 768px) {
+    .bath-paintings-grid,
+    .bath-ornaments-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Recruitment Info 2-Column Grid */
+@media (max-width: 768px) {
+    .recruitment-info-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ==========================================================================
+   Recruitment Cards UI
+   ========================================================================== */
+
+.recruitment-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.recruitment-card {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.recruitment-card:hover {
+    border-color: var(--pico-primary);
+    transform: translateY(-1px);
+}
+
+.recruitment-card.is-recruited {
+    border-color: rgba(46, 204, 113, 0.35);
+    background: rgba(46, 204, 113, 0.05);
+}
+
+.recruitment-card.is-recruited:hover {
+    border-color: rgba(46, 204, 113, 0.75);
+}
+
+.recruitment-card.is-spoke-to {
+    border-color: rgba(52, 152, 219, 0.45);
+    background: rgba(52, 152, 219, 0.06);
+}
+
+.recruitment-card.is-spoke-to:hover {
+    border-color: rgba(52, 152, 219, 0.85);
+}
+
+.recruitment-card.not-recruited {
+    opacity: 0.82;
+}
+
+.recruitment-card.not-recruited:hover {
+    opacity: 1;
+}
+
+.recruitment-portrait-wrapper {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--pico-muted-border-color);
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recruitment-portrait-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.recruitment-card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.recruitment-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.recruitment-char-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--pico-color);
+}
+
+.recruitment-char-name strong {
+    color: var(--pico-primary);
+}
+
+.recruitment-status-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.recruitment-card-controls {
+    display: flex;
+    align-items: center;
+}
+
+.recruitment-select {
+    margin-bottom: 0 !important;
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+    height: auto !important;
+    width: 100%;
+    border-radius: 4px;
+}
+

@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Recruitment Portrait Cards Grid Overhaul (`recruitment.js`, `style.css`)**:
+  - Replaced the legacy single-column HTML `<table>` layout with responsive portrait cards (`.recruitment-cards-grid`).
+  - **Visual Portrait Cards (`.recruitment-card`)**:
+    - Displays 52×52px character portraits (`./image/portraits/fp_###.png`) with automatic fallback handling.
+    - Card header shows character ID and name (`#ID: Name`) alongside color-coded dynamic recruitment status badges (`✓ Recruited`, `✓ Recruited Via SFix`, `✓ Recruited Via Kraken`, `💬 Spoke To`, `📋 On Leave`, `☠ Deceased`, `🔒 Event Locked`, `✗ Not Recruited`).
+    - Replaced raw numeric text input with a stylized `<select class="recruitment-select">` dropdown supporting standard flags (`0`, `1`, `70`, `71`, `86`, `212`, `213`) while preserving custom hex/decimal values.
+    - Active recruited cards highlight with green borders (`.is-recruited`), contacted characters highlight with blue borders (`.is-spoke-to`), while non-recruited cards remain subtly dimmed.
+  - **Live Filter & Search Toolbar (`.recruitment-toolbar`)**:
+    - Real-time search filter matching character name or numeric ID with instant responsiveness.
+    - Quick status filter dropdown (`All Characters`, `✓ Recruited Only`, `💬 Spoke To Only`, `✗ Not Recruited Only`).
+    - Live star counter badge (`⭐ Recruited: X / Total`) that dynamically recalculates on every change.
+
+- **Playable Character Portraits (`battleCharacters.js`, `style.css`)**:
+  - Integrated local 400x400 HD character portraits (`./image/portraits/fp_###.png`) into Column 1 (General) of each character's editor card.
+  - Positioned the portrait side-by-side with Level and Experience inputs in a dedicated top flex row, perfectly balancing the vertical space.
+  - Styled with rounded corners, subtle dark drop shadows, and hover transitions. Gracefully hides without disrupting layout if an image fails to load.
+
 - **Clive Quest Milestones & Completion Flag Tracking (`main.js`, `constants.js`)**:
   - Upgraded the **Play Time & Clive Quest Tracker** to evaluate both in-game playtime hours and event completion flags (`event_flag[94]`).
   - **8 Full Story Milestones Tracked**:
@@ -42,6 +59,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Toggle for whether the statue has been inspected and Jude's blessing collected at the Castle Shrine (`vk33`).
 
 ### Changed
+
+- **Integrated Bath House into Castle Tab (`schema.js`, `bathItems.js`, `style.css`)**:
+  - Integrated Dunan Castle Bath House items (`furo_item[0..7]`) into the **Castle** tab alongside the Guardian Deity, Library Books, Farm, and Fishing facilities.
+  - Eliminated the redundant standalone "Bath" tab from the main navigation bar.
+  - Redesigned `createBathItemsEditor` to match the Castle tab card design:
+    - **Paintings** (Slots 2 & 5): Symmetrically arranged in a 2-column grid (`.bath-paintings-grid`).
+    - **Ornaments** (Girl's Side: Slots 0, 1, 3; Boy's Side: Slots 4, 6, 7): Arranged side-by-side in a responsive 2-column card grid (`.bath-ornaments-grid`).
+    - Added change callback triggers to ensure instant save state indicator updates on edits.
+
+- **Recruitment Flag 2-Column Info & Warning Grid (`recruitment.js`, `style.css`)**:
+  - Replaced the stacked description with a 2-column layout (`.recruitment-info-grid`):
+    - **Status Values Column (240px)**: Compact list of recruitment status codes (`1`, `70`, `71`, `86`, `212`, `213`) with representative icons and descriptions.
+    - **Warning Column (1fr)**: Amber-accented callout box detailing the SuikodenFix & Kraken Patch guidance for multi-beast and dual-ninja recruitments.
+    - Includes responsive breakpoint collapsing to a single column on screens under 768px.
+
+- **Recruited Characters Mod Settings Card Styling (`recruitment.js`)**:
+  - Unified the "Recruitment Mods that you have on" card in the Recruited Characters tab to identically match the design in the Battle Characters tab.
+  - Applied `.recruitment-mods-section` styling with dark semi-transparent card background, border, header note, and compact label layout.
+  - Added bidirectional event synchronization via `recruitment-mods-changed` so toggling Better Leona or Kraken options instantly updates both tabs without a reload.
+
+- **Strict Grid Alignment for Magic MP Levels (`battleCharacters.js`, `style.css`)**:
+  - Replaced the flexbox layout in `Magic (MP Levels)` with a dedicated 5-column CSS grid (`.mp-level-row` with `56px 48px 12px 48px auto`).
+  - Locks all 4 MP level rows into straight vertical columns:
+    - Level label column (`56px`)
+    - Current MP input column (`48px`)
+    - Centered slash separator column (`12px`)
+    - Max MP capacity input column (`48px`)
+    - Clickable MP squares (`0` button + 9 fixed-width square indicators)
+  - Prevents input stretching and horizontal drift caused by differing square glyph widths across rows.
+
+- **3-Column Vertical-Count Inventory & Warehouse Grid (`tableEditor.js`, `style.css`)**:
+  - Replaced the single-column HTML `<table>` layout for Party Bag (`party_item`, 30 slots), Warehouse (`base_item`, 60 slots), and Room Items (`room_item`, 8 slots) with a responsive 3-column chip grid (`.items-3col-grid`).
+  - Implemented **vertical (column-first) slot counting**:
+    - **Party Bag (30 slots)**: Column 1 = Slots 1–10, Column 2 = Slots 11–20, Column 3 = Slots 21–30.
+    - **Warehouse (60 slots)**: Column 1 = Slots 1–20, Column 2 = Slots 21–40, Column 3 = Slots 41–60.
+    - **Room Items (8 slots)**: Column 1 = Slots 1–3, Column 2 = Slots 4–6, Column 3 = Slots 7–8.
+  - Each column features a distinct column header indicating the slot range (e.g. `📦 Slots 1–10 (10 slots)`).
+  - **Slimmed-down Slot Chips (`.item-slot-chip`)**:
+    - Removed bulky standalone numeric inputs for `item_no` and `use_cnt`.
+    - Compact representation showing Slot badge (`#01`), `[🔍 Pick]` button, `[✕]` clear button, bold item name, and inline metadata (`#ID · use: X · Type`). Empty slots display dimmed `Empty Slot` with clear button hidden.
+  - **Enhanced Item Picker Modal (`createItemPickerDialog`)**:
+    - Auto-detects and pre-selects the item category based on the current slot's `use_cnt`.
+    - Added instant real-time search filter by item name or ID.
+    - Added an `✕ Clear Slot` button in the dialog footer alongside `Cancel`.
+  - Converted the static item type explanation into a compact collapsible `<details>` guide.
 
 - **Streamlined Battle Characters Accessories UI (`battleCharacters.js`)**:
   - Replaced the standalone numeric `<input>` fields (`item_no` and `use_cnt`) with compact inline text displaying item name, ID, and usage count (e.g. `Power Ring (#82 · use_cnt: 16)` or `None (Empty)`).

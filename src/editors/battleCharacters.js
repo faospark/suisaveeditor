@@ -621,15 +621,91 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
     generalContainer.appendChild(generalHeader);
 
     const generalInputs = {};
-    const generalFields = [
-      { prop: 'level', label: 'Level' },
-      { prop: 'exp', label: 'Experience' },
+
+    // Top block: Portrait on the left, Level & Experience stacked on the right
+    const portraitRow = document.createElement('div');
+    portraitRow.className = 'character-portrait-row';
+    portraitRow.style.cssText = 'display: flex; gap: 0.65rem; align-items: stretch; margin-bottom: 0.5rem;';
+
+    // Portrait image wrapper
+    const portraitWrapper = document.createElement('div');
+    portraitWrapper.className = 'character-portrait-wrapper';
+    portraitWrapper.style.cssText = 'width: 74px; height: 74px; min-width: 74px; min-height: 74px; border-radius: 6px; overflow: hidden; border: 1px solid var(--pico-muted-border-color); background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2);';
+
+    const portraitImg = document.createElement('img');
+    const portraitNum = String(index).padStart(3, '0');
+    portraitImg.src = `./image/portraits/fp_${portraitNum}.png`;
+    portraitImg.alt = charName;
+    portraitImg.title = `${charName} (#${index})`;
+    portraitImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block;';
+    portraitImg.onerror = () => {
+      portraitWrapper.style.display = 'none';
+    };
+    portraitWrapper.appendChild(portraitImg);
+    portraitRow.appendChild(portraitWrapper);
+
+    // Right side: Level & Experience container
+    const lvExpContainer = document.createElement('div');
+    lvExpContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 0.35rem; min-width: 0;';
+
+    // Level
+    if (charData['level'] !== undefined) {
+      const lvDiv = document.createElement('div');
+      lvDiv.className = 'json-item';
+      lvDiv.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0;';
+      const lvLabel = document.createElement('label');
+      lvLabel.textContent = 'Level';
+      lvLabel.style.cssText = 'font-size: 0.75rem; margin-bottom: 0; font-weight: 500; min-width: 60px;';
+      lvDiv.appendChild(lvLabel);
+
+      const lvInput = document.createElement('input');
+      lvInput.type = 'number';
+      lvInput.min = '1';
+      lvInput.max = '99';
+      lvInput.value = charData['level'];
+      lvInput.style.cssText = 'margin-bottom: 0; font-size: 0.75rem; padding: 0.2rem 0.4rem; flex: 1; text-align: center;';
+      lvInput.addEventListener('input', (e) => {
+        charData['level'] = parseFloat(e.target.value) || 0;
+      });
+      generalInputs['level'] = lvInput;
+      lvDiv.appendChild(lvInput);
+      lvExpContainer.appendChild(lvDiv);
+    }
+
+    // Experience
+    if (charData['exp'] !== undefined) {
+      const expDiv = document.createElement('div');
+      expDiv.className = 'json-item';
+      expDiv.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0;';
+      const expLabel = document.createElement('label');
+      expLabel.textContent = 'Experience';
+      expLabel.style.cssText = 'font-size: 0.75rem; margin-bottom: 0; font-weight: 500; min-width: 60px;';
+      expDiv.appendChild(expLabel);
+
+      const expInput = document.createElement('input');
+      expInput.type = 'number';
+      expInput.min = '0';
+      expInput.value = charData['exp'];
+      expInput.style.cssText = 'margin-bottom: 0; font-size: 0.75rem; padding: 0.2rem 0.4rem; flex: 1; text-align: center;';
+      expInput.addEventListener('input', (e) => {
+        charData['exp'] = parseFloat(e.target.value) || 0;
+      });
+      generalInputs['exp'] = expInput;
+      expDiv.appendChild(expInput);
+      lvExpContainer.appendChild(expDiv);
+    }
+
+    portraitRow.appendChild(lvExpContainer);
+    generalContainer.appendChild(portraitRow);
+
+    // Remaining General fields: Max HP, Current HP, Killed Enemies
+    const remainingGeneralFields = [
       { prop: 'max_hp', label: 'Max HP' },
       { prop: 'now_hp', label: 'Current HP' },
       { prop: 'todome', label: 'Killed Enemies' }
     ];
 
-    generalFields.forEach(field => {
+    remainingGeneralFields.forEach(field => {
       if (charData[field.prop] !== undefined) {
         const fieldDiv = document.createElement('div');
         fieldDiv.className = 'json-item';
@@ -743,12 +819,12 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
       charData['mp'].forEach((rawByte, i) => {
         if (i < MP_LEVELS) {
           const mpDiv = document.createElement('div');
-          mpDiv.className = 'json-item mp-level';
-          mpDiv.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.45rem;';
+          mpDiv.className = 'mp-level-row';
+          mpDiv.style.cssText = 'display: grid; grid-template-columns: 56px 48px 12px 48px auto; align-items: center; gap: 0.45rem; margin-bottom: 0.4rem;';
 
           const label = document.createElement('label');
           label.textContent = mpLevelLabels[i];
-          label.style.cssText = 'min-width: 58px; margin-bottom: 0; font-size: 0.8rem;';
+          label.style.cssText = 'margin-bottom: 0; font-size: 0.8rem; font-weight: 500; white-space: nowrap;';
           mpDiv.appendChild(label);
 
           let curMp = Math.min(9, (rawByte >> 4) & 0x0F);
@@ -761,11 +837,12 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
           curInput.max = '9';
           curInput.value = curMp;
           curInput.title = 'Current MP charges (0–9)';
-          curInput.style.cssText = 'width: 52px; margin-bottom: 0; padding: 0.2rem 0.35rem; font-size: 0.78rem; text-align: center;';
+          curInput.style.cssText = 'width: 100%; margin-bottom: 0; padding: 0.2rem 0.25rem; font-size: 0.78rem; text-align: center; box-sizing: border-box; flex: none;';
 
           const slashSpan = document.createElement('span');
+          slashSpan.className = 'mp-slash';
           slashSpan.textContent = '/';
-          slashSpan.style.fontWeight = 'bold';
+          slashSpan.style.cssText = 'font-weight: bold; text-align: center; color: var(--pico-muted-color); font-size: 0.8rem; user-select: none;';
 
           // Max MP input (0-9)
           const maxInput = document.createElement('input');
@@ -774,7 +851,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
           maxInput.max = '9';
           maxInput.value = maxMp;
           maxInput.title = 'Max MP capacity (0–9)';
-          maxInput.style.cssText = 'width: 52px; margin-bottom: 0; padding: 0.2rem 0.35rem; font-size: 0.78rem; text-align: center;';
+          maxInput.style.cssText = 'width: 100%; margin-bottom: 0; padding: 0.2rem 0.25rem; font-size: 0.78rem; text-align: center; box-sizing: border-box; flex: none;';
 
           // Clickable 0 button + 9 MP squares
           const squaresDiv = document.createElement('div');
@@ -803,13 +880,11 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
 
             for (let sq = 1; sq <= MP_SQUARES_PER_LEVEL; sq++) {
               const square = document.createElement('span');
+              square.className = 'mp-square';
               const isFilled = sq <= curMp;
               const isWithinMax = sq <= maxMp;
               square.textContent = isFilled ? '■' : '□';
-              square.style.cursor = 'pointer';
-              square.style.color = isFilled
-                ? 'var(--pico-primary)'
-                : (isWithinMax ? '#f39c12' : 'var(--pico-muted-color)');
+              square.style.cssText = `display: inline-block; width: 13px; text-align: center; cursor: pointer; color: ${isFilled ? 'var(--pico-primary)' : (isWithinMax ? '#f39c12' : 'var(--pico-muted-color)')};`;
               square.title = `Click to set ${mpLevelLabels[i]} to ${sq}/${sq} MP (byte: ${(sq << 4) | sq})`;
               square.addEventListener('click', () => syncMpByte(sq, Math.max(sq, maxMp < sq ? sq : sq)));
               squaresDiv.appendChild(square);

@@ -3,8 +3,9 @@ import { EDITOR_LABELS } from '../config/schema.js';
 
 /**
  * Creates a smart item picker modal dialog
- * Allows user to select item type first, then choose specific item
- * Automatically sets both item_no and use_cnt
+ * Allows user to select item type first, search/filter, and choose a specific item.
+ * Automatically sets both item_no and use_cnt.
+ * Includes a search filter and "✕ Clear Slot" button.
  */
 function createItemPickerDialog(currentItemNo, currentUseCnt, onSelect) {
   const dialog = document.createElement('dialog');
@@ -44,8 +45,18 @@ function createItemPickerDialog(currentItemNo, currentUseCnt, onSelect) {
     { value: '80', label: 'Base/Warehouse', desc: 'use_cnt: 80' },
     { value: '101', label: 'Food Items', desc: 'use_cnt: 101-106' }
   ];
+
+  // Determine initial type selection from current slot use_cnt
+  let initialType = '0';
+  if (currentUseCnt === 16) initialType = '16';
+  else if (currentUseCnt === 32) initialType = '32';
+  else if (currentUseCnt === 48) initialType = '48';
+  else if (currentUseCnt === 64) initialType = '64';
+  else if (currentUseCnt === 80) initialType = '80';
+  else if (currentUseCnt >= 99) initialType = '101';
+  else initialType = '0';
   
-  let selectedType = null;
+  let selectedType = initialType;
   const checkboxes = [];
   
   itemTypes.forEach(type => {
@@ -55,6 +66,7 @@ function createItemPickerDialog(currentItemNo, currentUseCnt, onSelect) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = type.value;
+    checkbox.checked = (type.value === initialType);
     checkbox.style.cssText = 'margin: 0.25rem 0 0 0; flex-shrink: 0;';
     checkboxes.push(checkbox);
     
@@ -76,19 +88,28 @@ function createItemPickerDialog(currentItemNo, currentUseCnt, onSelect) {
         updateItemList(selectedType);
       } else {
         selectedType = null;
-        listContainer.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color); font-size: 0.75rem;">Select an item type</p>';
+        updateItemList(null);
       }
     });
   });
   
   mainContainer.appendChild(typeContainer);
   
-  // Right side - Item List Container (scrollable)
+  // Right side - Search + Item List Container (scrollable)
+  const rightColumn = document.createElement('div');
+  rightColumn.style.cssText = 'display: flex; flex-direction: column; overflow: hidden;';
+
+  const searchInput = document.createElement('input');
+  searchInput.type = 'search';
+  searchInput.placeholder = 'Search by name or ID...';
+  searchInput.style.cssText = 'font-size: 0.75rem; padding: 0.35rem 0.6rem; margin-bottom: 0.5rem;';
+  rightColumn.appendChild(searchInput);
+
   const listContainer = document.createElement('div');
-  listContainer.style.cssText = 'overflow-y: auto; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; padding: 0.5rem; font-size: 0.75rem;';
-  listContainer.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color); font-size: 0.75rem;">Select an item type</p>';
-  mainContainer.appendChild(listContainer);
+  listContainer.style.cssText = 'overflow-y: auto; flex: 1; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; padding: 0.5rem; font-size: 0.75rem;';
+  rightColumn.appendChild(listContainer);
   
+  mainContainer.appendChild(rightColumn);
   content.appendChild(mainContainer);
   
   // Helper to extract name from object/string format
@@ -100,121 +121,47 @@ function createItemPickerDialog(currentItemNo, currentUseCnt, onSelect) {
   
   // Helper to get use_cnt for food items based on item_no
   const getFoodUseCnt = (itemNo) => {
-    const foodItem = GameData.FOOD[itemNo];
+    const foodItem = GameData.FOOD?.[itemNo];
     if (foodItem && foodItem.attrs && foodItem.attrs.length > 0) {
       return foodItem.attrs[0];
     }
     return 101; // Default
   };
-  
-  // Build item list based on selected type
-  const updateItemList = (selectedType) => {
+
+  let allLoadedItems = [];
+
+  const renderItemsList = (itemsToRender) => {
     listContainer.innerHTML = '';
-    
-    if (!selectedType) {
-      listContainer.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color); font-size: 0.75rem;">Select an item type</p>';
+
+    if (!itemsToRender || itemsToRender.length === 0) {
+      listContainer.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color); font-size: 0.75rem; margin: 1rem 0;">No items found</p>';
       return;
     }
-    
-    let items = [];
-    let useCnt = parseInt(selectedType);
-    
-    // Gather items based on type
-    if (selectedType === '0') {
-      // Regular Items
-      Object.entries(GameData.ITEMS).forEach(([id, item]) => {
-        const name = extractName(item);
-        if (name) items.push({ id: parseInt(id), name, useCnt: item.attrs?.[0] || 0 });
-      });
-    } else if (selectedType === '16') {
-      // Equipment - combine all equipment types
-      // Use a Set to track IDs and avoid duplicates (especially ID 0)
-      const seenIds = new Set();
-      
-      Object.entries(GameData.HELMET).forEach(([id, item]) => {
-        const name = extractName(item);
-        const itemId = parseInt(id);
-        if (name && !seenIds.has(itemId)) {
-          items.push({ id: itemId, name: itemId === 0 ? name : `[Helmet] ${name}`, useCnt: 16 });
-          seenIds.add(itemId);
-        }
-      });
-      Object.entries(GameData.ARMOR).forEach(([id, item]) => {
-        const name = extractName(item);
-        const itemId = parseInt(id);
-        if (name && !seenIds.has(itemId)) {
-          items.push({ id: itemId, name: `[Armor] ${name}`, useCnt: 16 });
-          seenIds.add(itemId);
-        }
-      });
-      Object.entries(GameData.SHIELD).forEach(([id, item]) => {
-        const name = extractName(item);
-        const itemId = parseInt(id);
-        if (name && !seenIds.has(itemId)) {
-          items.push({ id: itemId, name: `[Shield] ${name}`, useCnt: 16 });
-          seenIds.add(itemId);
-        }
-      });
-      Object.entries(GameData.OTHER_EQUIP_GEAR).forEach(([id, item]) => {
-        const name = extractName(item);
-        const itemId = parseInt(id);
-        if (name && !seenIds.has(itemId)) {
-          items.push({ id: itemId, name: `[Accessory] ${name}`, useCnt: 16 });
-          seenIds.add(itemId);
-        }
-      });
-    } else if (selectedType === '32') {
-      // Runes
-      Object.entries(GameData.RUNES).forEach(([id, item]) => {
-        const name = extractName(item);
-        if (name) items.push({ id: parseInt(id), name, useCnt: 32 });
-      });
-    } else if (selectedType === '48') {
-      // Farming
-      Object.entries(GameData.FARMING).forEach(([id, item]) => {
-        const name = extractName(item);
-        if (name) items.push({ id: parseInt(id), name, useCnt: 48 });
-      });
-    } else if (selectedType === '64') {
-      // Trade
-      Object.entries(GameData.TRADE).forEach(([id, item]) => {
-        const name = extractName(item);
-        if (name) items.push({ id: parseInt(id), name, useCnt: 64 });
-      });
-    } else if (selectedType === '80') {
-      // Base/Warehouse
-      Object.entries(GameData.BASE_ITEM).forEach(([id, item]) => {
-        const name = extractName(item);
-        if (name) items.push({ id: parseInt(id), name, useCnt: 80 });
-      });
-    } else if (selectedType === '101') {
-      // Food Items
-      Object.entries(GameData.FOOD).forEach(([id, item]) => {
-        const name = extractName(item);
-        if (name && id !== '0') {
-          const foodUseCnt = getFoodUseCnt(parseInt(id));
-          items.push({ id: parseInt(id), name, useCnt: foodUseCnt });
-        }
-      });
-    }
-    
-    // Sort by ID
-    items.sort((a, b) => a.id - b.id);
-    
-    // Create selectable list
-    items.forEach(item => {
+
+    itemsToRender.forEach(item => {
       const itemDiv = document.createElement('div');
-      itemDiv.style.cssText = 'padding: 0.4rem; margin: 0.2rem 0; cursor: pointer; border-radius: 4px; border: 1px solid transparent; font-size: 0.75rem;';
-      itemDiv.innerHTML = `<strong>${item.id}:</strong> ${item.name} <span style="color: var(--pico-muted-color); font-size: 0.7rem;">(use_cnt: ${item.useCnt})</span>`;
+      itemDiv.style.cssText = 'padding: 0.4rem; margin: 0.2rem 0; cursor: pointer; border-radius: 4px; border: 1px solid transparent; font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center;';
+      
+      const isCurrent = (item.id === currentItemNo) && (item.useCnt === currentUseCnt || selectedType === '16');
+      if (isCurrent) {
+        itemDiv.style.backgroundColor = 'rgba(59, 130, 246, 0.15)';
+        itemDiv.style.borderColor = 'var(--pico-primary)';
+      }
+
+      itemDiv.innerHTML = `<span><strong>${item.id}:</strong> ${item.name}</span> <span style="color: var(--pico-muted-color); font-size: 0.7rem;">(use: ${item.useCnt})</span>`;
       
       itemDiv.addEventListener('mouseenter', () => {
-        itemDiv.style.backgroundColor = 'var(--pico-primary-background)';
-        itemDiv.style.borderColor = 'var(--pico-primary)';
+        if (!isCurrent) {
+          itemDiv.style.backgroundColor = 'var(--pico-primary-background)';
+          itemDiv.style.borderColor = 'var(--pico-primary)';
+        }
       });
       
       itemDiv.addEventListener('mouseleave', () => {
-        itemDiv.style.backgroundColor = '';
-        itemDiv.style.borderColor = 'transparent';
+        if (!isCurrent) {
+          itemDiv.style.backgroundColor = '';
+          itemDiv.style.borderColor = 'transparent';
+        }
       });
       
       itemDiv.addEventListener('click', () => {
@@ -225,26 +172,148 @@ function createItemPickerDialog(currentItemNo, currentUseCnt, onSelect) {
       
       listContainer.appendChild(itemDiv);
     });
-    
-    if (items.length === 0) {
-      listContainer.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color); font-size: 0.75rem;">No items found</p>';
+  };
+
+  const applySearchFilter = () => {
+    const query = searchInput.value.trim().toLowerCase();
+    if (!query) {
+      renderItemsList(allLoadedItems);
+    } else {
+      const filtered = allLoadedItems.filter(it => 
+        String(it.id).includes(query) || it.name.toLowerCase().includes(query)
+      );
+      renderItemsList(filtered);
     }
   };
+
+  searchInput.addEventListener('input', applySearchFilter);
   
-  // Footer with Cancel button
+  // Build item list based on selected type
+  const updateItemList = (type) => {
+    if (!type) {
+      allLoadedItems = [];
+      listContainer.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color); font-size: 0.75rem; margin: 1rem 0;">Select an item type</p>';
+      return;
+    }
+    
+    let items = [];
+    
+    if (type === '0') {
+      // Regular Items
+      Object.entries(GameData.ITEMS || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        if (name) items.push({ id: parseInt(id), name, useCnt: item.attrs?.[0] || 0 });
+      });
+    } else if (type === '16') {
+      // Equipment - combine all equipment types
+      const seenIds = new Set();
+      
+      Object.entries(GameData.HELMET || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        const itemId = parseInt(id);
+        if (name && !seenIds.has(itemId)) {
+          items.push({ id: itemId, name: itemId === 0 ? name : `[Helmet] ${name}`, useCnt: 16 });
+          seenIds.add(itemId);
+        }
+      });
+      Object.entries(GameData.ARMOR || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        const itemId = parseInt(id);
+        if (name && !seenIds.has(itemId)) {
+          items.push({ id: itemId, name: `[Armor] ${name}`, useCnt: 16 });
+          seenIds.add(itemId);
+        }
+      });
+      Object.entries(GameData.SHIELD || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        const itemId = parseInt(id);
+        if (name && !seenIds.has(itemId)) {
+          items.push({ id: itemId, name: `[Shield] ${name}`, useCnt: 16 });
+          seenIds.add(itemId);
+        }
+      });
+      Object.entries(GameData.OTHER_EQUIP_GEAR || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        const itemId = parseInt(id);
+        if (name && !seenIds.has(itemId)) {
+          items.push({ id: itemId, name: `[Accessory] ${name}`, useCnt: 16 });
+          seenIds.add(itemId);
+        }
+      });
+    } else if (type === '32') {
+      // Runes
+      Object.entries(GameData.RUNES || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        if (name) items.push({ id: parseInt(id), name, useCnt: 32 });
+      });
+    } else if (type === '48') {
+      // Farming
+      Object.entries(GameData.FARMING || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        if (name) items.push({ id: parseInt(id), name, useCnt: 48 });
+      });
+    } else if (type === '64') {
+      // Trade
+      Object.entries(GameData.TRADE || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        if (name) items.push({ id: parseInt(id), name, useCnt: 64 });
+      });
+    } else if (type === '80') {
+      // Base/Warehouse
+      Object.entries(GameData.BASE_ITEM || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        if (name) items.push({ id: parseInt(id), name, useCnt: 80 });
+      });
+    } else if (type === '101') {
+      // Food Items
+      Object.entries(GameData.FOOD || {}).forEach(([id, item]) => {
+        const name = extractName(item);
+        if (name && id !== '0') {
+          const foodUseCnt = getFoodUseCnt(parseInt(id));
+          items.push({ id: parseInt(id), name, useCnt: foodUseCnt });
+        }
+      });
+    }
+    
+    // Sort by ID
+    items.sort((a, b) => a.id - b.id);
+    allLoadedItems = items;
+    applySearchFilter();
+  };
+
+  // Initial load
+  if (selectedType) {
+    updateItemList(selectedType);
+  }
+  
+  // Footer with Clear and Cancel buttons
   const footer = document.createElement('footer');
-  footer.style.cssText = 'display: flex; justify-content: flex-end; margin: 0; padding-top: 0.75rem; border-top: 1px solid var(--pico-muted-border-color);';
+  footer.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 0; padding-top: 0.75rem; border-top: 1px solid var(--pico-muted-border-color);';
+  
+  const clearSlotBtn = document.createElement('button');
+  clearSlotBtn.type = 'button';
+  clearSlotBtn.textContent = '✕ Clear Slot';
+  clearSlotBtn.className = 'outline contrast';
+  clearSlotBtn.style.cssText = 'font-size: 0.75rem; margin-bottom: 0;';
+  clearSlotBtn.addEventListener('click', () => {
+    onSelect(0, 0);
+    dialog.close();
+    setTimeout(() => dialog.remove(), 100);
+  });
+  footer.appendChild(clearSlotBtn);
+
   const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
   cancelBtn.textContent = 'Cancel';
   cancelBtn.className = 'secondary';
-  cancelBtn.style.fontSize = '0.75rem';
+  cancelBtn.style.cssText = 'font-size: 0.75rem; margin-bottom: 0;';
   cancelBtn.addEventListener('click', () => {
     dialog.close();
     setTimeout(() => dialog.remove(), 100);
   });
   footer.appendChild(cancelBtn);
-  content.appendChild(footer);
   
+  content.appendChild(footer);
   dialog.appendChild(content);
   document.body.appendChild(dialog);
   dialog.showModal();
@@ -255,316 +324,262 @@ function createItemPickerDialog(currentItemNo, currentUseCnt, onSelect) {
   });
 }
 
+// Helper function to get the correct lookup table based on use_cnt
+function getItemLookup(useCnt) {
+  if (!GameData) return null;
+  if (useCnt === 16) return null; // Equipment handled specially
+  if (useCnt === 32) return GameData.RUNES;
+  if (useCnt === 48) return GameData.FARMING;
+  if (useCnt === 64) return GameData.TRADE;
+  if (useCnt === 80) return GameData.BASE_ITEM;
+  if (useCnt >= 99) return GameData.FOOD;
+  return GameData.ITEMS; // Default fallback for use_cnt 0-9
+}
+
+// Helper function to get item type name based on use_cnt
+function getItemTypeName(useCnt) {
+  if (useCnt === 16) return 'Equipment';
+  if (useCnt === 32) return 'Rune';
+  if (useCnt === 48) return 'Farming';
+  if (useCnt === 64) return 'Trade';
+  if (useCnt === 80) return 'Base Item';
+  if (useCnt >= 99) return 'Food';
+  return 'Regular';
+}
+
+// Helper function to get equipment name based on item_no (for use_cnt 16)
+function getEquipmentName(itemNo) {
+  if (!GameData) return null;
+
+  const extractName = (value) => {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value !== null && value.name) return value.name;
+    return null;
+  };
+
+  if (GameData.HELMET && GameData.HELMET[itemNo]) return extractName(GameData.HELMET[itemNo]);
+  if (GameData.ARMOR && GameData.ARMOR[itemNo]) return extractName(GameData.ARMOR[itemNo]);
+  if (GameData.SHIELD && GameData.SHIELD[itemNo]) return extractName(GameData.SHIELD[itemNo]);
+  if (GameData.OTHER_EQUIP_GEAR && GameData.OTHER_EQUIP_GEAR[itemNo]) return extractName(GameData.OTHER_EQUIP_GEAR[itemNo]);
+  return null;
+}
+
+// Helper function to resolve item display information
+function resolveItemInfo(itemNo, useCnt) {
+  const id = parseInt(itemNo) || 0;
+  const cnt = parseInt(useCnt) || 0;
+
+  if (id === 0) {
+    return {
+      isEmpty: true,
+      name: 'None (Empty)',
+      type: '',
+      meta: ''
+    };
+  }
+
+  const typeName = getItemTypeName(cnt);
+  let name = null;
+
+  if (cnt === 16) {
+    name = getEquipmentName(id) || `Unknown Equipment (${id})`;
+  } else {
+    const lookup = getItemLookup(cnt);
+    if (lookup && lookup[id]) {
+      const val = lookup[id];
+      name = typeof val === 'object' && val !== null && val.name ? val.name : (typeof val === 'string' ? val : null);
+    }
+    // Fallback search across other GameData tables
+    if (!name && GameData) {
+      if (GameData.ITEMS && GameData.ITEMS[id]) {
+        const val = GameData.ITEMS[id];
+        name = typeof val === 'object' && val !== null && val.name ? val.name : (typeof val === 'string' ? val : null);
+      } else if (GameData.BASE_ITEM && GameData.BASE_ITEM[id]) {
+        const val = GameData.BASE_ITEM[id];
+        name = typeof val === 'object' && val !== null && val.name ? val.name : (typeof val === 'string' ? val : null);
+      }
+    }
+  }
+
+  if (!name) {
+    name = `Item #${id}`;
+  }
+
+  return {
+    isEmpty: false,
+    name,
+    type: typeName,
+    meta: `#${id} · use: ${cnt} · ${typeName}`
+  };
+}
+
 /**
- * Creates a table editor interface for item arrays
- * Handles different item types based on use_cnt values and displays appropriate names
+ * Creates a modern 3-column card grid editor for item arrays (Party Bag, Warehouse, Room Items).
+ * Renders items in a responsive 3-column layout with vertical (column-first) numbering.
+ * Compacts the UI by removing bulky numeric inputs and displaying inline metadata with pick/clear buttons.
  * 
  * @param {Array<Object>} arr - Array of item objects with item_no and use_cnt properties
  * @param {string} key - Label for the editor section
  * @param {Function} updateCallback - Callback function when values change
- * @param {Array<string>} columns - Array of column property names to display
- * @returns {HTMLElement} - The table editor container
+ * @param {Array<string>} columns - Array of column property names (e.g. ['item_no', 'use_cnt'])
+ * @returns {HTMLElement} - The editor container
  */
 export function createTableEditor(arr, key, updateCallback, columns) {
   const container = document.createElement('div');
   container.className = 'table-editor-section';
 
-  // Add title
+  // Section Header
   const title = document.createElement('h3');
   title.textContent = `${key} [${arr.length}]`;
-  title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
+  title.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1.15rem;';
   container.appendChild(title);
 
-  // Add description for Party Bag and warehouse items explaining use_cnt classification
-  if (key.includes('Party Bag') || key.includes('Inventory') || key.includes('Warehouse')) {
-    const description = document.createElement('p');
-    description.id = `${key.toLowerCase().replace(/\s+/g, '-')}-description`;
-    description.style.cssText = 'font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;';
-    description.innerHTML = `<strong>Item Type Classification by Count:</strong><br>
-      • 0-9: Regular Items<br>
-      • 16: Equipment (All equipment types use value 16)<br>
-      • 32: Runes<br>
-      • 48: Farming Items<br>
-      • 64: Trade Items / Bath Items<br>
-      • 80: Base/Warehouse Items<br>
-      • 99+: Food Items [has specific values so be careful when it comes to use count]`;
-    container.appendChild(description);
-  }
+  // Collapsible Classification Guide
+  const guide = document.createElement('details');
+  guide.style.cssText = 'margin-bottom: 0.75rem; font-size: 0.75rem;';
+  const summary = document.createElement('summary');
+  summary.style.cssText = 'cursor: pointer; color: var(--pico-muted-color); font-weight: 600; font-size: 0.75rem;';
+  summary.textContent = 'ℹ️ Item Type Classification Guide (use_cnt reference)';
+  guide.appendChild(summary);
 
-  const table = document.createElement('table');
-  table.className = 'striped';
-  table.id = `table-${key.toLowerCase().replace(/\s+/g, '-')}`;
+  const guideBody = document.createElement('div');
+  guideBody.style.cssText = 'padding: 0.5rem 0.75rem; margin-top: 0.35rem; background: rgba(0,0,0,0.15); border-radius: 4px; color: var(--pico-muted-color); line-height: 1.4;';
+  guideBody.innerHTML = `<strong>Item Type Classification by Count:</strong><br>
+    • <strong>0–9:</strong> Regular Items (use_cnt = remaining charges / uses)<br>
+    • <strong>16:</strong> Equipment (Helmets, Armor, Shields, Accessories)<br>
+    • <strong>32:</strong> Runes<br>
+    • <strong>48:</strong> Farming Items<br>
+    • <strong>64:</strong> Trade / Bath Items<br>
+    • <strong>80:</strong> Base / Warehouse Items<br>
+    • <strong>99+:</strong> Food Items (specific recipe IDs)`;
+  guide.appendChild(guideBody);
+  container.appendChild(guide);
 
-  const thead = document.createElement('thead');
-  const trHead = document.createElement('tr');
+  // 3-Column Layout with Vertical (Column-First) Counting
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'items-3col-grid';
 
-  // Cache lookup table determination
-  let lookupTable = null;
-  if (typeof GameData !== 'undefined') {
-    if (key.includes('Warehouse')) lookupTable = GameData.BASE_ITEM;
-    else if (key.includes('Bath')) lookupTable = GameData.ITEMS;
-    else if (key.includes('Room')) lookupTable = GameData.ITEMS;
-  }
+  const totalItems = arr.length;
+  const numColumns = 3;
+  const itemsPerCol = Math.ceil(totalItems / numColumns);
 
-  // Helper function to get the correct lookup table based on use_cnt
-  function getItemLookup(useCnt) {
-    if (!GameData) return null;
-    if (useCnt === 16) {
-      // use_cnt 16 is used for HELMET, ARMOR, SHIELD, and OTHER_EQUIP
-      // We need to check the item_no to determine which category
-      // For now, return a combined lookup (will be handled specially below)
-      return null; // Will handle specially below
+  for (let colIndex = 0; colIndex < numColumns; colIndex++) {
+    const startIdx = colIndex * itemsPerCol;
+    const endIdx = Math.min(startIdx + itemsPerCol, totalItems);
+
+    if (startIdx >= totalItems && totalItems > 0) {
+      continue;
     }
-    if (useCnt === 32) return GameData.RUNES;
-    if (useCnt === 48) return GameData.FARMING;
-    if (useCnt === 64) return GameData.TRADE;
-    if (useCnt === 80) return GameData.BASE_ITEM;
-    if (useCnt >= 99) return GameData.FOOD;
-    return GameData.ITEMS; // Default fallback for use_cnt 0-9
-  }
 
-  // Helper function to get item type name based on use_cnt
-  function getItemTypeName(useCnt) {
-    if (useCnt === 16) return 'Equipment';
-    if (useCnt === 32) return 'Rune';
-    if (useCnt === 48) return 'Farming';
-    if (useCnt === 64) return 'Trade';
-    if (useCnt === 80) return 'Base Item';
-    if (useCnt >= 99) return 'Food';
-    return 'Regular Item';
-  }
+    const columnDiv = document.createElement('div');
+    columnDiv.className = 'items-column';
+    columnDiv.style.cssText = 'display: flex; flex-direction: column; gap: 0.35rem; min-width: 0;';
 
-  // Helper function to get equipment name based on item_no (for use_cnt 16)
-  function getEquipmentName(itemNo) {
-    if (!GameData) return null;
-
-    // Helper to extract name from either string or object format
-    const extractName = (value) => {
-      if (typeof value === 'string') return value;
-      if (typeof value === 'object' && value !== null && value.name) return value.name;
-      return null;
-    };
-
-    // Check each equipment category by item_no ranges
-    if (GameData.HELMET[itemNo]) return extractName(GameData.HELMET[itemNo]);
-    if (GameData.ARMOR[itemNo]) return extractName(GameData.ARMOR[itemNo]);
-    if (GameData.SHIELD[itemNo]) return extractName(GameData.SHIELD[itemNo]);
-    if (GameData.OTHER_EQUIP_GEAR && GameData.OTHER_EQUIP_GEAR[itemNo]) return extractName(GameData.OTHER_EQUIP_GEAR[itemNo]);
-    return null;
-  }
-
-  // Add Slot # column header
-  const slotHeader = document.createElement('th');
-  slotHeader.textContent = 'Slot #';
-  slotHeader.style.width = '80px';
-  trHead.appendChild(slotHeader);
-
-  // Add Actions column header
-  const actionsHeader = document.createElement('th');
-  actionsHeader.textContent = 'Actions';
-  actionsHeader.style.width = '100px';
-  trHead.appendChild(actionsHeader);
-
-  // Add Item Name column if we have a lookup
-  if (lookupTable || arr.length > 0) {
-    const th = document.createElement('th');
-    th.textContent = 'Item Name';
-    trHead.appendChild(th);
-  }
-
-  columns.forEach(col => {
-    const th = document.createElement('th');
-    th.textContent = EDITOR_LABELS[col] || col;
-    trHead.appendChild(th);
-
-    // Add Item Type column before use_cnt column
-    if (col === 'use_cnt') {
-      const typeHeader = document.createElement('th');
-      typeHeader.textContent = 'Item Type';
-      trHead.insertBefore(typeHeader, th);
+    // Column Header Badge: e.g. "📦 Slots 1–10"
+    if (totalItems > 0) {
+      const colHeader = document.createElement('div');
+      colHeader.style.cssText = 'font-size: 0.75rem; font-weight: 700; color: var(--pico-muted-color); padding: 0.2rem 0.4rem; border-bottom: 1px solid var(--pico-muted-border-color); margin-bottom: 0.2rem; display: flex; justify-content: space-between; align-items: center;';
+      colHeader.innerHTML = `<span>📦 Slots ${startIdx + 1}–${endIdx}</span><span style="font-weight: normal; font-size: 0.7rem; color: var(--pico-muted-color);">${endIdx - startIdx} slots</span>`;
+      columnDiv.appendChild(colHeader);
     }
-  });
-  thead.appendChild(trHead);
-  table.appendChild(thead);
 
-  const tbody = document.createElement('tbody');
+    for (let index = startIdx; index < endIdx; index++) {
+      const item = arr[index];
 
-  // Optimize: limit rendering and use fragment for better performance
-  const fragment = document.createDocumentFragment();
-  const maxItems = Math.min(arr.length, 200);
+      const slotCard = document.createElement('div');
+      slotCard.className = 'item-slot-chip';
+      slotCard.id = `${key.toLowerCase().replace(/\s+/g, '-')}-slot-${index}`;
 
-  for (let index = 0; index < maxItems; index++) {
-    const item = arr[index];
-    const tr = document.createElement('tr');
-    tr.id = `${key.toLowerCase().replace(/\s+/g, '-')}-row-${index}`;
+      // Slot number badge
+      const slotBadge = document.createElement('span');
+      const padLen = totalItems >= 10 ? 2 : 1;
+      slotBadge.textContent = `#${String(index + 1).padStart(padLen, '0')}`;
+      slotBadge.style.cssText = 'font-weight: 700; font-size: 0.72rem; color: var(--pico-muted-color); min-width: 26px; flex-shrink: 0;';
+      slotCard.appendChild(slotBadge);
 
-    // Cache values for performance
-    const itemUseCnt = item['use_cnt'] || 0;
-    const itemId = item['item_no'] || 0;
-    const itemLookup = getItemLookup(itemUseCnt);
+      // Pick button
+      const pickBtn = document.createElement('button');
+      pickBtn.type = 'button';
+      pickBtn.textContent = '🔍 Pick';
+      pickBtn.title = `Pick item for Slot ${index + 1}`;
+      pickBtn.className = 'secondary';
+      pickBtn.style.cssText = 'padding: 0.2rem 0.45rem; font-size: 0.72rem; margin-bottom: 0; white-space: nowrap; line-height: 1.2; flex-shrink: 0;';
+      slotCard.appendChild(pickBtn);
 
-    // Add slot number cell
-    const slotTd = document.createElement('td');
-    slotTd.textContent = index + 1;
-    slotTd.style.textAlign = 'center';
-    slotTd.style.fontWeight = 'bold';
-    tr.appendChild(slotTd);
+      // Clear button
+      const clearBtn = document.createElement('button');
+      clearBtn.type = 'button';
+      clearBtn.className = 'outline secondary';
+      clearBtn.textContent = '✕';
+      clearBtn.title = `Clear Slot ${index + 1}`;
+      clearBtn.style.cssText = 'padding: 0.2rem 0.45rem; font-size: 0.72rem; margin-bottom: 0; line-height: 1.2; flex-shrink: 0;';
+      slotCard.appendChild(clearBtn);
 
-    // Add "Pick Item" button
-    const actionTd = document.createElement('td');
-    const pickBtn = document.createElement('button');
-    pickBtn.textContent = '🔍 Pick';
-    pickBtn.className = 'secondary';
-    pickBtn.style.cssText = 'padding: 0.25rem 0.5rem; font-size: 0.85rem; margin: 0;';
-    pickBtn.addEventListener('click', () => {
-      createItemPickerDialog(item['item_no'], item['use_cnt'], (newItemNo, newUseCnt) => {
-        // Update the item object
-        item['item_no'] = newItemNo;
-        item['use_cnt'] = newUseCnt;
-        
-        // Update the display
-        const nameCell = tr.cells[2]; // Now at index 2 (Slot, Actions, Name)
-        const itemLookup = getItemLookup(newUseCnt);
-        
-        if (newUseCnt === 16) {
-          const itemName = getEquipmentName(newItemNo);
-          nameCell.textContent = itemName || `Unknown Equipment (${newItemNo})`;
-        } else if (itemLookup) {
-          const lookupValue = itemLookup[newItemNo];
-          if (typeof lookupValue === 'object' && lookupValue !== null && lookupValue.name) {
-            nameCell.textContent = lookupValue.name;
-          } else if (typeof lookupValue === 'string') {
-            nameCell.textContent = lookupValue;
-          } else {
-            nameCell.textContent = `Unknown (${newItemNo})`;
-          }
+      // Details container
+      const itemDetails = document.createElement('div');
+      itemDetails.style.cssText = 'display: flex; flex-direction: column; min-width: 0; flex: 1; overflow: hidden;';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; font-size: 0.75rem;';
+
+      const metaSpan = document.createElement('span');
+      metaSpan.style.cssText = 'font-size: 0.68rem; color: var(--pico-muted-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2;';
+
+      itemDetails.appendChild(nameSpan);
+      itemDetails.appendChild(metaSpan);
+      slotCard.appendChild(itemDetails);
+
+      const updateSlotDisplay = () => {
+        const id = item.item_no || 0;
+        const cnt = item.use_cnt || 0;
+        const info = resolveItemInfo(id, cnt);
+
+        if (info.isEmpty) {
+          nameSpan.textContent = 'Empty Slot';
+          nameSpan.style.fontStyle = 'italic';
+          nameSpan.style.color = 'var(--pico-muted-color)';
+          nameSpan.style.fontWeight = 'normal';
+          metaSpan.textContent = '';
+          metaSpan.style.display = 'none';
+          clearBtn.style.visibility = 'hidden';
+          slotCard.classList.add('empty-slot');
         } else {
-          nameCell.textContent = `ID: ${newItemNo}`;
+          nameSpan.textContent = info.name;
+          nameSpan.style.fontStyle = 'normal';
+          nameSpan.style.color = 'var(--pico-color)';
+          nameSpan.style.fontWeight = '600';
+          metaSpan.textContent = info.meta;
+          metaSpan.style.display = '';
+          clearBtn.style.visibility = 'visible';
+          slotCard.classList.remove('empty-slot');
         }
-        
-        // Update type cell
-        const typeCell = document.getElementById(`type-${index}`);
-        if (typeCell) {
-          typeCell.textContent = getItemTypeName(newUseCnt);
-        }
-        
-        // Update input fields - find by data attribute
-        const inputs = tr.querySelectorAll('input[type="number"]');
-        inputs.forEach(input => {
-          if (input.dataset.column === 'item_no') {
-            input.value = newItemNo;
-          } else if (input.dataset.column === 'use_cnt') {
-            input.value = newUseCnt;
-          }
+      };
+
+      pickBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        createItemPickerDialog(item.item_no, item.use_cnt, (newItemNo, newUseCnt) => {
+          item.item_no = newItemNo;
+          item.use_cnt = newUseCnt;
+          updateSlotDisplay();
+          if (updateCallback) updateCallback();
         });
-        
+      });
+
+      clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        item.item_no = 0;
+        item.use_cnt = 0;
+        updateSlotDisplay();
         if (updateCallback) updateCallback();
       });
-    });
-    actionTd.appendChild(pickBtn);
-    tr.appendChild(actionTd);
 
-    // Add item name cell
-    const nameTd = document.createElement('td');
-
-    let itemName;
-    if (itemUseCnt === 16) {
-      // Special handling for equipment (use_cnt 16)
-      itemName = getEquipmentName(itemId);
-      nameTd.textContent = itemName || `Unknown Equipment (${itemId})`;
-    } else if (itemLookup) {
-      const lookupValue = itemLookup[itemId];
-      // Handle both string format and object format (for RUNES)
-      if (typeof lookupValue === 'object' && lookupValue !== null && lookupValue.name) {
-        nameTd.textContent = lookupValue.name;
-      } else if (typeof lookupValue === 'string') {
-        nameTd.textContent = lookupValue;
-      } else {
-        nameTd.textContent = `Unknown (${itemId})`;
-      }
-    } else {
-      nameTd.textContent = `ID: ${itemId}`;
+      updateSlotDisplay();
+      columnDiv.appendChild(slotCard);
     }
-    nameTd.style.fontStyle = 'italic';
-    nameTd.style.color = 'var(--pico-muted-color)';
-    tr.appendChild(nameTd);
 
-    columns.forEach(col => {
-      // Add Item Type column before use_cnt
-      if (col === 'use_cnt') {
-        const typeTd = document.createElement('td');
-        typeTd.textContent = getItemTypeName(item['use_cnt'] || 0);
-        typeTd.style.fontStyle = 'italic';
-        typeTd.style.fontSize = '0.85rem';
-        typeTd.id = `type-${index}`; // Add ID for updating
-        tr.appendChild(typeTd);
-      }
-
-      const td = document.createElement('td');
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.min = '0';
-      input.value = item[col];
-      input.style.marginBottom = '0';
-      input.style.padding = '0.25rem';
-      input.dataset.column = col; // Add data attribute for easier selection
-      input.addEventListener('input', (e) => {
-        item[col] = parseFloat(e.target.value);
-        // Update item name display if this is the item_no or use_cnt column
-        if ((col === 'item_no' || col === 'use_cnt')) {
-          const nameCell = tr.cells[2]; // Item name is at index 2 (Slot, Actions, Name)
-          const newId = item['item_no'] || 0;
-          const newUseCnt = item['use_cnt'] || 0;
-
-          // Update item type if use_cnt changed
-          if (col === 'use_cnt') {
-            const typeCell = document.getElementById(`type-${index}`);
-            if (typeCell) {
-              typeCell.textContent = getItemTypeName(newUseCnt);
-            }
-          }
-
-          if (newUseCnt === 16) {
-            // Special handling for equipment
-            const newName = getEquipmentName(newId);
-            nameCell.textContent = newName || `Unknown Equipment (${newId})`;
-          } else {
-            const newLookup = getItemLookup(newUseCnt);
-            if (newLookup) {
-              const lookupValue = newLookup[newId];
-              // Handle both string format and object format
-              if (typeof lookupValue === 'object' && lookupValue !== null && lookupValue.name) {
-                nameCell.textContent = lookupValue.name;
-              } else if (typeof lookupValue === 'string') {
-                nameCell.textContent = lookupValue;
-              } else {
-                nameCell.textContent = `Unknown (${newId})`;
-              }
-            } else {
-              nameCell.textContent = `ID: ${newId}`;
-            }
-          }
-        }
-      });
-      td.appendChild(input);
-      tr.appendChild(td);
-    });
-    fragment.appendChild(tr);
+    gridContainer.appendChild(columnDiv);
   }
 
-  tbody.appendChild(fragment); // Batch DOM update
-
-  if (arr.length > 200) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = columns.length + 1; // +1 for item name column
-    td.textContent = `... and ${arr.length - 200} more items (hidden)`;
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-  }
-
-  table.appendChild(tbody);
-  container.appendChild(table);
-
+  container.appendChild(gridContainer);
   return container;
 }
