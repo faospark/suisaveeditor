@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Item & Accessory Picker Dialog Modal Controls (`tableEditor.js`, `battleCharacters.js`)**:
+  - Added a dedicated top-right modal close button (`✕` / `.close`) to both the Item Picker and Accessory Picker dialog headers.
+  - Added backdrop click-outside dismissal (`dialog.addEventListener('click')`) to immediately close and clean up dialogs.
+  - Added missing ESC key listener (`cancel` event) to the Accessory Picker dialog for seamless keyboard dismissal.
+
 - **Recruitment Portrait Cards Grid Overhaul (`recruitment.js`, `style.css`)**:
   - Replaced the legacy single-column HTML `<table>` layout with responsive portrait cards (`.recruitment-cards-grid`).
   - **Visual Portrait Cards (`.recruitment-card`)**:

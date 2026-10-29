@@ -18,11 +18,25 @@ function createAccessoryPickerDialog(currentItemNo, currentUseCnt, onSelect) {
   
   // Header
   const header = document.createElement('header');
-  header.style.marginBottom = '0.75rem';
+  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;';
   const title = document.createElement('h3');
   title.textContent = 'Select Item for Accessory Slot';
   title.style.cssText = 'margin: 0; font-size: 1rem;';
   header.appendChild(title);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.rel = 'prev';
+  closeBtn.className = 'close';
+  closeBtn.title = 'Close';
+  closeBtn.style.cssText = 'margin: 0; padding: 0; width: 1.25rem; height: 1.25rem; cursor: pointer; border: none; background-color: transparent;';
+  closeBtn.addEventListener('click', () => {
+    dialog.close();
+    setTimeout(() => dialog.remove(), 100);
+  });
+  header.appendChild(closeBtn);
+
   content.appendChild(header);
   
   // Main container - side by side layout
@@ -207,6 +221,19 @@ function createAccessoryPickerDialog(currentItemNo, currentUseCnt, onSelect) {
   dialog.appendChild(content);
   document.body.appendChild(dialog);
   dialog.showModal();
+
+  // Handle backdrop click
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) {
+      dialog.close();
+      setTimeout(() => dialog.remove(), 100);
+    }
+  });
+
+  // Handle ESC key
+  dialog.addEventListener('cancel', () => {
+    setTimeout(() => dialog.remove(), 100);
+  });
 }
 
 /**
