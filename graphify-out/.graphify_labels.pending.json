@@ -12,5 +12,7 @@
   "10": "gamedata.schema.js",
   "11": "sw.js",
   "12": "sw.min.js",
-  "13": "schema.js"
+  "13": "gamedata.js",
+  "14": "guardianDeity.js",
+  "15": "gamedata.min.js"
 }

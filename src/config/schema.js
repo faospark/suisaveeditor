@@ -121,6 +121,12 @@ export const FIELD_CONFIG = {
   },
 
   // Castle Tab
+  'parts_no': {
+    label: "Jude's Guardian Deity Statue & Blueprints",
+    group: 'Castle',
+    renderer: 'guardian_deity',
+    path: 'game_data'
+  },
   'lib_flag': {
     label: 'Castle Library Old Books (Vol. 1–12)',
     group: 'Castle',
@@ -318,7 +324,7 @@ export const EDITOR_GROUPS = {
   'Bath': ['furo_item'],
   'Cooking': ['cook_off_progress', 'food_num', 'food_menu', 'food_resipi'],
   'Investigations': ['tantei_lv'],
-  'Castle': ['lib_flag', 'hon_flag', 'tsuri_data'],
+  'Castle': ['parts_no', 'lib_flag', 'hon_flag', 'tsuri_data'],
   'Experimental': ['hon_flag_raw', 't_box_flag', 'war_data']
 };
 

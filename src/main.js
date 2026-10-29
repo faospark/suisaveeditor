@@ -20,7 +20,8 @@ import {
   createWarRoomEditor,
   createSideQuestsAndCountersEditor,
   createFishingRecordsEditor,
-  createKitchenStockEditor
+  createKitchenStockEditor,
+  createGuardianDeityEditor
 } from './editors/index.js';
 import { COOK_OFF_STAGES, EVENT_FLAG_INDEX } from './config/constants.js';
 import { createDataValuesViewer } from './renderers/index.js';
@@ -256,6 +257,7 @@ const editorFactories = {
   location: null, // Defined later
   known_recipes: createKnownRecipesEditor,
   library_books: createLibraryBooksEditor,
+  guardian_deity: createGuardianDeityEditor,
   castle_flags: createCastleFlagsEditor,
   castle_flags_raw: createCastleFlagsRawEditor,
   richmond_detective: createRichmondDetectiveEditor,
@@ -314,6 +316,9 @@ function createEditorElement(renderer, value, targetData, data, key, label, conf
       return editorFactory(data, label, () => {});
 
     case 'library_books':
+      return editorFactory(value, label, onChange, targetData);
+
+    case 'guardian_deity':
       return editorFactory(value, label, onChange, targetData);
 
     case 'richmond_detective':

@@ -185,7 +185,8 @@ export function createLibraryBooksEditor(value, key, updateCallback, sourceData)
   body.appendChild(toolbar);
 
   const grid = document.createElement('div');
-  grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.4rem;';
+  grid.className = 'library-books-grid';
+  grid.style.cssText = 'display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem;';
 
   const checkboxes = [];
 

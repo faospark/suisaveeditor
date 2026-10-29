@@ -780,6 +780,42 @@ details summary:hover {
     }
 }
 
+.library-books-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.4rem;
+}
+
+@media (max-width: 992px) {
+    .library-books-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .library-books-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+.guardian-deity-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+}
+
+@media (max-width: 992px) {
+    .guardian-deity-plans-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .guardian-deity-plans-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* Two-column layout for long lists (more than 6 items) on larger screens */
 @media (min-width: 768px) {
     ul:has(> li:nth-child(7)), ol:has(> li:nth-child(7)) {

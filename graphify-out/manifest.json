@@ -6,9 +6,9 @@
     "semantic_hash": ""
   },
   "src/config/constants.js": {
-    "mtime": 1793017614.7362976,
-    "seen": 1793017886.589773,
-    "ast_hash": "730fbe7f18500ddc3ec394fbe0f9626b",
+    "mtime": 1793238646.303638,
+    "seen": 1793242193.914813,
+    "ast_hash": "df8323a87f3061487714ecf8fc1ce9c7",
     "semantic_hash": ""
   },
   "src/config/index.js": {
@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "src/config/schema.js": {
-    "mtime": 1793005839.5151477,
-    "seen": 1793017508.5788112,
-    "ast_hash": "4196233bd906590bf451a1ba32fb0ea4",
+    "mtime": 1793238608.521111,
+    "seen": 1793242193.914813,
+    "ast_hash": "34ba432091876888d7a797eb7ca9535a",
     "semantic_hash": ""
   },
   "src/config/schema.min.js": {
@@ -48,9 +48,9 @@
     "semantic_hash": ""
   },
   "src/editors/index.js": {
-    "mtime": 1792984975.757124,
-    "seen": 1793017508.5788112,
-    "ast_hash": "3c4b31171969cadac39dce405a5a930b",
+    "mtime": 1793238465.4550476,
+    "seen": 1793242193.914813,
+    "ast_hash": "82f5488cf8914d1e02642682e6251c2f",
     "semantic_hash": ""
   },
   "src/editors/keyItems.js": {
@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "src/editors/unlocksAndQuests.js": {
-    "mtime": 1793005927.2477293,
-    "seen": 1793017508.5788112,
-    "ast_hash": "67c0d913c8b15f15f02f59cd590e0ada",
+    "mtime": 1793242040.3464203,
+    "seen": 1793242193.914813,
+    "ast_hash": "e679339f01456540ef1a57f9b8ee95b8",
     "semantic_hash": ""
   },
   "src/editors/unlocksAndQuests.min.js": {
@@ -96,9 +96,9 @@
     "semantic_hash": ""
   },
   "src/gamedata.js": {
-    "mtime": 1792984647.8639019,
-    "seen": 1793017508.5788112,
-    "ast_hash": "d2f1f7d5f2a9ce28b68c7ecc664f19c0",
+    "mtime": 1793118034.5994802,
+    "seen": 1793242193.914813,
+    "ast_hash": "2ee0c4241b136df7a5a3921782521598",
     "semantic_hash": ""
   },
   "src/gamedata.schema.js": {
@@ -108,15 +108,15 @@
     "semantic_hash": ""
   },
   "src/main.js": {
-    "mtime": 1793017396.4752073,
-    "seen": 1793017508.5788112,
-    "ast_hash": "794a61580abd6e8c8e48c553a33ed82d",
+    "mtime": 1793238561.0976958,
+    "seen": 1793242193.914813,
+    "ast_hash": "f7a6455fd11b99835b0965bd3fc1d5ee",
     "semantic_hash": ""
   },
   "src/main.min.js": {
-    "mtime": 1793015503.3110454,
-    "seen": 1793017508.5788112,
-    "ast_hash": "c6ab407e9c4364e86e9cd526c92ded3c",
+    "mtime": 1793018878.9759848,
+    "seen": 1793242193.914813,
+    "ast_hash": "caaee26dd1051c470d32419f273e9fcd",
     "semantic_hash": ""
   },
   "src/renderers/dataValuesViewer.js": {
@@ -162,9 +162,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793017436.7268605,
-    "seen": 1793017508.5788112,
-    "ast_hash": "4585a3a21728f497b052462034f9ab37",
+    "mtime": 1793242109.0150304,
+    "seen": 1793242193.914813,
+    "ast_hash": "92a7fccf28cb088910d71a1f7be0ee86",
     "semantic_hash": ""
   },
   "sw.min.js": {
@@ -180,9 +180,9 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1793017614.636124,
-    "seen": 1793017886.5902717,
-    "ast_hash": "076ad03eb3ca36a4544c1d209e5f4d0a",
+    "mtime": 1793246300.7808983,
+    "seen": 1793246320.910195,
+    "ast_hash": "03ebfda003a3dec114f32e8e071ff958",
     "semantic_hash": ""
   },
   "README.md": {
@@ -210,9 +210,9 @@
     "semantic_hash": ""
   },
   "src/config/constants.min.js": {
-    "mtime": 1793017614.7623444,
-    "seen": 1793017886.589773,
-    "ast_hash": "0390c24905333457dbe5930cfdc731d8",
+    "mtime": 1793019384.0940478,
+    "seen": 1793242193.914813,
+    "ast_hash": "59f5e5399e184411b4a45d0ec1d3f014",
     "semantic_hash": ""
   },
   "tools/symbol_indexer/indexer.py": {
@@ -231,6 +231,18 @@
     "mtime": 1793017877.7247481,
     "seen": 1793017886.5902717,
     "ast_hash": "155d5b8e0cff6d2c2e12ef55de20550e",
+    "semantic_hash": ""
+  },
+  "src/editors/guardianDeity.js": {
+    "mtime": 1793246267.053544,
+    "seen": 1793246320.910195,
+    "ast_hash": "0ce20382fa8cd8ea89aa4002037fa834",
+    "semantic_hash": ""
+  },
+  "src/gamedata.min.js": {
+    "mtime": 1793118034.5804527,
+    "seen": 1793242193.914813,
+    "ast_hash": "cc04f67bc9981ec721283b5c782f4138",
     "semantic_hash": ""
   }
 }

@@ -5,6 +5,30 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.7] - 2026-10-29
+
+### Added
+
+- **Guardian Deity Statue & Blueprints Editor (`parts_no`) under Castle Tab**:
+  - Implemented `createGuardianDeityEditor` in `src/editors/guardianDeity.js` and registered in `schema.js`, `main.js`, and `src/editors/index.js`.
+  - **Blueprints Delivered to Jude (`parts_no[0]` & `parts_no[1]`)**:
+    - 16 interactive toggle checkboxes for all Dragon, Unicorn, Rabbit, and Turtle plans with drop/acquisition locations and anatomical segment info.
+    - Quick actions: "Deliver All 16 Plans" (`[255, 255]`) and "Clear Plans" (`[0, 0]`).
+  - **Modular Statue Customizer (`parts_no[2]`)**:
+    - 4 Anatomical selectors for Head, Body, Legs, and Tail (Dragon, Unicorn, Rabbit, Turtle).
+    - Bitwise 8-bit combination calculation: `(Tail << 6) | (Legs << 4) | (Body << 2) | Head`.
+    - Live reward evaluation dynamically previewing Jude's exact blessing across all 256 combinations (Pure relics, permanent stat stones, supreme runes, cash, or dud warning).
+    - Quick presets dropdown for iconic Pure statues, all 7 permanent stat stones (+3 ATK, DEF, MAG, MDEF, SKL, SPD, LUK), and top rewards.
+  - **Shrine Statue Active & Reward Claim State (`parts_no[3]`)**:
+    - Toggle for whether the statue has been inspected and Jude's blessing collected at the Castle Shrine (`vk33`).
+
+### Changed
+
+- **Castle Library Old Books Grid Layout (`unlocksAndQuests.js`, `style.css`)**:
+  - Replaced the auto-fill wrapping layout with a dedicated 6-column grid (`.library-books-grid`), neatly organizing all 12 volumes into two symmetrical rows of 6 (Vol. 1-6 and Vol. 7-12) with responsive breakpoints for narrower screens.
+
+- **Guardian Deity Blueprints Layout (`guardianDeity.js`, `style.css`)**:
+  - Reorganized the 16 blueprint checkboxes into 4 dedicated columns (1 column per guardian deity: Dragon, Unicorn, Rabbit, Turtle) with anatomical parts (#1 Head, #2 Body, #3 Legs, #4 Tail) aligned symmetrically across rows.
 ## [1.4.6] - 2026-10-26
 
 ### Changed
