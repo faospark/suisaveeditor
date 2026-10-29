@@ -225,6 +225,7 @@ if (isDebugMode()) {
         autoSaveToLocalStorage();
       });
       saveBtn.disabled = false;
+      updateSaveFileIndicator(currentFileName);
       console.log('Debug mode: Auto-loaded save file');
     })
     .catch(err => {
@@ -1887,8 +1888,7 @@ fileInput.addEventListener('click', (e) => {
   }
 });
 
-fileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
+function loadJsonFile(file) {
   if (!file) return;
 
   currentFileName = file.name;
@@ -1910,7 +1910,50 @@ fileInput.addEventListener('change', (e) => {
     }
   };
   reader.readAsText(file);
+}
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    loadJsonFile(file);
+  }
 });
+
+// Drag and drop support on file action bar
+const fileActionBar = document.querySelector('.file-action-bar');
+if (fileActionBar) {
+  ['dragenter', 'dragover'].forEach(eventName => {
+    fileActionBar.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileActionBar.classList.add('drag-over');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    fileActionBar.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileActionBar.classList.remove('drag-over');
+    });
+  });
+
+  fileActionBar.addEventListener('drop', (e) => {
+    if (isDebugMode()) {
+      showAlertDialog('Debug Mode Active', '<p>Please click <strong>Change File</strong> first to exit debug mode before loading another file.</p>');
+      return;
+    }
+    const dt = e.dataTransfer;
+    const file = dt?.files?.[0];
+    if (file) {
+      if (file.name.toLowerCase().endsWith('.json')) {
+        loadJsonFile(file);
+      } else {
+        showAlertDialog('Invalid File', '<p>❌ Please select or drop a valid <code>.json</code> save file.</p>');
+      }
+    }
+  });
+}
 
 saveBtn.addEventListener('click', () => {
   if (!currentData) return;

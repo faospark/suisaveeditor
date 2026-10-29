@@ -62,14 +62,30 @@
     <article>
       <header>
         <div class="status-bar"></div>
-        <div class="grid">
-          <div style="height: auto;">
-            <label for="file-input">Load JSON File</label>
-            <input type="file" id="file-input" accept=".json" style="height: auto; color: aquamarine;" />
+        <div class="file-action-bar">
+          <div class="file-action-left">
+            <input type="file" id="file-input" accept=".json" style="display: none;" />
+            <label for="file-input" class="file-upload-btn" id="file-upload-label" role="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.45rem;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Choose File</span>
+            </label>
+            <div id="file-status-badge" class="file-status-badge">
+              <span class="file-status-text">No file chosen</span>
+            </div>
           </div>
-          <div style="height: 100%; display: flex; align-items: center;">
-            <label for="save-btn">&nbsp;</label>
-            <button id="save-btn" disabled>Save / Download JSON</button>
+          <div class="file-action-right">
+            <button id="save-btn" class="save-btn-action" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.45rem;">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Save / Download JSON
+            </button>
           </div>
         </div>
         <div class="grid-12 d-grid">

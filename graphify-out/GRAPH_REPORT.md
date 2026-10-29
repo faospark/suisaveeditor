@@ -1,17 +1,17 @@
 # Graph Report - suisaveeditor  (2026-10-29)
 
 ## Corpus Check
-- 38 files · ~79,168 words
+- 38 files · ~79,612 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 3, .css 2, .backup 1)
 
 ## Summary
-- 322 nodes · 549 edges · 17 communities (13 shown, 4 thin omitted)
+- 324 nodes · 555 edges · 17 communities (13 shown, 4 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 42 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f13ca520`
+- Built from commit: `12d60f0d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -42,7 +42,7 @@
 7. `renderTabContent()` - 8 edges
 8. `checkForAutoSave()` - 7 edges
 9. `checkForAutoSave()` - 7 edges
-10. `markdownToHTML()` - 7 edges
+10. `updateSaveFileIndicator()` - 7 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Added` --references--> `createGuardianDeityEditor()`  [INFERRED]
@@ -62,8 +62,8 @@
 ## Communities (17 total, 4 thin omitted)
 
 ### Community 0 - "main.js"
-Cohesion: 0.08
-Nodes (37): DEBUG_FILE_PATH, SAVE_FILE_PATTERNS, autoSaveToLocalStorage(), checkForAutoSave(), clearAutoSave(), createAboutViewer(), createArrayEditor(), createCastleEditorsCombined() (+29 more)
+Cohesion: 0.07
+Nodes (41): EDITOR_GROUPS, EDITOR_LABELS, FIELD_CONFIG, GROUP_PATHS, RENDERER_TYPES, TABLE_COLUMNS, createCastleFlagsEditor(), createCastleFlagsRawEditor() (+33 more)
 
 ### Community 1 - "Changelog"
 Cohesion: 0.04
@@ -71,7 +71,7 @@ Nodes (44): [1.0.0] - 2025-11-28, [1.1.0] - 2025-12-02, [1.2.0] - 2025-12-03, [1
 
 ### Community 2 - "main.min.js"
 Cohesion: 0.08
-Nodes (39): EDITOR_GROUPS, EDITOR_LABELS, FIELD_CONFIG, GROUP_PATHS, RENDERER_TYPES, TABLE_COLUMNS, createCastleFlagsEditor(), createCastleFlagsRawEditor() (+31 more)
+Nodes (36): DEBUG_FILE_PATH, createSideQuestsAndCountersEditor(), createAboutViewer(), createChangelogViewer(), autoSaveToLocalStorage(), checkForAutoSave(), clearAutoSave(), createAboutViewer() (+28 more)
 
 ### Community 3 - "Save File Field Mapping Reference"
 Cohesion: 0.07
@@ -79,7 +79,7 @@ Nodes (26): ✅ Correct Implementation Checklist:, Data Path Resolution Rules, E
 
 ### Community 4 - "constants.js"
 Cohesion: 0.11
-Nodes (23): APP_VERSION, BATTLE_PARTY_SLOTS, CHAR_INDEX, CLIVE_MILESTONES, CONVOY_SLOTS, COOK_OFF_STAGES, EVENT_FLAG_INDEX, MAX_CHARACTERS_WITH_NPC (+15 more)
+Nodes (24): APP_VERSION, BATTLE_PARTY_SLOTS, CHAR_INDEX, CLIVE_MILESTONES, CONVOY_SLOTS, COOK_OFF_STAGES, EVENT_FLAG_INDEX, MAX_CHARACTERS_WITH_NPC (+16 more)
 
 ### Community 5 - "sym.py"
 Cohesion: 0.11
@@ -122,7 +122,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `Changelog` connect `Changelog` to `guardianDeity.js`?**
   _High betweenness centrality (0.158) - this node is a cross-community bridge._
 - **Should `main.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.07729468599033816 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07446808510638298 - nodes in this community are weakly interconnected._
 - **Why does `[1.4.7] - 2026-10-29` connect `guardianDeity.js` to `Changelog`, `gamedata.js`?**
   _High betweenness centrality (0.143) - this node is a cross-community bridge._
 - **Should `Changelog` be split into smaller, more focused modules?**
@@ -130,6 +130,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `createGuardianDeityEditor()` connect `guardianDeity.js` to `main.js`, `main.min.js`?**
   _High betweenness centrality (0.080) - this node is a cross-community bridge._
 - **Should `main.min.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.07632850241545894 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08080808080808081 - nodes in this community are weakly interconnected._
 - **Should `Save File Field Mapping Reference` be split into smaller, more focused modules?**
   _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._

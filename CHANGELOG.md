@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Modern File Action Toolbar & Drag-and-Drop (`index.html`, `style.css`, `helpers.js`, `main.js`)**:
+  - Replaced the unstyled native file input and 2-column grid with a modern flex action bar (`.file-action-bar`).
+  - Added custom-styled file upload button (`.file-upload-btn`) with vector upload icon, automatically toggling between "Choose File" and "Change File".
+  - Integrated dynamic file status badge (`.file-status-badge`) showing a green checkmark, monospace file name, and detected save slot tag (`Slot #88`).
+  - Added drag-and-drop support across the file action bar with visual glow indicators when hovering with `.json` save files.
+  - Aligned the Save / Download button with a matching vector disk icon and smooth hover elevation.
+
 - **Item & Accessory Picker Dialog Modal Controls (`tableEditor.js`, `battleCharacters.js`)**:
   - Added a dedicated top-right modal close button (`✕` / `.close`) to both the Item Picker and Accessory Picker dialog headers.
   - Added backdrop click-outside dismissal (`dialog.addEventListener('click')`) to immediately close and clean up dialogs.
@@ -25,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Real-time search filter matching character name or numeric ID with instant responsiveness.
     - Quick status filter dropdown (`All Characters`, `✓ Recruited Only`, `💬 Spoke To Only`, `✗ Not Recruited Only`).
     - Live star counter badge (`⭐ Recruited: X / Total`) that dynamically recalculates on every change.
+    - Excluded unused placeholder slots #126 and #127 ("NA-") from the recruitment card list and total counts.
 
 - **Playable Character Portraits (`battleCharacters.js`, `style.css`)**:
   - Integrated local 400x400 HD character portraits (`./image/portraits/fp_###.png`) into Column 1 (General) of each character's editor card.

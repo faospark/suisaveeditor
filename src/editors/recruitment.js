@@ -17,8 +17,9 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
   container.className = 'recruitment-editor-section';
 
   // Section Title
+  const validCount = arr.filter((_, idx) => idx !== 0 && idx !== 126 && idx !== 127).length;
   const title = document.createElement('h3');
-  title.textContent = `${key} [${Math.max(0, arr.length - 1)} characters]`;
+  title.textContent = `${key} [${validCount} characters]`;
   title.style.cssText = 'margin: 0 0 1rem 0; font-size: 1.25rem;';
   container.appendChild(title);
 
@@ -179,7 +180,7 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
 
   // Build character cards
   arr.forEach((flagValue, index) => {
-    if (index === 0) return; // Skip index 0
+    if (index === 0 || index === 126 || index === 127) return; // Skip index 0 and unused slots 126, 127
 
     const charEntry = lookupTable && lookupTable[index];
     const charName = charEntry ? (typeof charEntry === 'string' ? charEntry : (charEntry.name || `Character ${index}`)) : `Character ${index}`;
