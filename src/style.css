@@ -816,6 +816,34 @@ details summary:hover {
     }
 }
 
+.battle-character-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.battle-character-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    min-width: 0;
+}
+
+@media (max-width: 1200px) {
+    .battle-character-columns {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .battle-character-columns {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* Two-column layout for long lists (more than 6 items) on larger screens */
 @media (min-width: 768px) {
     ul:has(> li:nth-child(7)), ol:has(> li:nth-child(7)) {

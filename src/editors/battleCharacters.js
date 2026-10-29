@@ -181,6 +181,18 @@ function createAccessoryPickerDialog(currentItemNo, currentUseCnt, onSelect) {
   
   const footer = document.createElement('footer');
   footer.style.cssText = 'margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem;';
+
+  const unequipBtn = document.createElement('button');
+  unequipBtn.type = 'button';
+  unequipBtn.textContent = '✕ Unequip / Clear Slot';
+  unequipBtn.className = 'outline secondary';
+  unequipBtn.style.cssText = 'margin-right: auto; font-size: 0.75rem; padding: 0.25rem 0.55rem;';
+  unequipBtn.addEventListener('click', () => {
+    onSelect({ id: 0, name: 'None (Empty)', useCnt: 0 });
+    dialog.close();
+    dialog.remove();
+  });
+  footer.appendChild(unequipBtn);
   
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Cancel';
@@ -580,23 +592,33 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
     charDetails.appendChild(charSummary);
 
     const columnsContainer = document.createElement('div');
-    columnsContainer.className = 'grid g-2-col';
+    columnsContainer.className = 'grid battle-character-columns';
+    columnsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;';
 
-    const leftColumn = document.createElement('div');
-    leftColumn.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
+    const colGeneral = document.createElement('div');
+    colGeneral.className = 'battle-character-col';
+    colGeneral.style.cssText = 'padding: 0.75rem; background: rgba(0,0,0,0.15); border-radius: 6px; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0;';
 
-    const rightColumn = document.createElement('div');
-    rightColumn.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
+    const colMagic = document.createElement('div');
+    colMagic.className = 'battle-character-col';
+    colMagic.style.cssText = 'padding: 0.75rem; background: rgba(0,0,0,0.15); border-radius: 6px; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0;';
+
+    const colGear = document.createElement('div');
+    colGear.className = 'battle-character-col';
+    colGear.style.cssText = 'padding: 0.75rem; background: rgba(0,0,0,0.15); border-radius: 6px; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0;';
 
     // General section (Level, Experience, HP, Killed Enemies, Friendship)
     const generalContainer = document.createElement('div');
     generalContainer.className = 'battle-character-general';
     generalContainer.id = `char-${index}-general`;
 
-    const generalTitle = document.createElement('h4');
+    const generalHeader = document.createElement('div');
+    generalHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;';
+    const generalTitle = document.createElement('strong');
+    generalTitle.style.fontSize = '0.82rem';
     generalTitle.textContent = 'General';
-    generalTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-    generalContainer.appendChild(generalTitle);
+    generalHeader.appendChild(generalTitle);
+    generalContainer.appendChild(generalHeader);
 
     const generalInputs = {};
     const generalFields = [
@@ -692,7 +714,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
       generalContainer.appendChild(sukiDiv);
     }
 
-    leftColumn.appendChild(generalContainer);
+    colGeneral.appendChild(generalContainer);
 
     // Magic section (Packed Nibble MP: High Nibble = Current MP 0-9, Low Nibble = Max MP 0-9)
     const mpSyncFns = [];
@@ -702,17 +724,17 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
       mpContainer.id = `char-${index}-magic`;
 
       const mpHeader = document.createElement('div');
-      mpHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;';
-      const mpTitle = document.createElement('h4');
-      mpTitle.textContent = 'Magic (MP Levels — Click Squares or Edit Cur/Max)';
-      mpTitle.style.cssText = 'margin: 0; font-size: 0.95rem;';
+      mpHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;';
+      const mpTitle = document.createElement('strong');
+      mpTitle.style.fontSize = '0.82rem';
+      mpTitle.textContent = 'Magic (MP Levels)';
       mpHeader.appendChild(mpTitle);
 
       const maxMpBtn = document.createElement('button');
       maxMpBtn.type = 'button';
       maxMpBtn.className = 'outline';
-      maxMpBtn.textContent = 'Max All (9/9)';
-      maxMpBtn.style.cssText = 'font-size: 0.7rem; padding: 0.2rem 0.5rem; margin-bottom: 0;';
+      maxMpBtn.textContent = '⚡ Max All (9/9)';
+      maxMpBtn.style.cssText = 'font-size: 0.7rem; padding: 0.2rem 0.5rem; margin-bottom: 0; white-space: nowrap;';
       mpHeader.appendChild(maxMpBtn);
       mpContainer.appendChild(mpHeader);
 
@@ -815,7 +837,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         mpSyncFns.forEach(fn => fn.maxAll());
       });
 
-      leftColumn.appendChild(mpContainer);
+      colMagic.appendChild(mpContainer);
     }
 
     // Weapon section (Weapon Level, Weapon Rune)
@@ -823,10 +845,13 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
     weaponContainer.className = 'battle-character-weapon';
     weaponContainer.id = `char-${index}-weapon`;
 
-    const weaponTitle = document.createElement('h4');
+    const weaponHeader = document.createElement('div');
+    weaponHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;';
+    const weaponTitle = document.createElement('strong');
+    weaponTitle.style.fontSize = '0.82rem';
     weaponTitle.textContent = 'Weapon';
-    weaponTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-    weaponContainer.appendChild(weaponTitle);
+    weaponHeader.appendChild(weaponTitle);
+    weaponContainer.appendChild(weaponHeader);
 
     let weaponLvInput = null;
     const isBeast = GameData && GameData.BEASTS && GameData.BEASTS.includes(index);
@@ -851,7 +876,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
       weaponContainer.appendChild(weaponLvDiv);
     }
 
-    rightColumn.appendChild(weaponContainer);
+    colGear.appendChild(weaponContainer);
 
     const runeSelectElements = [];
     let unlockAllRuneSlotsFn = () => {};
@@ -866,16 +891,23 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         paraContainer.className = 'battle-character-stats';
         paraContainer.id = `char-${index}-stats`;
 
-        const statsTitle = document.createElement('h4');
+        const statsHeader = document.createElement('div');
+        statsHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0 0.35rem 0; padding-top: 0.45rem; border-top: 1px dashed var(--pico-muted-border-color);';
+        const statsTitle = document.createElement('strong');
+        statsTitle.style.fontSize = '0.82rem';
         statsTitle.textContent = 'Stats';
-        statsTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-        paraContainer.appendChild(statsTitle);
+        statsHeader.appendChild(statsTitle);
+        paraContainer.appendChild(statsHeader);
+
+        const statsGrid = document.createElement('div');
+        statsGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;';
 
         charData[prop].forEach((value, i) => {
           if (i < statLabels.length) {
             const statDiv = document.createElement('div');
-            statDiv.className = 'json-item';
+            statDiv.style.cssText = 'display: flex; flex-direction: column; gap: 0.15rem;';
             const label = document.createElement('label');
+            label.style.cssText = 'font-size: 0.72rem; margin-bottom: 0;';
             label.textContent = statLabels[i];
             statDiv.appendChild(label);
 
@@ -884,15 +916,16 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
             input.min = '0';
             input.max = '255';
             input.value = value;
+            input.style.cssText = 'margin-bottom: 0; font-size: 0.75rem; padding: 0.2rem 0.35rem;';
             input.addEventListener('input', (e) => {
               charData[prop][i] = parseFloat(e.target.value) || 0;
             });
             statDiv.appendChild(input);
-            paraContainer.appendChild(statDiv);
+            statsGrid.appendChild(statDiv);
           }
         });
-
-        leftColumn.appendChild(paraContainer);
+        paraContainer.appendChild(statsGrid);
+        colGeneral.appendChild(paraContainer);
         return;
       }
       else if (prop === 'mon_eqp' && Array.isArray(charData[prop])) {
@@ -901,10 +934,10 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         eqpContainer.id = `char-${index}-runes`;
 
         const runesHeader = document.createElement('div');
-        runesHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;';
-        const runesTitle = document.createElement('h4');
+        runesHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0 0.35rem 0; padding-top: 0.45rem; border-top: 1px dashed var(--pico-muted-border-color);';
+        const runesTitle = document.createElement('strong');
+        runesTitle.style.fontSize = '0.82rem';
         runesTitle.textContent = 'Runes';
-        runesTitle.style.cssText = 'margin: 0; font-size: 1rem;';
         runesHeader.appendChild(runesTitle);
 
         // Granular per-character Unlock Locked Runes / Bypass Restrictions toggle
@@ -998,7 +1031,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         });
 
         rebuildRuneDropdowns(false);
-        rightColumn.appendChild(eqpContainer);
+        colMagic.appendChild(eqpContainer);
 
         // Rune Slot Unlock Levels (mon_kosu_type[0..2]) directly underneath Runes
         if (koteiData && Array.isArray(koteiData.mon_kosu_type)) {
@@ -1007,9 +1040,9 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
           kosuContainer.id = `char-${index}-rune-unlocks`;
 
           const kosuHeader = document.createElement('div');
-          kosuHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; gap: 0.5rem;';
-          const kosuTitle = document.createElement('h4');
-          kosuTitle.style.cssText = 'margin: 0; font-size: 0.95rem;';
+          kosuHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0 0.35rem 0; gap: 0.4rem; padding-top: 0.45rem; border-top: 1px dashed var(--pico-muted-border-color);';
+          const kosuTitle = document.createElement('strong');
+          kosuTitle.style.fontSize = '0.82rem';
           kosuTitle.textContent = 'Rune Slot Unlock Levels (mon_kosu_type)';
           kosuHeader.appendChild(kosuTitle);
 
@@ -1059,7 +1092,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
           };
 
           unlockBtn.addEventListener('click', unlockAllRuneSlotsFn);
-          rightColumn.appendChild(kosuContainer);
+          colMagic.appendChild(kosuContainer);
         }
 
         return;
@@ -1069,10 +1102,13 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         boguContainer.className = 'equipment-worn-section';
         boguContainer.id = `char-${index}-equipment`;
 
-        const equipmentTitle = document.createElement('h4');
+        const equipmentHeader = document.createElement('div');
+        equipmentHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0 0.35rem 0; padding-top: 0.45rem; border-top: 1px dashed var(--pico-muted-border-color);';
+        const equipmentTitle = document.createElement('strong');
+        equipmentTitle.style.fontSize = '0.82rem';
         equipmentTitle.textContent = 'Equipment';
-        equipmentTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-        boguContainer.appendChild(equipmentTitle);
+        equipmentHeader.appendChild(equipmentTitle);
+        boguContainer.appendChild(equipmentHeader);
 
         const equipmentSlots = [
           { label: 'Helmet', category: 'HELMET' },
@@ -1161,7 +1197,7 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
           }
         });
 
-        rightColumn.appendChild(boguContainer);
+        colGear.appendChild(boguContainer);
         return;
       }
       else if (prop === 'item_eqp' && Array.isArray(charData[prop])) {
@@ -1169,17 +1205,20 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         itemContainer.className = 'equip-accessories-section';
         itemContainer.id = `char-${index}-accessories`;
 
-        const accessoriesTitle = document.createElement('h4');
+        const accessoriesHeader = document.createElement('div');
+        accessoriesHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0 0.35rem 0; padding-top: 0.45rem; border-top: 1px dashed var(--pico-muted-border-color);';
+        const accessoriesTitle = document.createElement('strong');
+        accessoriesTitle.style.fontSize = '0.82rem';
         accessoriesTitle.textContent = `Accessories [${charData[prop].length}]`;
-        accessoriesTitle.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1rem;';
-        itemContainer.appendChild(accessoriesTitle);
+        accessoriesHeader.appendChild(accessoriesTitle);
+        itemContainer.appendChild(accessoriesHeader);
 
         if (isBeast) {
           const disabledMsg = document.createElement('p');
           disabledMsg.textContent = 'Beast/Monster character - Cannot equip accessories';
           disabledMsg.style.cssText = 'color: var(--pico-muted-color); font-style: italic; margin: 0.5rem 0;';
           itemContainer.appendChild(disabledMsg);
-          rightColumn.appendChild(itemContainer);
+          colGear.appendChild(itemContainer);
           return;
         }
 
@@ -1187,41 +1226,45 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
           const itemDiv = document.createElement('div');
           itemDiv.className = 'json-item';
           itemDiv.style.display = 'flex';
-          itemDiv.style.gap = '0.5rem';
+          itemDiv.style.gap = '0.45rem';
           itemDiv.style.alignItems = 'center';
-          itemDiv.style.marginBottom = '0.5rem';
+          itemDiv.style.marginBottom = '0.4rem';
+          itemDiv.style.flexWrap = 'wrap';
 
           const slotLabel = document.createElement('span');
           slotLabel.textContent = `Slot ${i + 1}:`;
           slotLabel.style.fontWeight = 'bold';
-          slotLabel.style.minWidth = '60px';
+          slotLabel.style.minWidth = '52px';
+          slotLabel.style.fontSize = '0.78rem';
           itemDiv.appendChild(slotLabel);
 
           const pickBtn = document.createElement('button');
+          pickBtn.type = 'button';
           pickBtn.textContent = '🔍 Pick';
-          pickBtn.style.cssText = 'padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-bottom: 0;';
-          pickBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            createAccessoryPickerDialog(item.item_no, item.use_cnt, (selectedItem) => {
-              item.item_no = selectedItem.id;
-              item.use_cnt = selectedItem.useCnt;
-              itemName.textContent = selectedItem.name;
-              idInput.value = selectedItem.id;
-              cntInput.value = selectedItem.useCnt;
-              if (updateCallback) updateCallback();
-            });
-          });
+          pickBtn.style.cssText = 'padding: 0.2rem 0.5rem; font-size: 0.72rem; margin-bottom: 0; white-space: nowrap;';
           itemDiv.appendChild(pickBtn);
 
+          const clearBtn = document.createElement('button');
+          clearBtn.type = 'button';
+          clearBtn.className = 'outline secondary';
+          clearBtn.textContent = '✕';
+          clearBtn.title = 'Clear / Unequip Accessory';
+          clearBtn.style.cssText = 'padding: 0.2rem 0.45rem; font-size: 0.72rem; margin-bottom: 0; line-height: 1;';
+          itemDiv.appendChild(clearBtn);
+
+          const itemDesc = document.createElement('div');
+          itemDesc.style.cssText = 'display: flex; align-items: baseline; gap: 0.35rem; flex-wrap: wrap; flex: 1; min-width: 140px; font-size: 0.78rem;';
+
           const itemName = document.createElement('span');
-          itemName.style.fontStyle = 'italic';
-          itemName.style.color = 'var(--pico-muted-color)';
-          itemName.style.minWidth = '180px';
-          itemName.style.fontSize = '0.85rem';
-          const itemId = item.item_no || 0;
-          const useCnt = item.use_cnt || 0;
+          const itemMeta = document.createElement('span');
+          itemMeta.style.cssText = 'font-size: 0.7rem; color: var(--pico-muted-color);';
+
+          itemDesc.appendChild(itemName);
+          itemDesc.appendChild(itemMeta);
+          itemDiv.appendChild(itemDesc);
 
           const getItemName = (id, cnt) => {
+            if (id === 0) return 'None (Empty)';
             if (cnt === 16 && GameData?.OTHER_EQUIP_GEAR?.[id]) {
               return GameData.OTHER_EQUIP_GEAR[id];
             } else if (cnt <= 9 && GameData?.ITEMS?.[id]) {
@@ -1234,47 +1277,49 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
             return `Item ${id}`;
           };
 
-          itemName.textContent = getItemName(itemId, useCnt);
-          itemDiv.appendChild(itemName);
+          const updateDisplay = () => {
+            const id = item.item_no || 0;
+            const cnt = item.use_cnt || 0;
+            if (id === 0) {
+              itemName.textContent = 'None (Empty)';
+              itemName.style.fontStyle = 'italic';
+              itemName.style.color = 'var(--pico-muted-color)';
+              itemName.style.fontWeight = 'normal';
+              itemMeta.textContent = '';
+              clearBtn.style.display = 'none';
+            } else {
+              itemName.textContent = getItemName(id, cnt);
+              itemName.style.fontStyle = 'normal';
+              itemName.style.color = 'var(--pico-color)';
+              itemName.style.fontWeight = '600';
+              itemMeta.textContent = `(#${id} · use_cnt: ${cnt})`;
+              clearBtn.style.display = '';
+            }
+          };
 
-          const idInput = document.createElement('input');
-          idInput.type = 'number';
-          idInput.min = '0';
-          idInput.value = item.item_no;
-          idInput.style.width = '70px';
-          idInput.style.marginBottom = '0';
-          idInput.addEventListener('input', (e) => {
-            const newId = parseFloat(e.target.value) || 0;
-            item.item_no = newId;
-            itemName.textContent = getItemName(newId, item.use_cnt);
+          pickBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            createAccessoryPickerDialog(item.item_no, item.use_cnt, (selectedItem) => {
+              item.item_no = selectedItem.id;
+              item.use_cnt = selectedItem.useCnt;
+              updateDisplay();
+              if (updateCallback) updateCallback();
+            });
+          });
+
+          clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            item.item_no = 0;
+            item.use_cnt = 0;
+            updateDisplay();
             if (updateCallback) updateCallback();
           });
-          itemDiv.appendChild(idInput);
 
-          const cntLabel = document.createElement('label');
-          cntLabel.textContent = 'use_cnt';
-          cntLabel.style.marginBottom = '0';
-          cntLabel.style.fontSize = '0.75rem';
-          itemDiv.appendChild(cntLabel);
-
-          const cntInput = document.createElement('input');
-          cntInput.type = 'number';
-          cntInput.min = '0';
-          cntInput.value = item.use_cnt;
-          cntInput.style.width = '60px';
-          cntInput.style.marginBottom = '0';
-          cntInput.addEventListener('input', (e) => {
-            const newCnt = parseFloat(e.target.value) || 0;
-            item.use_cnt = newCnt;
-            itemName.textContent = getItemName(item.item_no, newCnt);
-            if (updateCallback) updateCallback();
-          });
-          itemDiv.appendChild(cntInput);
-
+          updateDisplay();
           itemContainer.appendChild(itemDiv);
         });
 
-        rightColumn.appendChild(itemContainer);
+        colGear.appendChild(itemContainer);
         return;
       }
       else if (prop === 'buki_mon') {
@@ -1345,12 +1390,13 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         const el = createElementForValue(charData[prop], displayLabel, (newValue) => {
           charData[prop] = newValue;
         }, charData);
-        leftColumn.appendChild(el);
+        colGeneral.appendChild(el);
       }
     });
 
-    columnsContainer.appendChild(leftColumn);
-    columnsContainer.appendChild(rightColumn);
+    columnsContainer.appendChild(colGeneral);
+    columnsContainer.appendChild(colMagic);
+    columnsContainer.appendChild(colGear);
     charDetails.appendChild(columnsContainer);
 
     // =========================================================================

@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Clive Quest Milestones & Completion Flag Tracking (`main.js`, `constants.js`)**:
+  - Upgraded the **Play Time & Clive Quest Tracker** to evaluate both in-game playtime hours and event completion flags (`event_flag[94]`).
+  - **8 Full Story Milestones Tracked**:
+    - `0x01` (Bit 0): Muse City Entrance (<3h)
+    - `0x02` (Bit 1): South Window Recruitment (Clive joins)
+    - `0x04` (Bit 2): Lakewest Town (<11h)
+    - `0x08` (Bit 3): Forest Village (<13h)
+    - `0x10` (Bit 4): Rockaxe Information
+    - `0x20` (Bit 5): Radat Town (<14h)
+    - `0x40` (Bit 6): Muse Hill (<15h)
+    - `0x80` (Bit 7): Sajah Finale (<20h)
+  - **Dynamic State Evaluation**:
+    - **Done**: Shows green `✓ [Milestone] [Done]` if already completed in the save, preventing late-game saves from mistakenly displaying earlier completed cutoffs as expired.
+    - **Open**: Shows blue `⏳ [Milestone] [Open]` if pending and current play time is still under the cutoff.
+    - **Expired**: Shows red `✗ [Milestone] [Expired]` if pending and current play time has exceeded the cutoff.
+  - **Interactive Toggles & Quick Actions**:
+    - Clicking any milestone badge directly toggles its completion bit in `event_flag[94]`.
+    - Added "Toggle All Done (Flag 94)" quick-action button in the card header alongside "Set Hours = 1".
+
 - **Guardian Deity Statue & Blueprints Editor (`parts_no`) under Castle Tab**:
   - Implemented `createGuardianDeityEditor` in `src/editors/guardianDeity.js` and registered in `schema.js`, `main.js`, and `src/editors/index.js`.
   - **Blueprints Delivered to Jude (`parts_no[0]` & `parts_no[1]`)**:
@@ -24,11 +43,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Streamlined Battle Characters Accessories UI (`battleCharacters.js`)**:
+  - Replaced the standalone numeric `<input>` fields (`item_no` and `use_cnt`) with compact inline text displaying item name, ID, and usage count (e.g. `Power Ring (#82 · use_cnt: 16)` or `None (Empty)`).
+  - Added an inline `[✕]` unequip button to each equipped accessory slot for instant clearing.
+  - Added an `✕ Unequip / Clear Slot` button to the accessory picker dialog footer.
+  - Eliminates horizontal stretching and overflow in Column 3 (Equipment & Gear) of the character cards.
+
 - **Castle Library Old Books Grid Layout (`unlocksAndQuests.js`, `style.css`)**:
   - Replaced the auto-fill wrapping layout with a dedicated 6-column grid (`.library-books-grid`), neatly organizing all 12 volumes into two symmetrical rows of 6 (Vol. 1-6 and Vol. 7-12) with responsive breakpoints for narrower screens.
 
 - **Guardian Deity Blueprints Layout (`guardianDeity.js`, `style.css`)**:
   - Reorganized the 16 blueprint checkboxes into 4 dedicated columns (1 column per guardian deity: Dragon, Unicorn, Rabbit, Turtle) with anatomical parts (#1 Head, #2 Body, #3 Legs, #4 Tail) aligned symmetrically across rows.
+
+- **Battle Characters Editor 3-Column Card Architecture (`battleCharacters.js`, `style.css`)**:
+  - Maximized horizontal space and established full visual consistency with the 3 archetype cards by structuring character controls into 3 styled dark cards (`.battle-character-col`):
+    - **Column 1 (General & Stats)**: General info and Core Stats arranged in a compact 2-column grid matching the elemental affinities format.
+    - **Column 2 (Magic & Runes)**: Magic MP charges (Levels 1-4 with interactive visual pips, header `⚡ Max All` button), Runes, and Rune Slot Unlock Levels.
+    - **Column 3 (Weapon & Equipment)**: Weapon stats (Level & Rune), Armor (Helmet, Armor, Shield), and equipped Accessories.
+    - Standardized headers (`strong` 0.82rem), dashed sub-section dividers, and responsive breakpoints (2 columns on tablets <= 1200px, 1 column on mobile <= 768px).
+
 ## [1.4.6] - 2026-10-26
 
 ### Changed

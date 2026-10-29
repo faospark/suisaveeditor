@@ -1,17 +1,17 @@
 # Graph Report - suisaveeditor  (2026-10-29)
 
 ## Corpus Check
-- 38 files · ~69,966 words
+- 38 files · ~77,154 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 3, .css 2, .backup 1)
 
 ## Summary
-- 320 nodes · 536 edges · 16 communities (12 shown, 4 thin omitted)
-- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 39 edges (avg confidence: 0.86)
+- 321 nodes · 542 edges · 16 communities (12 shown, 4 thin omitted)
+- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 40 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2c2b6147`
+- Built from commit: `f049dc6b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -49,11 +49,11 @@
 - `What is indexed` --references--> `refs()`  [INFERRED]
   .agents/rules/sym.md → tools/symbol_indexer/sym.py
 - `renderTabContent()` --calls--> `createSideQuestsAndCountersEditor()`  [EXTRACTED]
-  src/main.js → src/editors/unlocksAndQuests.js
-- `checkForAutoSave()` --calls--> `updateSaveFileIndicator()`  [EXTRACTED]
-  src/main.js → src/utils/helpers.js
-- `renderEditor()` --calls--> `extractSaveNumber()`  [EXTRACTED]
-  src/main.js → src/utils/helpers.js
+  src/main.min.js → src/editors/unlocksAndQuests.js
+- `createAboutViewer()` --calls--> `markdownToHTML()`  [EXTRACTED]
+  src/main.js → src/utils/markdown.js
+- `createChangelogViewer()` --calls--> `markdownToHTML()`  [EXTRACTED]
+  src/main.js → src/utils/markdown.js
 
 ## Import Cycles
 - None detected.
@@ -62,7 +62,7 @@
 
 ### Community 0 - "main.js"
 Cohesion: 0.08
-Nodes (38): EDITOR_GROUPS, FIELD_CONFIG, GROUP_PATHS, RENDERER_TYPES, TABLE_COLUMNS, createCastleFlagsEditor(), createCastleFlagsRawEditor(), createFishingRecordsEditor() (+30 more)
+Nodes (37): DEBUG_FILE_PATH, SAVE_FILE_PATTERNS, createSideQuestsAndCountersEditor(), autoSaveToLocalStorage(), checkForAutoSave(), clearAutoSave(), createAboutViewer(), createArrayEditor() (+29 more)
 
 ### Community 1 - "Changelog"
 Cohesion: 0.04
@@ -70,15 +70,15 @@ Nodes (44): [1.0.0] - 2025-11-28, [1.1.0] - 2025-12-02, [1.2.0] - 2025-12-03, [1
 
 ### Community 2 - "main.min.js"
 Cohesion: 0.08
-Nodes (37): DEBUG_FILE_PATH, SAVE_FILE_PATTERNS, createSideQuestsAndCountersEditor(), createAboutViewer(), createChangelogViewer(), autoSaveToLocalStorage(), checkForAutoSave(), clearAutoSave() (+29 more)
+Nodes (39): EDITOR_GROUPS, EDITOR_LABELS, FIELD_CONFIG, GROUP_PATHS, RENDERER_TYPES, TABLE_COLUMNS, createCastleFlagsEditor(), createCastleFlagsRawEditor() (+31 more)
 
 ### Community 3 - "Save File Field Mapping Reference"
 Cohesion: 0.07
 Nodes (26): ✅ Correct Implementation Checklist:, Data Path Resolution Rules, EDITOR_GROUPS Structure, Experimental Tab Fields, Experimental Tab Implementation, Farm Animals (`hon_flag[32]`), Farming Items (GameData.FARMING), Farming System Documentation (+18 more)
 
 ### Community 4 - "constants.js"
-Cohesion: 0.12
-Nodes (22): APP_VERSION, BATTLE_PARTY_SLOTS, CHAR_INDEX, CONVOY_SLOTS, COOK_OFF_STAGES, EVENT_FLAG_INDEX, MAX_CHARACTERS_WITH_NPC, MAX_MP_VALUE (+14 more)
+Cohesion: 0.11
+Nodes (23): APP_VERSION, BATTLE_PARTY_SLOTS, CHAR_INDEX, CLIVE_MILESTONES, CONVOY_SLOTS, COOK_OFF_STAGES, EVENT_FLAG_INDEX, MAX_CHARACTERS_WITH_NPC (+15 more)
 
 ### Community 5 - "sym.py"
 Cohesion: 0.09
@@ -101,8 +101,8 @@ Cohesion: 0.29
 Nodes (6): EDITOR_GROUPS, EDITOR_LABELS, FIELD_CONFIG, GROUP_PATHS, RENDERER_TYPES, TABLE_COLUMNS
 
 ### Community 13 - "gamedata.js"
-Cohesion: 0.15
-Nodes (8): EDITOR_LABELS, createBathItemsEditor(), createKeyItemsEditor(), createPartyMembersEditor(), createItemPickerDialog(), createTableEditor(), GameData, createDataValuesViewer()
+Cohesion: 0.16
+Nodes (7): createBathItemsEditor(), createKeyItemsEditor(), createPartyMembersEditor(), createItemPickerDialog(), createTableEditor(), GameData, createDataValuesViewer()
 
 ### Community 14 - "guardianDeity.js"
 Cohesion: 0.18
@@ -114,17 +114,17 @@ Nodes (8): [1.4.7] - 2026-10-29, Added, Changed, BEAST_NAMES, createGuardianDeit
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createGuardianDeityEditor()` connect `guardianDeity.js` to `main.js`?**
-  _High betweenness centrality (0.159) - this node is a cross-community bridge._
+- **Why does `createGuardianDeityEditor()` connect `guardianDeity.js` to `main.js`, `main.min.js`?**
+  _High betweenness centrality (0.161) - this node is a cross-community bridge._
 - **Should `main.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.07777777777777778 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0782608695652174 - nodes in this community are weakly interconnected._
 - **Why does `Changelog` connect `Changelog` to `guardianDeity.js`?**
   _High betweenness centrality (0.158) - this node is a cross-community bridge._
 - **Should `Changelog` be split into smaller, more focused modules?**
   _Cohesion score 0.044444444444444446 - nodes in this community are weakly interconnected._
 - **Should `main.min.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.07729468599033816 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07632850241545894 - nodes in this community are weakly interconnected._
 - **Should `Save File Field Mapping Reference` be split into smaller, more focused modules?**
   _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._
 - **Should `constants.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.12 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11396011396011396 - nodes in this community are weakly interconnected._

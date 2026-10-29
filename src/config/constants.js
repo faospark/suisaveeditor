@@ -53,9 +53,22 @@ export const RECRUIT_STATUS = {
 
 // Event Flag Indices
 export const EVENT_FLAG_INDEX = {
+  CLIVE_QUEST: 94,
   COOK_OFF_BYTE1: 152,
   COOK_OFF_BYTE2: 153
 };
+
+// Clive Quest Milestones & Cutoffs (event_flag[94])
+export const CLIVE_MILESTONES = [
+  { bit: 0x01, name: 'Muse', label: 'Muse (<3h)', limit: 3, desc: 'Elza encounter at Muse City entrance gate' },
+  { bit: 0x02, name: 'South Window', label: 'South Window (Join)', limit: null, desc: 'Clive recruited into party' },
+  { bit: 0x04, name: 'Lakewest', label: 'Lakewest (<11h)', limit: 11, desc: "Elza's letter at Lakewest Inn" },
+  { bit: 0x08, name: 'Forest Village', label: 'Forest Village (<13h)', limit: 13, desc: "Elza lookalike at Village Elder's house" },
+  { bit: 0x10, name: 'Rockaxe', label: 'Rockaxe (Info)', limit: null, desc: 'Guild pursuit intelligence gathered' },
+  { bit: 0x20, name: 'Radat', label: 'Radat (<14h)', limit: 14, desc: 'Hostage standoff at Radat Tavern' },
+  { bit: 0x40, name: 'Muse Hill', label: 'Muse Hill (<15h)', limit: 15, desc: 'Jowston Hill confrontation after Muse liberation' },
+  { bit: 0x80, name: 'Sajah Finale', label: 'Sajah Finale (<20h)', limit: 20, desc: 'Final duel and conclusion with Elza' }
+];
 
 // Cook-Off Progress Values
 export const COOK_OFF_STAGES = [
