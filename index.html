@@ -3,7 +3,9 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="./public/favicon.svg" />
+  <link rel="icon" type="image/png" href="./public/favicon.png" />
+  <link rel="icon" type="image/x-icon" href="./public/favicon.ico" />
+  <link rel="apple-touch-icon" href="./public/icon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Primary Meta Tags -->
@@ -42,9 +44,12 @@
     <header class="pads-1">
 
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h1 style="margin-bottom: 0.5rem;">Suikoden 2 Remaster Save Editor <span id="app-version" style="font-size: 0.6em; color: var(--pico-muted-color); font-weight: normal;"></span></h1>
-          <p style="margin: 0;">A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.</p>
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <img src="./public/favicon.png" alt="Bright Shield Rune" width="44" height="44" style="border-radius: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); flex-shrink: 0;" />
+          <div>
+            <h1 style="margin-bottom: 0.2rem;">Suikoden 2 Remaster Save Editor <span id="app-version" style="font-size: 0.6em; color: var(--pico-muted-color); font-weight: normal;"></span></h1>
+            <p style="margin: 0;">A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.</p>
+          </div>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
           <a href="https://github.com/faospark/suisaveeditor" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: #24292e; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
@@ -65,14 +70,14 @@
         <div class="file-action-bar">
           <div class="file-action-left">
             <input type="file" id="file-input" accept=".json" style="display: none;" />
-            <label for="file-input" class="file-upload-btn" id="file-upload-label" role="button">
+            <button type="button" class="file-upload-btn" id="file-upload-label" style="cursor: pointer; margin: 0;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.45rem;">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
               <span>Choose File</span>
-            </label>
+            </button>
             <div id="file-status-badge" class="file-status-badge">
               <span class="file-status-text">No file chosen</span>
             </div>
@@ -84,7 +89,7 @@
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                 <polyline points="7 3 7 8 15 8"></polyline>
               </svg>
-              Save / Download JSON
+              Save As...
             </button>
           </div>
         </div>
@@ -92,7 +97,7 @@
           <blockquote class="g-span-8" style="font-size: smaller; margin:0;">
             This Save Editor works only with JSON files generated from Suikoden II Remaster using SuikodenFix. To use the editor, make sure the save edit feature is enabled in SuikodenFix so it can produce the required JSON file or you can use <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter">SuikodenSaveDecrypter</a> to decrypt your save file. As of the moment json save files are in the game root folder but a newer version of SuikodenFix will have (GAME_PATH)\SuikodenFix\Backup\gsd2\ folder where the JSON file will be generated.
             <p style="margin: 0; color: #f0b90b;">Note: It is highly recommended that you turn off cloud saving for the game before editing save files and create your own back up</p>
-            <p style="margin: 0; color: crimson;">Warning: Always backup your original save files first!</p>
+            <p style="margin: 0; color: crimson;">Warning: Always backup your original save files first!</p><p class="desktop-app-notice" style="margin: 0.4rem 0 0 0; color: #4fc3f7;">Recommended: Use the <a href="https://github.com/faospark/suisaveeditor/releases" target="_blank" rel="noopener noreferrer">Desktop App</a> for best reliability. It silently creates a <code>.bak</code> next to your save on open and saves back to the same folder. Browsers cannot write to your save folder directly, so the web version may save to Downloads.</p>
           </blockquote>
           <div class="g-span-4">
             <div class="tabs-right" style="display: flex; align-items: center; justify-content: end; height: 100%;"><button class="tab-button outline data-values-tab" id="tab-data-values" data-tab-name="Data Values">Data Values</button><button class="tab-button outline about-tab" id="tab-about" data-tab-name="About">About</button><button class="tab-button outline changelog-tab" id="tab-changelog" data-tab-name="Changelog">Changelog</button></div>

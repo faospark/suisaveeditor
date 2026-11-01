@@ -29,6 +29,13 @@ A minimal, fast, and feature-rich GUI editor for Suikoden II HD Remaster JSON sa
 - **Live Search & Filter Toolbar**: Instant real-time filtering by character name, numeric ID, or recruitment status.
 - **Live Star Counter**: Real-time counter badge tracking recruited stars of destiny.
 - **Recruitment Mod Compatibility**: Built-in support for "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Chuchara, Abizboah, Rulodia).
+- **Smart Story Flags & Item Reset**: Interactive `🔄 Reset` button for characters with complex multi-step story flags (Badeaux, Tenkou, Simone, Vincent, Annallee, Alberto, Connell, Tony, Wakaba, Tessai, Tomo, Feather, Ayda). Setting status to `0: Not Recruited` automatically clears their linked `event_flag` bits and removes granted items (e.g. 2× Listening Crystals) to allow clean re-recruitment in-game.
+
+### 🚩 Story & Event Flags (`event_flag[0..255]`)
+- **Full 256-Byte Array Exposed**: Complete access to all 256 event flag bytes ($2,048$ digital switches) driving story progression, cutscenes, and NPC spawns.
+- **Annotated Knowledge Base**: Pre-labeled known story flags (Badeaux, Tenkou, Simone & Vincent, Annallee, Alberto, Connell, Tony, Wakaba, Tessai, Tomo, Feather & Ayda, Clive Milestones, Hai Yo Cook-Offs).
+- **Interactive 8-Bit Checkbox Matrix**: Granular bit toggles (`b0` to `b7`) with bitmask labels alongside synchronized Decimal (`0..255`) and Hexadecimal inputs.
+- **Live Search & Filter**: Filter by flag index (`#211`, `#230`), character name, area, or active status (`> 0`).
 
 ### 🏆 Side-Quests & Collection Unlocks
 - **Clive Quest Time-Trial Tracker**: Evaluates in-game play time against all 8 story milestones and completion flags (`event_flag[94]`).

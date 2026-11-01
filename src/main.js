@@ -21,7 +21,11 @@ import {
   createSideQuestsAndCountersEditor,
   createFishingRecordsEditor,
   createKitchenStockEditor,
-  createGuardianDeityEditor
+  createGuardianDeityEditor,
+  createStoryFlagsEditor,
+
+  createSuggestionBoxEditor
+
 } from './editors/index.js';
 import { COOK_OFF_STAGES, EVENT_FLAG_INDEX, CLIVE_MILESTONES } from './config/constants.js';
 import { createDataValuesViewer } from './renderers/index.js';
@@ -32,6 +36,10 @@ const editorContainer = document.getElementById('editor-container');
 
 let currentData = null;
 let currentFileName = 'save.json';
+
+let currentFilePath = null;
+
+let lastFileHandle = null;
 let hasUnsavedChanges = false;
 
 // Auto-save configuration
@@ -266,7 +274,11 @@ const editorFactories = {
   war_room: createWarRoomEditor,
   side_quests: createSideQuestsAndCountersEditor,
   fishing_records: createFishingRecordsEditor,
-  kitchen_stock: createKitchenStockEditor
+  kitchen_stock: createKitchenStockEditor,
+
+  story_flags: createStoryFlagsEditor,
+
+  suggestion_box: createSuggestionBoxEditor
 };
 
 /**
@@ -333,6 +345,15 @@ function createEditorElement(renderer, value, targetData, data, key, label, conf
 
     case 'side_quests':
       return editorFactory(data, onChange);
+
+    case 'suggestion_box':
+
+      return editorFactory(data, label, onChange);
+
+
+
+    case 'story_flags':
+      return editorFactory(value || data.event_flag, label, onChange, data);
 
     case 'castle_flags_raw':
       return editorFactory(value, label, onChange);
@@ -811,7 +832,7 @@ function renderGeneralTab(container, data) {
 
         badge.innerHTML = `<span style="font-weight: 700; margin-right: 0.2rem;">${icon}</span> ${m.label} <span style="font-size: 0.65rem; opacity: 0.85; padding-left: 0.15rem;">[${statusText}]</span>`;
         badge.style.cssText = `font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; background: ${bg}; border: 1px solid ${borderCol}; color: ${textCol}; cursor: pointer; margin-bottom: 0; line-height: 1.2; transition: filter 0.15s ease;`;
-        badge.title = `${m.name}: ${m.desc}\nStatus: ${statusText}\nBit: 0x${m.bit.toString(16).toUpperCase()} (${m.bit})\nClick to toggle completion`;
+        badge.title = `${m.name}: ${m.desc}\r\nStatus: ${statusText}\r\nBit: 0x${m.bit.toString(16).toUpperCase()} (${m.bit})\r\nClick to toggle completion`;
 
         badge.addEventListener('mouseenter', () => { badge.style.filter = 'brightness(1.25)'; });
         badge.addEventListener('mouseleave', () => { badge.style.filter = 'none'; });
@@ -1597,23 +1618,7 @@ function createCookOffProgressEditor(data, key, updateCallback) {
   const container = document.createElement('div');
   container.className = 'json-object cook-off-progress-card';
   container.id = 'cook-off-progress-editor';
-  container.style.cssText = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
-
-  const header = document.createElement('div');
-  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
-  const title = document.createElement('strong');
-  title.style.fontSize = '0.85rem';
-  title.textContent = '🍳 Hai Yo\'s Cook-Off Battles Won (cook_off_progress)';
-  header.appendChild(title);
-  container.appendChild(header);
-
-  const label = document.createElement('label');
-  label.textContent = 'Current Match Status:';
-  label.style.cssText = 'font-size: 0.75rem; font-weight: bold; margin-bottom: 0.35rem;';
-  container.appendChild(label);
-
-  const select = document.createElement('select');
-  select.style.cssText = 'margin-bottom: 0;';
+  container.style.cssText = 'padding: 0.85rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
 
   const cookOffStages = [
     [0, 0, 32],
@@ -1631,53 +1636,189 @@ function createCookOffProgressEditor(data, key, updateCallback) {
     [12, 255, 47]
   ];
 
-  const currentByte152 = data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1] || 0;
-  const currentByte153 = data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2] || 32;
-
-  let currentStage = 0;
-  for (let i = 0; i < cookOffStages.length; i++) {
-    const [matches, b152, b153] = cookOffStages[i];
-    if (currentByte152 === b152 && currentByte153 === b153) {
-      currentStage = matches;
-      break;
-    }
-  }
-
   const opponents = [
-    'Not started',
-    'Match 1: Ky Yun Defeated',
-    'Match 2: Goetsu Defeated',
-    'Match 3: Shinki Defeated',
-    'Match 4: Ryuki Defeated',
-    'Match 5: Bashok Defeated',
-    'Match 6: Ryuko Defeated',
-    'Match 7: Antoio Defeated',
-    'Match 8: Gyokuran Defeated',
-    'Match 9: Retso Defeated',
-    'Match 10: Lester Defeated',
-    'Match 11: Retso Defeated',
-    'Match 12: Jinkai Defeated (Complete!)'
+    { num: 1,  name: 'Ky Yun', desc: 'Apprentice cook from Gregminster' },
+    { num: 2,  name: 'Goetsu', desc: 'Fish cook from Coronet' },
+    { num: 3,  name: 'Shinki', desc: 'Vegetable master from Forest Village' },
+    { num: 4,  name: 'Ryuki', desc: 'Pasta chef from Two River' },
+    { num: 5,  name: 'Bashok', desc: 'Meat specialist from Radat' },
+    { num: 6,  name: 'Ryuko', desc: 'Dessert specialist from South Window' },
+    { num: 7,  name: 'Antonio', desc: 'Gyuran chef from Muse' },
+    { num: 8,  name: 'Gyokuran', desc: 'Master chef from Gregminster' },
+    { num: 9,  name: 'Retso (Round 1)', desc: 'Black Dragon Group assassin' },
+    { num: 10, name: 'Lester', desc: 'Stout stew specialist' },
+    { num: 11, name: 'Retso (Round 2)', desc: 'Rematch with dragon technique' },
+    { num: 12, name: 'Jinkai (Grand Finale)', desc: 'Head of Black Dragon Group' }
   ];
 
-  cookOffStages.forEach(([matches]) => {
-    const option = document.createElement('option');
-    option.value = matches;
-    option.textContent = opponents[matches];
-    select.appendChild(option);
+  const getCurrentStage = () => {
+    const b152 = (data.event_flag && data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1]) || 0;
+    const b153 = (data.event_flag && data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2]) || 32;
+    for (let i = 0; i < cookOffStages.length; i++) {
+      if (b152 === cookOffStages[i][1] && b153 === cookOffStages[i][2]) {
+        return cookOffStages[i][0];
+      }
+    }
+    // Fallback: estimate from byte 152 and byte 153 bits
+    if (b153 & 8) return 12;
+    if (b153 & 4) return 11;
+    if (b153 & 2) return 10;
+    if (b153 & 1) return 9;
+    for (let bit = 7; bit >= 0; bit--) {
+      if (b152 & (1 << bit)) return bit + 1;
+    }
+    return 0;
+  };
+
+  let currentStage = getCurrentStage();
+
+  // Header
+  const header = document.createElement('div');
+  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;';
+
+  const titleBox = document.createElement('div');
+  titleBox.style.cssText = 'display: flex; align-items: center; gap: 0.5rem;';
+  const title = document.createElement('strong');
+  title.style.fontSize = '0.9rem';
+  title.textContent = '🍳 Hai Yo\'s Cook-Off Battles';
+  titleBox.appendChild(title);
+
+  const statusBadge = document.createElement('span');
+  statusBadge.style.cssText = 'font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: bold; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);';
+  titleBox.appendChild(statusBadge);
+  header.appendChild(titleBox);
+
+  // Actions Box (Reset & Max buttons)
+  const actionsBox = document.createElement('div');
+  actionsBox.style.cssText = 'display: flex; gap: 0.4rem; align-items: center;';
+
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.textContent = '🔄 Reset to Start';
+  resetBtn.title = 'Reset all 12 Cook-Off battles to Not Started (preserves minigame unlock)';
+  resetBtn.style.cssText = 'font-size: 0.72rem; padding: 0.2rem 0.55rem; margin-bottom: 0; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 4px; cursor: pointer;';
+
+  const maxBtn = document.createElement('button');
+  maxBtn.type = 'button';
+  maxBtn.textContent = '⚡ Complete All';
+  maxBtn.title = 'Mark all 12 Cook-Off battles as won';
+  maxBtn.style.cssText = 'font-size: 0.72rem; padding: 0.2rem 0.55rem; margin-bottom: 0; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 4px; cursor: pointer;';
+
+  actionsBox.appendChild(resetBtn);
+  actionsBox.appendChild(maxBtn);
+  header.appendChild(actionsBox);
+  container.appendChild(header);
+
+  // Description / Subtitle
+  const desc = document.createElement('p');
+  desc.textContent = 'Linear progression checklist: Checking a match automatically completes all preceding opponents. Use Reset to re-trigger cook-off cutscenes from the beginning.';
+  desc.style.cssText = 'font-size: 0.72rem; color: var(--pico-muted-color); margin-bottom: 0.65rem;';
+  container.appendChild(desc);
+
+  // Checklist Grid
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.45rem;';
+
+  const checkboxes = [];
+
+  const updateUI = (stageNum) => {
+    currentStage = Math.max(0, Math.min(12, stageNum));
+    const stageData = cookOffStages[currentStage];
+    data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1] = stageData[1];
+    data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2] = stageData[2];
+
+    if (currentStage === 0) {
+      statusBadge.textContent = 'Not Started (0/12)';
+      statusBadge.style.color = '#94a3b8';
+      statusBadge.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+      statusBadge.style.background = 'rgba(148, 163, 184, 0.15)';
+    } else if (currentStage === 12) {
+      statusBadge.textContent = 'Completed (12/12 - Jinkai Won!)';
+      statusBadge.style.color = '#4ade80';
+      statusBadge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+      statusBadge.style.background = 'rgba(34, 197, 94, 0.15)';
+    } else {
+      statusBadge.textContent = `Progress: ${currentStage}/12 Won (Next: ${opponents[currentStage].name})`;
+      statusBadge.style.color = '#38bdf8';
+      statusBadge.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+      statusBadge.style.background = 'rgba(56, 189, 248, 0.15)';
+    }
+
+    checkboxes.forEach((cb, idx) => {
+      const matchNum = idx + 1;
+      const isChecked = matchNum <= currentStage;
+      cb.checked = isChecked;
+      const card = cb.closest('.cook-off-item');
+      if (card) {
+        if (isChecked) {
+          card.style.background = 'rgba(34, 197, 94, 0.08)';
+          card.style.borderColor = 'rgba(34, 197, 94, 0.35)';
+        } else {
+          card.style.background = 'rgba(255, 255, 255, 0.02)';
+          card.style.borderColor = 'var(--pico-muted-border-color)';
+        }
+      }
+    });
+
+    if (typeof updateCallback === 'function') updateCallback();
+  };
+
+  opponents.forEach((opp, idx) => {
+    const matchNum = opp.num;
+    const item = document.createElement('label');
+    item.className = 'cook-off-item';
+    item.style.cssText = 'display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.35rem 0.5rem; border: 1px solid var(--pico-muted-border-color); border-radius: 5px; cursor: pointer; transition: all 0.15s ease; margin-bottom: 0;';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.style.cssText = 'margin: 0.2rem 0 0 0; cursor: pointer; flex-shrink: 0;';
+    cb.dataset.match = matchNum;
+
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        updateUI(matchNum);
+      } else {
+        updateUI(matchNum - 1);
+      }
+    });
+
+    checkboxes.push(cb);
+
+    const info = document.createElement('div');
+    info.style.cssText = 'display: flex; flex-direction: column; line-height: 1.25;';
+
+    const nameLabel = document.createElement('span');
+    nameLabel.style.cssText = 'font-size: 0.76rem; font-weight: 600;';
+    nameLabel.textContent = `Match ${matchNum}: ${opp.name}`;
+
+    const descLabel = document.createElement('span');
+    descLabel.style.cssText = 'font-size: 0.68rem; color: var(--pico-muted-color);';
+    descLabel.textContent = opp.desc;
+
+    info.appendChild(nameLabel);
+    info.appendChild(descLabel);
+
+    item.appendChild(cb);
+    item.appendChild(info);
+    grid.appendChild(item);
   });
 
-  select.value = currentStage;
+  container.appendChild(grid);
 
-  select.addEventListener('change', (e) => {
-    const selectedMatches = parseInt(e.target.value);
-    const stage = cookOffStages[selectedMatches];
-    data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE1] = stage[1];
-    data.event_flag[EVENT_FLAG_INDEX.COOK_OFF_BYTE2] = stage[2];
+  resetBtn.addEventListener('click', () => {
+    updateUI(0);
   });
 
-  container.appendChild(select);
+  maxBtn.addEventListener('click', () => {
+    updateUI(12);
+  });
+
+  // Initial render
+  updateUI(currentStage);
+
   return container;
 }
+
 
 // Register editor factories after functions are defined
 editorFactories.play_time = createPlayTimeEditor;
@@ -1749,7 +1890,7 @@ function createChangelogViewer(container) {
       wrapper.className = 'changelog-wrapper';
 
       // Parse releases: Split by ## [version] - date
-      const releaseRegex = /^##\s+\[([^\]]+)\](?:\s*-\s*([^\n]+))?/gm;
+      const releaseRegex = /^##\s+\[([^\]]+)\](?:\s*-\s*([^\r\n]+))?/gm;
       const releases = [];
       let match;
       const matches = [];
@@ -2009,107 +2150,595 @@ fileInput.addEventListener('click', (e) => {
   }
 });
 
-function loadJsonFile(file) {
+// Tauri IPC Helper
+
+const isTauri = () => typeof window !== 'undefined' && Boolean(
+
+  window.__TAURI_INTERNALS__ || 
+
+  window.__TAURI__ || 
+
+  window.__TAURI_METADATA__ || 
+
+  window.isTauri || 
+
+  (window.navigator && window.navigator.userAgent && window.navigator.userAgent.includes('tauri'))
+
+);
+
+
+
+async function tauriInvoke(cmd, args = {}) {
+
+  if (window.__TAURI__?.core?.invoke) {
+
+    return window.__TAURI__.core.invoke(cmd, args);
+
+  }
+
+  if (window.__TAURI_INTERNALS__?.invoke) {
+
+    return window.__TAURI_INTERNALS__.invoke(cmd, args);
+
+  }
+
+  if (window.__TAURI__?.invoke) {
+
+    return window.__TAURI__.invoke(cmd, args);
+
+  }
+
+  throw new Error('Tauri API not found');
+
+}
+
+
+
+// Silent Backup Helper (stores in localStorage for Web without triggering noisy download popups)
+
+function saveSilentWebBackup(fileName, rawText) {
+
+  try {
+
+    localStorage.setItem(`suikoden_bak_${fileName}`, rawText);
+
+    console.log(`Silent web backup cached for: ${fileName}`);
+
+  } catch (e) {
+
+    console.warn('Could not cache silent web backup:', e);
+
+  }
+
+}
+
+
+
+function downloadBakFile(name, text) {
+
+  try {
+
+    const bakName = name.toLowerCase().endsWith('.bak') ? name : `${name}.bak`;
+
+    const blob = new Blob([text], { type: 'application/octet-stream' });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+
+    a.href = url;
+
+    a.download = bakName;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    console.log('Created silent .bak backup:', bakName);
+
+  } catch (e) {
+
+    console.warn('Could not download .bak:', e);
+
+  }
+
+}
+
+
+
+function handleLoadedFile(rawText, fileName, diskPath, fileHandle = null) {
+
+  try {
+
+    currentFileName = fileName;
+
+    if (diskPath) {
+
+      currentFilePath = diskPath;
+
+      localStorage.setItem('suikoden_last_file_path', currentFilePath);
+
+    }
+
+    if (fileHandle) {
+
+      lastFileHandle = fileHandle;
+
+    }
+
+
+
+    // Create .bak on disk
+
+    if (isTauri() && (diskPath || currentFilePath)) {
+
+      tauriInvoke('create_backup_from_path', { filePath: diskPath || currentFilePath }).catch(() => {
+
+        // Browser sandbox: no unsolicited download prompts on open
+
+      });
+
+    } else {
+
+      // Browser sandbox: no unsolicited download prompts on open
+
+    }
+
+
+
+    currentData = JSON.parse(rawText);
+
+    renderEditor(editorContainer, currentData, (newData) => {
+
+      currentData = newData;
+
+      hasUnsavedChanges = true;
+
+      autoSaveToLocalStorage();
+
+    });
+
+    saveBtn.disabled = false;
+
+    updateSaveFileIndicator(currentFileName);
+
+    hasUnsavedChanges = false;
+
+    autoSaveToLocalStorage();
+
+    console.log(`Loaded ${fileName} successfully`);
+
+  } catch (err) {
+
+    showAlertDialog('Parse Error', `<p>❌ <strong>Error parsing JSON:</strong></p><p>${err.message}</p>`);
+
+  }
+
+}
+
+
+
+async function loadJsonFile(file, fileHandle = null) {
+
   if (!file) return;
 
-  currentFileName = file.name;
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    try {
-      currentData = JSON.parse(event.target.result);
-      renderEditor(editorContainer, currentData, (newData) => {
-        currentData = newData;
-        hasUnsavedChanges = true;
-        autoSaveToLocalStorage();
-      });
-      saveBtn.disabled = false;
-      updateSaveFileIndicator(currentFileName);
-      hasUnsavedChanges = false;
-      autoSaveToLocalStorage();
-    } catch (err) {
-      showAlertDialog('Parse Error', `<p>❌ <strong>Error parsing JSON:</strong></p><p>${err.message}</p>`);
-    }
-  };
-  reader.readAsText(file);
+  const rawText = await file.text();
+
+  handleLoadedFile(rawText, file.name, file.path || null, fileHandle);
+
 }
+
+
+
+// Unified openFile supporting File System Access API in browser so Save As knows the folder
+
+async function openFile() {
+
+  if (isDebugMode()) {
+
+    setDebugMode(false);
+
+    updateStatusBar();
+
+    location.reload();
+
+    return;
+
+  }
+
+
+
+  // 1. Desktop Tauri mode
+
+  if (isTauri()) {
+
+    try {
+
+      const lastPath = currentFilePath || localStorage.getItem('suikoden_last_file_path') || null;
+
+      const result = await tauriInvoke('open_file_dialog_and_backup', { defaultPath: lastPath });
+
+      if (result && result.content) {
+
+        handleLoadedFile(result.content, result.name, result.path, null);
+
+      }
+
+      return;
+
+    } catch (e) {
+
+      console.warn('Tauri open failed, falling back:', e);
+
+    }
+
+  }
+
+
+
+  // 2. Modern Web Browser mode: window.showOpenFilePicker keeps folder location
+
+  if (typeof window.showOpenFilePicker === 'function') {
+
+    try {
+
+      const pickerOpts = {
+        id: 'suikoden-save-dir',
+        multiple: false,
+        types: [{
+          description: 'Suikoden II Save File (*.json)',
+          accept: { 'application/json': ['.json'] }
+        }]
+      };
+      if (lastFileHandle) {
+        pickerOpts.startIn = lastFileHandle;
+      }
+      let handle;
+      try {
+        const [h] = await window.showOpenFilePicker(pickerOpts);
+        handle = h;
+      } catch (pickerErr) {
+        if (pickerErr.name === 'AbortError') return;
+        if (pickerOpts.startIn) {
+          delete pickerOpts.startIn;
+          const [h] = await window.showOpenFilePicker(pickerOpts);
+          handle = h;
+        } else {
+          throw pickerErr;
+        }
+      }
+
+      if (handle) {
+
+        lastFileHandle = handle;
+
+        const file = await handle.getFile();
+
+        const text = await file.text();
+
+        handleLoadedFile(text, file.name, null, handle);
+
+      }
+
+      return;
+
+    } catch (err) {
+
+      if (err.name === 'AbortError') return;
+
+      console.warn('showOpenFilePicker failed, falling back to input:', err);
+
+    }
+
+  }
+
+
+
+  // 3. Fallback for legacy browsers
+
+  document.getElementById('file-input')?.click();
+
+}
+
+
+
+const fileUploadLabel = document.getElementById('file-upload-label');
+
+if (fileUploadLabel) {
+
+  fileUploadLabel.addEventListener('click', (e) => {
+
+    e.preventDefault();
+
+    openFile();
+
+  });
+
+}
+
+
 
 fileInput.addEventListener('change', (e) => {
+
   const file = e.target.files[0];
+
   if (file) {
+
     loadJsonFile(file);
+
   }
+
 });
 
-// Drag and drop support on file action bar
+
+
+// Drag and drop support capturing FileSystemHandle where available
+
 const fileActionBar = document.querySelector('.file-action-bar');
+
 if (fileActionBar) {
+
   ['dragenter', 'dragover'].forEach(eventName => {
+
     fileActionBar.addEventListener(eventName, (e) => {
+
       e.preventDefault();
+
       e.stopPropagation();
+
       fileActionBar.classList.add('drag-over');
+
     });
+
   });
+
+
 
   ['dragleave', 'drop'].forEach(eventName => {
+
     fileActionBar.addEventListener(eventName, (e) => {
+
       e.preventDefault();
+
       e.stopPropagation();
+
       fileActionBar.classList.remove('drag-over');
+
     });
+
   });
 
-  fileActionBar.addEventListener('drop', (e) => {
+
+
+  fileActionBar.addEventListener('drop', async (e) => {
+
+    e.preventDefault();
+
     if (isDebugMode()) {
+
       showAlertDialog('Debug Mode Active', '<p>Please click <strong>Change File</strong> first to exit debug mode before loading another file.</p>');
+
       return;
+
     }
-    const dt = e.dataTransfer;
-    const file = dt?.files?.[0];
+
+    const item = e.dataTransfer?.items?.[0];
+
+    let handle = null;
+
+    if (item && typeof item.getAsFileSystemHandle === 'function') {
+
+      try {
+
+        handle = await item.getAsFileSystemHandle();
+
+      } catch (err) {}
+
+    }
+
+    const file = e.dataTransfer?.files?.[0];
+
     if (file) {
+
       if (file.name.toLowerCase().endsWith('.json')) {
-        loadJsonFile(file);
+
+        loadJsonFile(file, handle);
+
       } else {
+
         showAlertDialog('Invalid File', '<p>❌ Please select or drop a valid <code>.json</code> save file.</p>');
+
       }
+
     }
+
   });
+
 }
 
-saveBtn.addEventListener('click', () => {
+
+
+// Unified Save As: opens dialog in the exact location opened without any JS popups
+
+async function saveFileAs() {
+
   if (!currentData) return;
 
-  let jsonContent = JSON.stringify(currentData, (key, value) => {
-    return value;
-  }, 2);
-  
+
+
+  let jsonContent = JSON.stringify(currentData, null, 2);
+
   jsonContent = jsonContent.replace(/[\u0080-\uFFFF]/g, (ch) => {
+
     return '\\u' + ('0000' + ch.charCodeAt(0).toString(16).toUpperCase()).slice(-4);
+
   });
-  
-  jsonContent = jsonContent.replace(/\r?\n/g, '\r\n');
-  
+
+  jsonContent = jsonContent.replace(/\r?\r\n/g, '\r\n');
+
+
+
+  // 1. Desktop Tauri mode: Native dialog pre-focused on same directory
+
+  if (isTauri()) {
+
+    try {
+
+      const lastPath = currentFilePath || localStorage.getItem('suikoden_last_file_path') || null;
+
+      const result = await tauriInvoke('save_file_as_dialog', {
+
+        suggestedName: currentFileName,
+
+        content: jsonContent,
+
+        defaultPath: lastPath
+
+      });
+
+      if (result) {
+
+        currentFileName = result.name;
+
+        currentFilePath = result.path;
+
+        localStorage.setItem('suikoden_last_file_path', currentFilePath);
+
+        updateSaveFileIndicator(currentFileName);
+
+        clearAutoSave();
+
+        console.log('Saved to:', result.path);
+
+      }
+
+      return;
+
+    } catch (err) {
+
+      console.error('Tauri Save As failed, falling back to web:', err);
+
+    }
+
+  }
+
+
+
+  // 2. Web Browser: showSaveFilePicker pre-focused on the exact same folder via lastFileHandle
+
+  if (typeof window.showSaveFilePicker === 'function') {
+
+    try {
+
+      const pickerOptions = {
+        id: 'suikoden-save-dir',
+        suggestedName: currentFileName,
+        types: [{
+          description: 'Suikoden II Save File (*.json)',
+          accept: { 'application/json': ['.json'] }
+        }]
+      };
+      if (lastFileHandle) {
+        pickerOptions.startIn = lastFileHandle;
+      }
+      let handle;
+      try {
+        handle = await window.showSaveFilePicker(pickerOptions);
+      } catch (pickerErr) {
+        if (pickerErr.name === 'AbortError') return;
+        if (pickerOptions.startIn) {
+          delete pickerOptions.startIn;
+          handle = await window.showSaveFilePicker(pickerOptions);
+        } else {
+          throw pickerErr;
+        }
+      }
+
+      lastFileHandle = handle;
+
+      const writable = await handle.createWritable();
+
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+
+      const jsonBytes = new TextEncoder().encode(jsonContent);
+
+      const fileContent = new Uint8Array(bom.length + jsonBytes.length);
+
+      fileContent.set(bom, 0);
+
+      fileContent.set(jsonBytes, bom.length);
+
+      await writable.write(fileContent);
+
+      await writable.close();
+
+
+
+      currentFileName = handle.name || currentFileName;
+
+      updateSaveFileIndicator(currentFileName);
+
+      clearAutoSave();
+
+      console.log('Saved to same location:', currentFileName);
+
+      return;
+
+    } catch (err) {
+
+      if (err.name === 'AbortError') return;
+
+      console.warn('showSaveFilePicker failed, falling back:', err);
+
+    }
+
+  }
+
+
+
+  // 3. Fallback for legacy browsers: direct silent download
+
   const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-  const textEncoder = new TextEncoder();
-  const jsonBytes = textEncoder.encode(jsonContent);
-  
+
+  const jsonBytes = new TextEncoder().encode(jsonContent);
+
   const fileContent = new Uint8Array(bom.length + jsonBytes.length);
+
   fileContent.set(bom, 0);
+
   fileContent.set(jsonBytes, bom.length);
-  
+
   const blob = new Blob([fileContent], { type: 'application/json' });
+
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement('a');
+
   a.href = url;
+
   a.download = currentFileName;
+
   document.body.appendChild(a);
+
   a.click();
+
   document.body.removeChild(a);
+
   URL.revokeObjectURL(url);
-  
+
+  updateSaveFileIndicator(currentFileName);
+
   clearAutoSave();
-  showAlertDialog('File Saved', '<p>✅ <strong>File saved successfully!</strong></p><p>Auto-save backup has been cleared.</p>');
-});
+
+}
+
+
+
+saveBtn.addEventListener('click', saveFileAs);
 
 // Hotkey: Ctrl+D to toggle debug mode
 document.addEventListener('keydown', (e) => {
@@ -2197,8 +2826,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.ctrlKey || e.metaKey) {
       if (e.key === 'o' || e.key === 'O') {
         e.preventDefault();
-        const fileInput = document.getElementById('file-input');
-        if (fileInput) fileInput.click();
+        openFile();
       } else if (e.key === 's' || e.key === 'S') {
         e.preventDefault();
         const saveBtn = document.getElementById('save-btn');

@@ -133,9 +133,15 @@ export const FIELD_CONFIG = {
     renderer: 'library_books'
   },
   'hon_flag': {
-    label: 'Castle Farm Plots & Livestock (hon_flag[30–32])',
+    label: 'Tony\'s Farm & Yuzu\'s Ranch (hon_flag[30–32])',
     group: 'Castle',
     renderer: 'castle_flags'
+  },
+  'meyasu_box': {
+    label: 'Castle Suggestion Box (目安箱)',
+    group: 'Castle',
+    renderer: 'suggestion_box',
+    path: 'game_data'
   },
 
   // Experimental / Unlocks & Quests Tab
@@ -284,6 +290,12 @@ export const FIELD_CONFIG = {
     label: 'Count'
   },
 
+  'event_flag': {
+    label: 'Story & Event Flags (256 Bytes)',
+    group: 'Experimental',
+    renderer: 'story_flags'
+  },
+
   // Other fields
   'version': {
     label: 'Save Version'
@@ -323,8 +335,8 @@ export const EDITOR_GROUPS = {
   'Warehouse': ['base_item', 'room_item'],
   'Cooking': ['cook_off_progress', 'food_num', 'food_menu', 'food_resipi'],
   'Investigations': ['tantei_lv'],
-  'Castle': ['parts_no', 'furo_item', 'lib_flag', 'hon_flag', 'tsuri_data'],
-  'Experimental': ['hon_flag_raw', 't_box_flag', 'war_data']
+  'Castle': ['parts_no', 'furo_item', 'lib_flag', 'hon_flag', 'tsuri_data', 'meyasu_box'],
+  'Experimental': ['event_flag', 'hon_flag_raw', 't_box_flag', 'war_data']
 };
 
 /**

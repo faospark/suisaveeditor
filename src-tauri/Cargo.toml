@@ -1,6 +1,6 @@
 [package]
 name = "suisaveeditor"
-version = "1.4.8"
+version = "1.4.9"
 description = "Suikoden 2 Remaster Save Editor"
 authors = ["you"]
 license = ""
@@ -23,3 +23,4 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.12.5" }
 tauri-plugin-log = "2"
+rfd = "0.17.2"

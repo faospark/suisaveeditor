@@ -1612,6 +1612,7 @@ input[type=search] {
 /* ==========================================================================
    DESKTOP APP (TAURI) STYLING & NATIVE WINDOWS FEEL
    ========================================================================== */
+body.is-tauri .desktop-app-notice { display: none; } /* web-only recommendation */
 body.is-tauri {
     /* Prevent web-like text dragging and highlighting on application chrome */
     user-select: none;

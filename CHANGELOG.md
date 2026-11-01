@@ -5,6 +5,57 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.9] - 2026-11-01
+
+### Added
+
+- **Automatic Immediate `.bak` Backup on File Open (`src/main.js`, `src-tauri/src/lib.rs`)**:
+  - **Desktop App (Tauri)**: As soon as a `.json` save file is opened via the file dialog or drag-and-drop, the app automatically copies the file to `<filename>.bak` right in that same folder on disk before any edits can be made.
+  - **Web Version**: Silently caches a rollback snapshot in browser storage (`localStorage`). No download or dialog is triggered on open. Browsers cannot write files into the save folder, so the Desktop App is recommended for on-disk `.bak` backups.
+
+- **Native "Save As..." Workflow (`src/main.js`, `src-tauri/src/lib.rs`, `index.html`)**:
+  - Replaced blind direct file download with a full "Save As..." dialog workflow.
+  - **Desktop App (Tauri)**: Invokes the native Windows Save As file dialog prefilled with the current filename, allowing players to save into any folder or as a new slot name, writing clean UTF-8 BOM encoded JSON directly to disk.
+  - **Web Version**: Uses the browser File System Access API (`showSaveFilePicker`) where available (Chrome/Edge; disabled by default in Brave), remembering the folder the file was opened from. Without that API the browser falls back to a normal download.
+
+- **Desktop App Recommendation (`index.html`, `src/style.css`)**:
+  - Added an inline note in the web version recommending the Desktop App for reliable same-folder saving and silent `.bak` backups. Hidden inside the Desktop App.
+
+- **Version Sync (`src/config/constants.js`)**:
+  - Web version label updated from 1.4.8 to 1.4.9 to match `tauri.conf.json` and `Cargo.toml`.
+
+- **Castle Suggestion Box (目安箱 / Meyasubako) Editor (`src/editors/suggestionBox.js`, `schema.js`, `main.js`)**:
+  - Full-featured editor for Dunan Castle's suggestion box system located under the **Castle** tab.
+  - Complete control over `game_data.meyasu_data` (32-byte bitfield managing 2-bit letter progression levels 0–3 for 125+ stars of destiny and castle allies).
+  - Unread mail notification indicator and toggles (`b_meyasu`) plus management of the 4 pending inbox letter slots (`game_data.unread_letter`).
+  - One-click `🔄 Reset All to Unread (0)`: Clears inbox and sets all character letter levels to 0, allowing players to re-experience receiving and reading all suggestion box letters from scratch.
+  - One-click `⚡ Mark All Read (Level 3)`: Instantly sets all 32 bytes to `0xFF` (level 3 for all characters).
+  - Searchable allies roster with live filtering (Read, Unread, Incomplete, Complete) and instant segmented button level selection.
+
+- **Hai Yo Cook-Off Battles Linear Checklist Redesign (`src/main.js`)**:
+  - Replaced the single-select dropdown with a clean, responsive linear checklist covering all 12 culinary matches from Ky Yun through Jinkai.
+  - Added dedicated `🔄 Reset to Start` button (`event_flag[152]=0`, `event_flag[153]=32`), allowing players to replay the cook-off minigame at any time.
+  - Added `⚡ Complete All` button (`event_flag[152]=255`, `event_flag[153]=47`) and dynamic progress status badges.
+
+- **Consolidated Story Flags & Recruitment Resets**:
+  - Moved raw `event_flag` editing into the **Experimental** tab to streamline the main navigation.
+  - Grounded `KNOWN_STORY_FLAGS` strictly to verified story and recruitment events without generic filler.
+  - Added recruitment resets with automatic item removal and story flag synchronization for 12+ multi-step recruits.
+
+
+- **Dedicated "Story Flags" Editor Tab (`src/editors/storyFlags.js`, `schema.js`, `main.js`)**:
+  - Added a full-featured editor tab exposing all 256 bytes (`event_flag[0..255]`) of the game engine's global event ledger.
+  - Built-in registry (`KNOWN_STORY_FLAGS`) annotating key story checkpoints and character recruitments (Badeaux, Tenkou, Simone, Vincent, Annallee, Alberto, Connell, Tony, Wakaba, Tessai, Tomo, Feather, Ayda, Viki, Genshu, Alex & Hilda, Tsai, Millie, Kinnison, Shiro, Zamza, Anita, Templeton, Meg, Gadget, Sid, Hans, Clive Milestones, Hai Yo Cook-Offs).
+  - Searchable toolbar with instant filtering by flag number, character name, area, or description.
+  - Interactive 8-bit checkbox array (`b0` through `b7`) for every byte with descriptive bit tooltips.
+  - Two-way synchronized decimal (`0..255`) and hex (`0x00..0xFF`) inputs with visual state highlighting.
+
+- **Smart Recruitment & Story Flags Reset (`src/editors/recruitment.js`)**:
+  - Added `RECRUITMENT_STORY_FLAGS` mapping characters with multi-step world state flags.
+  - Integrated a compact `🔄 Reset` button directly on character cards for characters with linked story flags.
+  - One-click action sets character status to `0: Not Recruited`, automatically clears corresponding `event_flag` bits, and removes any granted quest items (such as Badeaux's 2× Listening Crystals) from party bag and warehouse.
+  - Selecting `0: Not Recruited` from the dropdown also automatically clears linked story flags.
+
 ## [1.4.8] - 2026-10-31
 
 ### Changed

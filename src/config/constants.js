@@ -1,6 +1,6 @@
 // Application Constants
 
-export const APP_VERSION = '1.4.8';
+export const APP_VERSION = '1.4.9';
 export const DEBUG_FILE_PATH = './debug/save.json';
 
 // Character Limits

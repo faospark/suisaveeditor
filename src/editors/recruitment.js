@@ -2,6 +2,222 @@ import GameData from '../gamedata.js';
 import { CHAR_INDEX, RECRUIT_STATUS } from '../config/constants.js';
 
 /**
+ * Registry of characters with associated story/event flags and quest items.
+ */
+export const RECRUITMENT_STORY_FLAGS = {
+  51: { // Badeaux
+    name: 'Badeaux',
+    flags: [
+      { byte: 211, mask: 0x06, desc: 'Badeaux Recruited & Spoke Flags (Mask 2 | 4)' },
+      { byte: 230, mask: 0x02, desc: 'Listening Crystal / Forest Village Flag (Mask 2)' }
+    ],
+    items: [
+      { id: 2126, altId: 55, name: 'Listening Crystal' }
+    ]
+  },
+  97: { // Tenkou
+    name: 'Tenkou',
+    flags: [
+      { byte: 211, mask: 0x18, desc: 'Tenkou Recruited & Spoke Flags (Mask 8 | 16)' }
+    ]
+  },
+  65: { // Simone
+    name: 'Simone',
+    flags: [
+      { byte: 29, mask: 0x08, desc: 'Simone Recruited Flag (Mask 8)' }
+    ],
+    items: [
+      { id: 2128, altId: 75, name: 'Rose Brooch' }
+    ]
+  },
+  64: { // Vincent
+    name: 'Vincent',
+    flags: [
+      { byte: 29, mask: 0xE0, desc: 'Vincent Dialogue & Recruited Flags (Mask 32 | 64 | 128)' }
+    ]
+  },
+  112: { // Annallee
+    name: 'Annallee',
+    flags: [
+      { byte: 92, mask: 0x01, desc: 'Unpaid Meal / Street Spawn Flag (Mask 1)' },
+      { byte: 112, mask: 0x30, desc: 'Annallee Recruited Flags (Mask 16 | 32)' }
+    ]
+  },
+  114: { // Alberto
+    name: 'Alberto',
+    flags: [
+      { byte: 212, mask: 0x03, desc: 'Alberto Tinto & HQ Flags (Mask 1 | 2)' },
+      { byte: 114, mask: 0x30, desc: 'Alberto Recruited Flags (Mask 16 | 32)' }
+    ]
+  },
+  108: { // Connell
+    name: 'Connell',
+    flags: [
+      { byte: 216, mask: 0x03, desc: 'Connell Spoke & Recruited Flags (Mask 1 | 2)' }
+    ]
+  },
+  104: { // Tony
+    name: 'Tony',
+    flags: [
+      { byte: 216, mask: 0x30, desc: 'Tony Spoke & Recruited Flags (Mask 16 | 32)' }
+    ]
+  },
+  68: { // Wakaba
+    name: 'Wakaba',
+    flags: [
+      { byte: 216, mask: 0x80, desc: 'Wakaba Initial Talk Flag (Mask 128)' }
+    ]
+  },
+  110: { // Tessai
+    name: 'Tessai',
+    flags: [
+      { byte: 110, mask: 0x02, desc: 'Tessai Recruited Flag (Mask 2)' }
+    ]
+  },
+  17: { // Tomo
+    name: 'Tomo',
+    flags: [
+      { byte: 171, mask: 0x40, desc: 'Tomo Recruited Flag (Mask 64)' },
+      { byte: 20, mask: 0x80, desc: 'Tomo Late-Game Lockout Flag (Mask 128)' }
+    ]
+  },
+  50: { // Feather
+    name: 'Feather',
+    flags: [
+      { byte: 230, mask: 0x03, desc: 'Feather Quest & Crystal Flags (Mask 1 | 2)' },
+      { byte: 215, mask: 0x14, desc: 'Feather Ambush & Recruited Flags (Mask 4 | 16)' }
+    ]
+  },
+  43: { // Ayda
+    name: 'Ayda',
+    flags: [
+      { byte: 230, mask: 0x03, desc: 'Ayda Quest & Crystal Flags (Mask 1 | 2)' },
+      { byte: 215, mask: 0x40, desc: 'Ayda Recruited Flag (Mask 64)' }
+    ]
+  },
+  4: { // Viki
+    name: 'Viki',
+    flags: [
+      { byte: 210, mask: 0xC0, desc: 'Viki Forest Path Encounter & Recruited Flags (Mask 64 | 128)' }
+    ]
+  },
+  47: { // Genshu
+    name: 'Genshu',
+    flags: [
+      { byte: 23, mask: 0x08, desc: 'Genshu Recruited Flag (Mask 8)' }
+    ]
+  },
+  94: { // Hilda
+    name: 'Hilda',
+    flags: [
+      { byte: 206, mask: 0x07, desc: 'Sindar Ruins & Alex/Hilda Recruited Flags (Mask 1 | 2 | 4)' }
+    ]
+  },
+  95: { // Alex
+    name: 'Alex',
+    flags: [
+      { byte: 206, mask: 0x07, desc: 'Sindar Ruins & Alex/Hilda Recruited Flags (Mask 1 | 2 | 4)' }
+    ]
+  },
+  24: { // Millie
+    name: 'Millie',
+    flags: [
+      { byte: 160, mask: 0x41, desc: 'Bonaparte Chase & Millie Recruited Flags (Mask 1 | 64)' }
+    ]
+  },
+  30: { // Kinnison
+    name: 'Kinnison',
+    flags: [
+      { byte: 164, mask: 0x06, desc: 'Bird Nest & Kinnison/Shiro Recruited Flags (Mask 2 | 4)' }
+    ]
+  },
+  26: { // Shiro
+    name: 'Shiro',
+    flags: [
+      { byte: 164, mask: 0x06, desc: 'Bird Nest & Kinnison/Shiro Recruited Flags (Mask 2 | 4)' }
+    ]
+  },
+  27: { // Zamza
+    name: 'Zamza',
+    flags: [
+      { byte: 166, mask: 0x04, desc: 'Zamza Toto Inn Recruited Flag (Mask 4)' }
+    ]
+  },
+  39: { // Anita
+    name: 'Anita',
+    flags: [
+      { byte: 166, mask: 0x01, desc: 'Anita Muse Tavern Recruited Flag (Mask 1)' }
+    ]
+  },
+  86: { // Templeton
+    name: 'Templeton',
+    flags: [
+      { byte: 166, mask: 0x30, desc: 'Templeton Encounter & Recruited Flags (Mask 16 | 32)' }
+    ],
+    items: [
+      { id: 2090, altId: 35, name: 'Suiko Map' }
+    ]
+  },
+  41: { // Meg
+    name: 'Meg',
+    flags: [
+      { byte: 216, mask: 0x40, desc: 'Meg & Gadget Greenhill Border Recruited Flag (Mask 64)' }
+    ]
+  },
+  42: { // Gadget
+    name: 'Gadget',
+    flags: [
+      { byte: 216, mask: 0x40, desc: 'Meg & Gadget Greenhill Border Recruited Flag (Mask 64)' }
+    ]
+  },
+  52: { // Tsai
+    name: 'Tsai',
+    flags: [
+      { byte: 208, mask: 0x03, desc: 'Tsai Spear Errand & Recruited Flags (Mask 1 | 2)' }
+    ]
+  },
+  56: { // Sid
+    name: 'Sid',
+    flags: [
+      { byte: 65, mask: 0x02, desc: 'Sid Two River Sewers Recruited Flag (Mask 2)' }
+    ]
+  },
+  107: { // Hans
+    name: 'Hans',
+    flags: [
+      { byte: 68, mask: 0x01, desc: 'Hans Kobold District Armory Recruited Flag (Mask 1)' }
+    ]
+  }
+};
+
+/**
+ * Removes quest items from party bag or castle warehouse when resetting recruitment.
+ */
+function removeAssociatedItems(itemsList, gameDataObj) {
+  if (!itemsList || !gameDataObj) return 0;
+  let countRemoved = 0;
+  if (Array.isArray(gameDataObj.party_data?.party_item)) {
+    gameDataObj.party_data.party_item.forEach(slot => {
+      if (itemsList.some(it => slot.item_no === it.id || slot.item_no === it.altId)) {
+        slot.item_no = 0;
+        slot.use_cnt = 0;
+        countRemoved++;
+      }
+    });
+  }
+  if (Array.isArray(gameDataObj.game_data?.base_item)) {
+    gameDataObj.game_data.base_item.forEach(slot => {
+      if (itemsList.some(it => slot.item_no === it.id || slot.item_no === it.altId)) {
+        slot.item_no = 0;
+        slot.use_cnt = 0;
+        countRemoved++;
+      }
+    });
+  }
+  return countRemoved;
+}
+
+/**
  * Creates the recruitment editor interface with portrait cards and live filtering.
  * Replaces the old HTML table with responsive cards displaying character portraits,
  * recruitment badges, and instant status selectors.
@@ -248,6 +464,50 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
     select.value = String(flagValue);
 
     controlsDiv.appendChild(select);
+
+    const storyFlagsConfig = RECRUITMENT_STORY_FLAGS[index];
+    if (storyFlagsConfig) {
+      const resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'outline secondary recruitment-reset-flags-btn';
+      resetBtn.innerHTML = '🔄';
+      const flagNames = storyFlagsConfig.flags.map(f => `Flag ${f.byte}`).join(', ');
+      resetBtn.title = `Full reset: Sets ${charName} to 'Not Recruited', clears ${flagNames}${storyFlagsConfig.items ? ', and removes granted quest items' : ''}`;
+      resetBtn.style.cssText = 'font-size: 0.72rem; padding: 0.25rem 0.45rem; margin-bottom: 0; line-height: 1; height: auto; flex-shrink: 0; margin-left: 0.35rem;';
+
+      resetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        arr[index] = 0;
+        select.value = '0';
+
+        if (gameData && Array.isArray(gameData.event_flag)) {
+          storyFlagsConfig.flags.forEach(f => {
+            const cur = Number(gameData.event_flag[f.byte]) || 0;
+            gameData.event_flag[f.byte] = cur & ~f.mask;
+          });
+        }
+
+        if (storyFlagsConfig.items) {
+          removeAssociatedItems(storyFlagsConfig.items, gameData);
+        }
+
+        updateCardState();
+        updateCounter();
+        applyFilters();
+
+        if (updateCallback) updateCallback();
+        window.dispatchEvent(new CustomEvent('recruitment-flags-changed'));
+
+        resetBtn.textContent = '✅';
+        resetBtn.style.borderColor = 'var(--pico-ins-color)';
+        setTimeout(() => {
+          resetBtn.innerHTML = '🔄';
+          resetBtn.style.borderColor = '';
+        }, 1200);
+      });
+
+      controlsDiv.appendChild(resetBtn);
+    }
     cardBody.appendChild(controlsDiv);
     card.appendChild(cardBody);
 
@@ -358,6 +618,14 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
     select.addEventListener('change', (e) => {
       const newStatus = parseInt(e.target.value) || 0;
       arr[index] = newStatus;
+
+      // Auto-clear linked story flags if set to Not Recruited
+      if (newStatus === 0 && storyFlagsConfig && gameData && Array.isArray(gameData.event_flag)) {
+        storyFlagsConfig.flags.forEach(f => {
+          const cur = Number(gameData.event_flag[f.byte]) || 0;
+          gameData.event_flag[f.byte] = cur & ~f.mask;
+        });
+      }
 
       updateCardState();
 

@@ -251,67 +251,13 @@ export function createCastleFlagsEditor(arr, key, updateCallback) {
   const container = document.createElement('div');
   container.className = 'castle-flags-editor';
 
-  // Section 1: Granular Farming & Ranch (hon_flag[30..32]) - Non-collapsible
-  const farmDetails = document.createElement('div');
-  farmDetails.className = 'json-object';
-  farmDetails.style.cssText = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
-
-  const farmSummary = document.createElement('div');
-  farmSummary.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
-  farmSummary.innerHTML = '<strong>🌱 Castle Farm Plots & Livestock (hon_flag[30–32])</strong>';
-  farmDetails.appendChild(farmSummary);
-
-  const farmBody = document.createElement('div');
-  farmBody.style.cssText = 'padding: 0.5rem 0; display: flex; flex-direction: column; gap: 1rem;';
-
-  const farmConfigs = [
-    {
-      byteIndex: 30,
-      title: 'Vegetable Plots Group A (hon_flag[30] — Cabbage / Potato)',
-      bitNames: [
-        'Plot A1 (Bit 0)', 'Plot A2 (Bit 1)', 'Plot A3 (Bit 2)', 'Plot A4 (Bit 3)',
-        'Seed/Growth State 1 (Bit 4)', 'Seed/Growth State 2 (Bit 5)', 'Seed/Growth State 3 (Bit 6)', 'Seed/Growth State 4 (Bit 7)'
-      ],
-      presets: [
-        { label: '✓ Fill All (255)', val: 255 },
-        { label: 'Planted Empty (240)', val: 240 },
-        { label: '✗ Clear (0)', val: 0 }
-      ]
-    },
-    {
-      byteIndex: 31,
-      title: 'Vegetable Plots Group B (hon_flag[31] — Spinach / Tomato)',
-      bitNames: [
-        'Plot B1 (Bit 0)', 'Plot B2 (Bit 1)', 'Plot B3 (Bit 2)', 'Plot B4 (Bit 3)',
-        'Seed/Growth State 5 (Bit 4)', 'Seed/Growth State 6 (Bit 5)', 'Seed/Growth State 7 (Bit 6)', 'Seed/Growth State 8 (Bit 7)'
-      ],
-      presets: [
-        { label: '✓ Fill All (255)', val: 255 },
-        { label: 'Planted Empty (240)', val: 240 },
-        { label: '✗ Clear (0)', val: 0 }
-      ]
-    },
-    {
-      byteIndex: 32,
-      title: 'Yuzu Ranch Livestock (hon_flag[32] — Chick / Piglet / Lamb / Calf)',
-      bitNames: [
-        'Chick Slot 1 (Bit 0)', 'Chick Slot 2 (Bit 1)', 'Piglet Slot 1 (Bit 2)', 'Piglet Slot 2 (Bit 3)',
-        'Lamb Slot 1 (Bit 4)', 'Lamb Slot 2 (Bit 5)', 'Calf Slot 1 (Bit 6)', 'Calf Slot 2 (Bit 7)'
-      ],
-      presets: [
-        { label: '✓ Standard Full Ranch (221)', val: 221 },
-        { label: '✓ All Bits On (255)', val: 255 },
-        { label: '✗ Clear All (0)', val: 0 }
-      ]
-    }
-  ];
-
-  farmConfigs.forEach(cfg => {
+  // Helper to build a single byte card with presets, byte input, and granular checkboxes
+  function buildByteCard(cfg) {
     const card = document.createElement('div');
     card.style.cssText = 'padding: 0.75rem; background: rgba(0,0,0,0.15); border-radius: 6px;';
 
     const header = document.createElement('div');
-    header.style.cssText = 'display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;';
+    header.style.cssText = 'display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;';
 
     const title = document.createElement('strong');
     title.style.fontSize = '0.85rem';
@@ -326,16 +272,16 @@ export function createCastleFlagsEditor(arr, key, updateCallback) {
     byteInput.min = '0';
     byteInput.max = '255';
     byteInput.value = arr[cfg.byteIndex] || 0;
-    byteInput.style.cssText = 'width: 75px; margin-bottom: 0; font-size: 0.75rem; padding: 0.25rem;';
+    byteInput.style.cssText = 'width: 75px; margin-bottom: 0; font-size: 0.75rem; padding: 0.25rem; text-align: center;';
 
-    const bitCheckboxes = [];
+    const bitCheckboxes = {};
 
     const setByteValue = (newVal) => {
       const clamped = Math.max(0, Math.min(255, parseInt(newVal) || 0));
       arr[cfg.byteIndex] = clamped;
       byteInput.value = clamped;
-      bitCheckboxes.forEach((cb, bit) => {
-        cb.checked = (clamped & (1 << bit)) !== 0;
+      Object.entries(bitCheckboxes).forEach(([bit, cb]) => {
+        cb.checked = (clamped & (1 << parseInt(bit))) !== 0;
       });
       if (updateCallback) updateCallback(arr);
     };
@@ -356,39 +302,195 @@ export function createCastleFlagsEditor(arr, key, updateCallback) {
     header.appendChild(controls);
     card.appendChild(header);
 
-    const bitGrid = document.createElement('div');
-    bitGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.35rem;';
+    // Render granular items
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.5rem;';
 
-    cfg.bitNames.forEach((bitName, bit) => {
-      const bitLabel = document.createElement('label');
-      bitLabel.style.cssText = 'display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; cursor: pointer; margin-bottom: 0;';
+    cfg.groups.forEach(group => {
+      const groupDiv = document.createElement('div');
+      groupDiv.style.cssText = 'padding: 0.45rem 0.6rem; background: rgba(0,0,0,0.12); border-radius: 4px; border-left: 3px solid var(--pico-primary);';
 
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.style.margin = '0';
-      cb.checked = ((arr[cfg.byteIndex] || 0) & (1 << bit)) !== 0;
+      if (group.heading) {
+        const h = document.createElement('div');
+        h.style.cssText = 'font-size: 0.75rem; font-weight: bold; margin-bottom: 0.35rem; color: #f0b90b;';
+        h.textContent = group.heading;
+        groupDiv.appendChild(h);
+      }
 
-      cb.addEventListener('change', (e) => {
-        const cur = arr[cfg.byteIndex] || 0;
-        const next = e.target.checked ? (cur | (1 << bit)) : (cur & ~(1 << bit));
-        setByteValue(next);
+      const itemsDiv = document.createElement('div');
+      itemsDiv.style.cssText = 'display: flex; flex-direction: column; gap: 0.25rem;';
+
+      group.items.forEach(item => {
+        const label = document.createElement('label');
+        label.style.cssText = 'display: flex; align-items: center; gap: 0.4rem; font-size: 0.73rem; cursor: pointer; margin-bottom: 0;';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.style.margin = '0';
+        cb.checked = ((arr[cfg.byteIndex] || 0) & (1 << item.bit)) !== 0;
+
+        cb.addEventListener('change', (e) => {
+          const cur = arr[cfg.byteIndex] || 0;
+          const next = e.target.checked ? (cur | (1 << item.bit)) : (cur & ~(1 << item.bit));
+          setByteValue(next);
+        });
+
+        const span = document.createElement('span');
+        span.textContent = item.label;
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        itemsDiv.appendChild(label);
+        bitCheckboxes[item.bit] = cb;
       });
 
-      const span = document.createElement('span');
-      span.textContent = bitName;
-
-      bitLabel.appendChild(cb);
-      bitLabel.appendChild(span);
-      bitGrid.appendChild(bitLabel);
-      bitCheckboxes.push(cb);
+      groupDiv.appendChild(itemsDiv);
+      grid.appendChild(groupDiv);
     });
 
-    card.appendChild(bitGrid);
-    farmBody.appendChild(card);
+    card.appendChild(grid);
+    return card;
+  }
+
+  // ==========================================================================
+  // SECTION 1: TONY'S VEGETABLE FARM (hon_flag[30..31])
+  // ==========================================================================
+  const farmDetails = document.createElement('div');
+  farmDetails.className = 'json-object';
+  farmDetails.style.cssText = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
+
+  const farmSummary = document.createElement('div');
+  farmSummary.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
+  farmSummary.innerHTML = "<strong>🌱 Tony's Vegetable Farm (hon_flag[30–31])</strong>";
+  farmDetails.appendChild(farmSummary);
+
+  const farmBody = document.createElement('div');
+  farmBody.style.cssText = 'padding: 0.5rem 0; display: flex; flex-direction: column; gap: 1rem;';
+
+  // hon_flag[30] - Cabbage & Potato
+  const cabbagePotatoCard = buildByteCard({
+    byteIndex: 30,
+    title: 'Vegetable Field A (hon_flag[30] — Cabbage & Potato)',
+    presets: [
+      { label: '✓ Fill All (255)', val: 255 },
+      { label: 'Planted Only (240)', val: 240 },
+      { label: '✗ Clear (0)', val: 0 }
+    ],
+    groups: [
+      {
+        heading: '🥬 Cabbage (Seed Item #1)',
+        items: [
+          { bit: 4, label: 'Cabbage Plot 1: Planted (Bit 4)' },
+          { bit: 0, label: 'Cabbage Plot 1: Harvest Ready (Bit 0)' },
+          { bit: 5, label: 'Cabbage Plot 2: Planted (Bit 5)' },
+          { bit: 1, label: 'Cabbage Plot 2: Harvest Ready (Bit 1)' }
+        ]
+      },
+      {
+        heading: '🥔 Potato (Seed Item #2)',
+        items: [
+          { bit: 6, label: 'Potato Plot 1: Planted (Bit 6)' },
+          { bit: 2, label: 'Potato Plot 1: Harvest Ready (Bit 2)' },
+          { bit: 7, label: 'Potato Plot 2: Planted (Bit 7)' },
+          { bit: 3, label: 'Potato Plot 2: Harvest Ready (Bit 3)' }
+        ]
+      }
+    ]
   });
+  farmBody.appendChild(cabbagePotatoCard);
+
+  // hon_flag[31] - Spinach & Tomato
+  const spinachTomatoCard = buildByteCard({
+    byteIndex: 31,
+    title: 'Vegetable Field B (hon_flag[31] — Spinach & Tomato)',
+    presets: [
+      { label: '✓ Fill All (255)', val: 255 },
+      { label: 'Planted Only (240)', val: 240 },
+      { label: '✗ Clear (0)', val: 0 }
+    ],
+    groups: [
+      {
+        heading: '🌿 Spinach (Seed Item #3)',
+        items: [
+          { bit: 4, label: 'Spinach Plot 1: Planted (Bit 4)' },
+          { bit: 0, label: 'Spinach Plot 1: Harvest Ready (Bit 0)' },
+          { bit: 5, label: 'Spinach Plot 2: Planted (Bit 5)' },
+          { bit: 1, label: 'Spinach Plot 2: Harvest Ready (Bit 1)' }
+        ]
+      },
+      {
+        heading: '🍅 Tomato (Seed Item #4)',
+        items: [
+          { bit: 6, label: 'Tomato Plot 1: Planted (Bit 6)' },
+          { bit: 2, label: 'Tomato Plot 1: Harvest Ready (Bit 2)' },
+          { bit: 7, label: 'Tomato Plot 2: Planted (Bit 7)' },
+          { bit: 3, label: 'Tomato Plot 2: Harvest Ready (Bit 3)' }
+        ]
+      }
+    ]
+  });
+  farmBody.appendChild(spinachTomatoCard);
 
   farmDetails.appendChild(farmBody);
   container.appendChild(farmDetails);
+
+  // ==========================================================================
+  // SECTION 2: YUZU'S LIVESTOCK RANCH (hon_flag[32]) - DEDICATED SEPARATE CARD
+  // ==========================================================================
+  const ranchDetails = document.createElement('div');
+  ranchDetails.className = 'json-object';
+  ranchDetails.style.cssText = 'padding: 0.75rem 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 6px; background: rgba(0,0,0,0.12); margin-bottom: 1rem;';
+
+  const ranchSummary = document.createElement('div');
+  ranchSummary.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
+  ranchSummary.innerHTML = "<strong>🐑 Yuzu's Livestock Ranch (hon_flag[32])</strong>";
+  ranchDetails.appendChild(ranchSummary);
+
+  const ranchBody = document.createElement('div');
+  ranchBody.style.cssText = 'padding: 0.5rem 0;';
+
+  const livestockCard = buildByteCard({
+    byteIndex: 32,
+    title: 'Castle Pasture & Animal Pens (hon_flag[32])',
+    presets: [
+      { label: '✓ Full Ranch (255)', val: 255 },
+      { label: 'Standard Ranch (221)', val: 221 },
+      { label: '✗ Clear All (0)', val: 0 }
+    ],
+    groups: [
+      {
+        heading: '🐥 Chickens (Chick Item #5)',
+        items: [
+          { bit: 0, label: 'Chick Pen 1 (Bit 0)' },
+          { bit: 1, label: 'Chick Pen 2 (Bit 1)' }
+        ]
+      },
+      {
+        heading: '🐷 Pigs (Piglet Item #6)',
+        items: [
+          { bit: 2, label: 'Piglet Pen 1 (Bit 2)' },
+          { bit: 3, label: 'Piglet Pen 2 (Bit 3)' }
+        ]
+      },
+      {
+        heading: '🐑 Sheep (Lamb Item #7)',
+        items: [
+          { bit: 4, label: 'Lamb Pen 1 (Bit 4)' },
+          { bit: 5, label: 'Lamb Pen 2 (Bit 5)' }
+        ]
+      },
+      {
+        heading: '🐄 Cattle (Calf Item #8)',
+        items: [
+          { bit: 6, label: 'Calf Pen 1 (Bit 6)' },
+          { bit: 7, label: 'Calf Pen 2 (Bit 7)' }
+        ]
+      }
+    ]
+  });
+  ranchBody.appendChild(livestockCard);
+  ranchDetails.appendChild(ranchBody);
+  container.appendChild(ranchDetails);
 
   return container;
 }
