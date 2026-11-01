@@ -960,30 +960,281 @@ details summary:hover {
     }
 }
 
+/* ==========================================================================
+   ABOUT & README VIEW STYLING
+   ========================================================================== */
+.about-content {
+    padding: 0.5rem 0;
+}
+
+.readme-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: var(--pico-card-background-color);
+    border: 1px solid var(--pico-card-border-color);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    line-height: 1.65;
+}
+
+.readme-content h1 {
+    font-size: 1.85rem;
+    border-bottom: 2px solid var(--pico-primary);
+    padding-bottom: 0.75rem;
+    margin: 0 0 1rem;
+    color: var(--pico-color);
+}
+
+.readme-content h2 {
+    font-size: 1.35rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    padding-bottom: 0.4rem;
+    margin: 2rem 0 0.85rem;
+    color: var(--pico-primary);
+}
+
+.readme-content h3 {
+    font-size: 1.1rem;
+    margin: 1.25rem 0 0.5rem;
+    color: #f0b90b;
+}
+
+.readme-content ul,
+.readme-content ol,
+.changelog-card-body ul,
+.changelog-card-body ol {
+    margin: 0.5rem 0 1rem 1.75rem;
+    padding: 0;
+}
+
+.readme-content ul {
+    list-style-type: disc;
+}
+
+.readme-content ol {
+    list-style-type: decimal;
+}
+
+.readme-content li,
+.changelog-card-body li {
+    margin-bottom: 0.45rem;
+    line-height: 1.6;
+}
+
+.readme-content li > ul,
+.readme-content li > ol,
+.changelog-card-body li > ul,
+.changelog-card-body li > ol {
+    margin-top: 0.35rem;
+    margin-bottom: 0.35rem;
+    margin-left: 1.5rem;
+}
+
+.readme-content hr {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid var(--pico-card-border-color);
+}
+
+/* GitHub Alert Boxes */
+.alert {
+    padding: 0.85rem 1.15rem;
+    border-radius: 6px;
+    margin: 1.25rem 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.alert-important {
+    border-left: 4px solid #f0b90b;
+    background: rgba(240, 185, 11, 0.12);
+    color: #ffe685;
+}
+
+.alert-warning {
+    border-left: 4px solid #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+}
+
+.alert-note {
+    border-left: 4px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.12);
+    color: #93c5fd;
+}
+
+.alert-tip {
+    border-left: 4px solid #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    color: #6ee7b7;
+}
+
+/* ==========================================================================
+   CHANGELOG VIEW STYLING
+   ========================================================================== */
 .changelog-content {
-    ul {
-        list-style-type: disc;
-        margin: 0;
-        padding: 0;
-        list-style-position: inside;
+    padding: 0.5rem 0;
+}
 
-        li {
-            display: block;
-            /* redundant, but explicit */
-            break-inside: avoid;
-            page-break-inside: avoid;
-        }
-    }
+.changelog-wrapper {
+    max-width: 950px;
+    margin: 0 auto;
+}
 
-    /* Large screens: switch to two columns */
-    @media (min-width: 1024px) {
-        ul {
-            column-count: 2;
-            /* number of columns */
-            column-gap: 2rem;
-            /* space between columns */
-        }
-    }
+.changelog-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    background: var(--pico-card-background-color);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--pico-card-border-color);
+}
+
+.changelog-search-box {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 260px;
+    background: var(--pico-form-element-background-color);
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+}
+
+.changelog-search-input {
+    border: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0.25rem 0 !important;
+    box-shadow: none !important;
+    width: 100%;
+    color: var(--pico-color) !important;
+    font-size: 0.9rem;
+}
+
+.changelog-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.changelog-count-badge {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--pico-muted-color);
+    white-space: nowrap;
+}
+
+.changelog-toggle-all-btn {
+    padding: 0.4rem 0.85rem !important;
+    font-size: 0.8rem !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    border-radius: 6px !important;
+}
+
+.changelog-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.changelog-card {
+    background: var(--pico-card-background-color);
+    border: 1px solid var(--pico-card-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 0;
+}
+
+.changelog-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.changelog-card-summary {
+    padding: 0.85rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    align-items: center;
+    list-style: none;
+}
+
+.changelog-card-summary::-webkit-details-marker {
+    display: none;
+}
+
+.changelog-card[open] .changelog-card-summary {
+    border-bottom: 1px solid var(--pico-card-border-color);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.changelog-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.changelog-version-tag {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pico-primary);
+    font-family: monospace;
+    letter-spacing: -0.3px;
+}
+
+.changelog-badge-latest {
+    background: #10b981;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.changelog-date {
+    color: var(--pico-muted-color);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.changelog-card-body {
+    padding: 1.25rem 1.5rem;
+    font-size: 0.93rem;
+    line-height: 1.6;
+}
+
+.changelog-card-body h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 1rem 0 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #f0b90b;
+}
+
+.changelog-card-body h3:first-child {
+    margin-top: 0;
+}
+
+.changelog-card-body ul {
+    list-style-type: disc;
 }
 
 @media (min-width: 1024px) {
@@ -1357,3 +1608,71 @@ input[type=search] {
     border-radius: 4px;
 }
 
+
+/* ==========================================================================
+   DESKTOP APP (TAURI) STYLING & NATIVE WINDOWS FEEL
+   ========================================================================== */
+body.is-tauri {
+    /* Prevent web-like text dragging and highlighting on application chrome */
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+}
+
+/* Allow text selection inside editable input fields */
+body.is-tauri input,
+body.is-tauri textarea,
+body.is-tauri select,
+body.is-tauri code,
+body.is-tauri pre {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* On desktop, hide web promotional footer to maximize table viewing area */
+body.is-tauri footer.pads-1.b2 {
+    display: none !important;
+}
+
+/* Streamlined desktop container */
+body.is-tauri main.container {
+    max-width: 98% !important;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+body.is-tauri header.pads-1 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* Subtle desktop scrollbars */
+body.is-tauri ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+body.is-tauri ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+body.is-tauri ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+body.is-tauri ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.shortcut-hint {
+    display: inline-block;
+    font-size: 0.72rem;
+    opacity: 0.7;
+    margin-left: 0.35rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    font-family: inherit;
+    font-weight: 500;
+}

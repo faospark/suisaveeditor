@@ -141,17 +141,23 @@
 
   </main>
   <script>
-    // Register Service Worker for offline functionality
+    // Decommission legacy Service Workers & purge caches to ensure immediate web updates
+    // For 100% full offline usage, use the official standalone Tauri desktop version
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' })
-          .then((registration) => {
-            console.log('✅ Service Worker registered successfully:', registration.scope);
-          })
-          .catch((error) => {
-            console.log('❌ Service Worker registration failed:', error);
-          });
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+          console.log('🧹 Unregistered legacy Service Worker:', registration.scope);
+        }
       });
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          for (const key of keys) {
+            caches.delete(key);
+            console.log('🧹 Purged cache:', key);
+          }
+        });
+      }
     }
   </script>
   <script type="module" src="./src/main.js"></script>

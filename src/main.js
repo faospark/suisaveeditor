@@ -1695,7 +1695,7 @@ editorFactories.location = createLocationEditor;
 
 function createAboutViewer(container) {
   container.innerHTML = '';
-  container.classList.add('about-content');
+  container.className = 'about-content';
 
   const loading = document.createElement('p');
   loading.textContent = 'Loading README...';
@@ -1713,7 +1713,6 @@ function createAboutViewer(container) {
       container.innerHTML = '';
       const contentWrapper = document.createElement('div');
       contentWrapper.className = 'readme-content';
-      contentWrapper.style.cssText = 'max-width: 800px; margin: 0 auto; padding: 1rem;';
       const htmlContent = markdownToHTML(markdown);
       contentWrapper.innerHTML = htmlContent;
       container.appendChild(contentWrapper);
@@ -1729,11 +1728,12 @@ function createAboutViewer(container) {
 
 // ============================================================================
 // CHANGELOG VIEWER
-// RENDERS: Changelog from CHANGELOG.md with markdown parsing
+// RENDERS: Changelog from CHANGELOG.md with card-based versions and search
 // ============================================================================
 
 function createChangelogViewer(container) {
-  container.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color);">Loading Changelog...</p>';
+  container.innerHTML = '<p style="text-align: center; color: var(--pico-muted-color); padding: 2rem;">Loading Changelog...</p>';
+  container.className = 'tab-content changelog-content';
 
   fetch('./CHANGELOG.md')
     .then(response => {
@@ -1744,12 +1744,133 @@ function createChangelogViewer(container) {
     })
     .then(markdown => {
       container.innerHTML = '';
-      const contentWrapper = document.createElement('div');
-      contentWrapper.className = 'tab-content changelog-content';
-      contentWrapper.style.cssText = 'max-width: 800px; margin: 0 auto; padding: 1rem;';
-      const htmlContent = markdownToHTML(markdown);
-      contentWrapper.innerHTML = htmlContent;
-      container.appendChild(contentWrapper);
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'changelog-wrapper';
+
+      // Parse releases: Split by ## [version] - date
+      const releaseRegex = /^##\s+\[([^\]]+)\](?:\s*-\s*([^\n]+))?/gm;
+      const releases = [];
+      let match;
+      const matches = [];
+
+      while ((match = releaseRegex.exec(markdown)) !== null) {
+        matches.push({
+          version: match[1],
+          date: match[2] ? match[2].trim() : '',
+          index: match.index,
+          matchLength: match[0].length
+        });
+      }
+
+      if (matches.length > 0) {
+        for (let i = 0; i < matches.length; i++) {
+          const start = matches[i].index + matches[i].matchLength;
+          const end = i + 1 < matches.length ? matches[i + 1].index : markdown.length;
+          const body = markdown.slice(start, end).trim();
+          releases.push({
+            version: matches[i].version,
+            date: matches[i].date,
+            body: body,
+            isLatest: i === 0
+          });
+        }
+      }
+
+      // Toolbar: Search + Stats + Expand/Collapse
+      const toolbar = document.createElement('div');
+      toolbar.className = 'changelog-toolbar';
+      toolbar.innerHTML = `
+        <div class="changelog-search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; color: var(--pico-muted-color);">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" class="changelog-search-input" placeholder="Search changelog (e.g. Clive, Recruitment, Tauri, Kraken, Runes)..." />
+        </div>
+        <div class="changelog-actions">
+          <span class="changelog-count-badge">${releases.length} Releases</span>
+          <button type="button" class="outline changelog-toggle-all-btn">Collapse All</button>
+        </div>
+      `;
+      wrapper.appendChild(toolbar);
+
+      // Version cards container
+      const cardsContainer = document.createElement('div');
+      cardsContainer.className = 'changelog-cards';
+
+      releases.forEach((rel, idx) => {
+        const details = document.createElement('details');
+        details.className = 'changelog-card';
+        if (idx < 2) {
+          details.open = true;
+        }
+
+        const summary = document.createElement('summary');
+        summary.className = 'changelog-card-summary';
+        summary.innerHTML = `
+          <div class="changelog-card-title">
+            <span class="changelog-version-tag">v${rel.version}</span>
+            ${rel.isLatest ? '<span class="changelog-badge-latest">Latest</span>' : ''}
+            <span class="changelog-date">${rel.date || ''}</span>
+          </div>
+        `;
+        details.appendChild(summary);
+
+        const cardBody = document.createElement('div');
+        cardBody.className = 'changelog-card-body';
+        cardBody.innerHTML = markdownToHTML(rel.body);
+        details.appendChild(cardBody);
+
+        cardsContainer.appendChild(details);
+      });
+
+      wrapper.appendChild(cardsContainer);
+      container.appendChild(wrapper);
+
+      // Search filtering
+      const searchInput = toolbar.querySelector('.changelog-search-input');
+      const toggleAllBtn = toolbar.querySelector('.changelog-toggle-all-btn');
+      let allExpanded = true;
+
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const cards = cardsContainer.querySelectorAll('.changelog-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+          const text = card.textContent.toLowerCase();
+          if (!query || text.includes(query)) {
+            card.style.display = 'block';
+            if (query) card.open = true;
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+
+        let emptyNotice = cardsContainer.querySelector('.changelog-empty-notice');
+        if (visibleCount === 0) {
+          if (!emptyNotice) {
+            emptyNotice = document.createElement('p');
+            emptyNotice.className = 'changelog-empty-notice';
+            emptyNotice.style.cssText = 'text-align: center; color: var(--pico-muted-color); padding: 2rem;';
+            cardsContainer.appendChild(emptyNotice);
+          }
+          emptyNotice.textContent = `No changes found matching "${query}".`;
+          emptyNotice.style.display = 'block';
+        } else if (emptyNotice) {
+          emptyNotice.style.display = 'none';
+        }
+      });
+
+      toggleAllBtn.addEventListener('click', () => {
+        allExpanded = !allExpanded;
+        cardsContainer.querySelectorAll('.changelog-card').forEach(c => {
+          c.open = allExpanded;
+        });
+        toggleAllBtn.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+      });
     })
     .catch(error => {
       container.innerHTML = '';
@@ -2040,6 +2161,54 @@ document.addEventListener('keydown', (e) => {
 
 // Header button functionality - Data Values, About, Changelog
 document.addEventListener('DOMContentLoaded', () => {
+  // Desktop app integration (Tauri) & Windows Shortcuts
+  const isTauri = Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
+  if (isTauri) {
+    document.body.classList.add('is-tauri');
+    console.log('🖥️ Running in native desktop mode (Tauri)');
+
+    // Suppress browser right-click context menu
+    window.addEventListener('contextmenu', (e) => {
+      if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault();
+      }
+    });
+
+    // Add shortcut hints to action buttons
+    const uploadSpan = document.querySelector('#file-upload-label span');
+    if (uploadSpan && !uploadSpan.querySelector('.shortcut-hint')) {
+      const hint = document.createElement('span');
+      hint.className = 'shortcut-hint';
+      hint.textContent = 'Ctrl+O';
+      uploadSpan.appendChild(hint);
+    }
+
+    const saveBtn = document.getElementById('save-btn');
+    if (saveBtn && !saveBtn.querySelector('.shortcut-hint')) {
+      const hint = document.createElement('span');
+      hint.className = 'shortcut-hint';
+      hint.textContent = 'Ctrl+S';
+      saveBtn.appendChild(hint);
+    }
+  }
+
+  // Windows standard shortcuts: Ctrl+O (Open) and Ctrl+S (Save)
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        const fileInput = document.getElementById('file-input');
+        if (fileInput) fileInput.click();
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        const saveBtn = document.getElementById('save-btn');
+        if (saveBtn && !saveBtn.disabled) {
+          saveBtn.click();
+        }
+      }
+    }
+  });
+
   const versionElement = document.getElementById('app-version');
   if (versionElement) {
     versionElement.textContent = `v${APP_VERSION}`;

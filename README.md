@@ -1,79 +1,98 @@
 # Suikoden II HD Remaster Save Editor
 
-A minimal, static web-based GUI for editing Suikoden II HD Remaster JSON save files decrypted by SuikodenFix.
+A minimal, fast, and feature-rich GUI editor for Suikoden II HD Remaster JSON save files decrypted via SuikodenFix or SuikodenSaveDecrypter.
 
-**🌐 Live Demo:** [https://faospark.github.io/suisaveeditor/](https://faospark.github.io/suisaveeditor/)  
-**📦 Repository:** [https://github.com/faospark/suisaveeditor](https://github.com/faospark/suisaveeditor)
+**🌐 Web App:** [https://faospark.github.io/suisaveeditor/](https://faospark.github.io/suisaveeditor/)  
+**💻 Offline Desktop App:** Standalone Windows executable powered by Tauri v2 (100% offline, zero installation)  
+**📦 Repository:** [https://github.com/faospark/suisaveeditor](https://github.com/faospark/suisaveeditor)  
+**💬 Community & Mods:** [Moogles and Mods Discord](https://discord.gg/bSnpVBV)
 
-## Features
+---
 
-- **Active Party Members Editor** - Manage your 6-character battle party and 2 convoy slots with character selection dropdowns
-- **Recruitment Mods Integration** - Built-in support for "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Chuchara, Abizboah, Rulodia) honored across both Recruited Characters and Battle Characters tabs with live status synchronization and inline recruitment flags editor
-- **Key Items Editor** - Dedicated section for story-critical items (event_item array) with 2-column grid layout
-- **Battle Characters Editor** - Organized sections for General stats (including Friendship `suki_value`), Magic (MP), Weapon, Runes, Equipment, Accessories, and **Advanced Archetype (`c_kotei_dat`)**
-- **Advanced Character Archetype (`c_kotei_dat`)** - Granular per-character controls for Rune Slot Unlock levels (`mon_kosu_type`), 8 Elemental Affinities (`mon_zoku_aisyo`), 8 Equipment/Rune Slot Locks (`soubi_henkou`), and 6 Equippable Gear Classes (`soubi_kanou`), plus search & bulk actions
-- **Granular Collection & Side-Quest Unlocks** - Individual checkboxes and bulk unlock/clear controls for all 40 Cooking Recipes (`food_resipi`), 12 Library Old Books (`lib_flag`), Castle Farm & Livestock flags (`hon_flag`), 256 Treasure Chests (`t_box_flag`), Richmond's Detective Investigations (`tantei_lv`), Major War Battle Units (`war_data`), Clive's Quest Time-Trial tracker (`play_time`), and Gordon's Trading Quest (`trade_transaction_total`)
-- **Magic Points (MP) System** - Visual representation with filled/empty squares (■/□) showing MP progress per level
-- **Smart Rune Filtering** - Slot-specific and character-specific rune restrictions with locked rune support
-- **Castle Editors** - Combined Greenhill Aliases and Food Menu editors in a single view
-- **Save File Indicator** - Badge showing which save file number you're currently editing
-- **Debug Mode** - Toggle with Ctrl+D to auto-load test save files (state persists across sessions)
-- **Offline Support** - Full PWA with service worker for offline editing after first visit
-- **Status Bar** - Visual indicators for Debug Mode (green), Offline Mode (orange), and combined states (purple)
-- **Tab Navigation** - Data Values, About, and Changelog accessible without loading save files
-- Edit character stats, equipment, runes, and recruitment flags
-- Manage item inventories (warehouse, party bag, bath items)
-- User-friendly interface with organized tabs
-- Automatic item name lookup from game data
+## Key Features
+
+### 🎮 Party & Character Editors
+- **Active Party Members**: Configure all 6 combat battle party slots and 2 convoy slots with live portrait previews and slot dropdowns.
+- **Battle Characters Editor**: Comprehensive character cards featuring local HD portraits (`fp_###.png`), General stats, Friendship rating (`suki_value`), Level, and EXP.
+- **Interactive Item & Accessory Pickers**: Searchable modal dialogs with keyboard ESC and backdrop dismissal for seamless equipment selection.
+- **Magic Points (MP) Grid**: Visual representation with filled/empty squares (■/□) tracking MP level progressions.
+- **Smart Rune Management**: Slot-specific and character-specific rune restrictions with support for locked runes.
+
+### 🛡️ Advanced Character Archetypes (`c_kotei_dat`)
+- **Rune Slot Unlock Levels**: Granular control over Head, Right Hand, and Left Hand rune slot level requirements (`mon_kosu_type`).
+- **Elemental Affinities**: Customize all 8 elemental resistances and damage multipliers (`mon_zoku_aisyo`).
+- **Equipment & Rune Locks**: Toggle unequip locks across 8 gear and rune slots (`soubi_henkou`).
+- **Equippable Gear Classes**: Expand equippable armor and accessory types (`soubi_kanou`) per character, with bulk unlock/lock actions.
+
+### 👥 Recruitment Cards Grid
+- **Portrait Card Matrix**: Responsive visual cards featuring character portraits, star numbers, and dynamic recruitment status badges (`Recruited`, `Recruited via SFix`, `Recruited via Kraken`, `Spoke To`, `Deceased`, `Event Locked`).
+- **Live Search & Filter Toolbar**: Instant real-time filtering by character name, numeric ID, or recruitment status.
+- **Live Star Counter**: Real-time counter badge tracking recruited stars of destiny.
+- **Recruitment Mod Compatibility**: Built-in support for "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Chuchara, Abizboah, Rulodia).
+
+### 🏆 Side-Quests & Collection Unlocks
+- **Clive Quest Time-Trial Tracker**: Evaluates in-game play time against all 8 story milestones and completion flags (`event_flag[94]`).
+- **Cooking Recipes**: Individual checkboxes and bulk unlock/clear controls for all 40 Hai Yo recipes (`food_resipi`).
+- **Library Old Books**: Full collection tracking for all 12 Old Books (`lib_flag`).
+- **Castle Farm & Livestock**: Toggle all pigs, sheep, and chickens (`hon_flag`).
+- **Treasure Chest Matrix**: Bulk check or uncheck all 256 world treasure chests (`t_box_flag`).
+- **Richmond Investigations**: Set investigation completion levels (`tantei_lv`) for all 108 stars.
+- **War Battle Units**: Manage unlocked major war combat units (`war_data`).
+- **Gordon's Trading Quest**: Edit total trade transaction profits (`trade_transaction_total`).
+
+### 🎒 Inventories & Castle Customization
+- **Key Items Editor**: Dedicated 2-column grid for story-critical key items (`event_item`).
+- **Warehouse & Party Bag**: Full item inventory tables with item ID auto-lookup.
+- **Castle Facilities**: Bath Items, Room Decor, Greenhill Castle Aliases, Food Menus, and Guardian Deity customizer.
+
+### ⚡ Platforms & Offline Utility
+- **Desktop Executable (Tauri v2)**: Standalone Windows `.exe` (`suisaveeditor.exe`) with all assets baked in for 100% full offline capability.
+- **Clean Web Version**: Fast static web app with zero service worker cache interference—fresh code loads immediately upon refresh.
+
+---
 
 ## Instructions
 
 ### Before You Start
 
-> [!IMPORTANT] It is highly recommended that you turn off cloud saving for the game before editing save files and create your own back up
+> [!IMPORTANT]
+> **Always backup your original save files first!**  
+> It is also highly recommended to temporarily disable Steam Cloud saving for Suikoden I & II HD Remaster while editing save files to prevent Steam from overwriting your edits.
 
 ### Step-by-Step Guide
 
-1. **Decrypt your save file** using [SuikodenFix](https://github.com/d3xMachina/Suikoden-Fix)
+1. **Decrypt your save file**:
+   - Use [SuikodenFix](https://github.com/d3xMachina/Suikoden-Fix) (enable save editing in its config). Decrypted JSON save files will appear as `_decrypted_gsd2_Data*.json` in your game root or `SuikodenFix\Backup\gsd2\`.
+   - Alternatively, decrypt your raw save file using [SuikodenSaveDecrypter](https://github.com/d3xMachina/SuikodenSaveDecrypter).
+2. **Load your decrypted save**:
+   - Click **Choose File** (or drag and drop your `.json` file anywhere onto the action bar).
+   - The status badge will confirm the file name and detected save slot number.
+3. **Edit your save data**:
+   - Navigate through the editor tabs (Party, Battle Characters, Recruitment, Inventories, Unlocks & Quests).
+   - Use the **Data Values** tab in the top header as a reference for item IDs, runes, and character slot values.
+4. **Save and download**:
+   - Click **Save / Download JSON** to export your updated save file.
+5. **Load in game**:
+   - Replace the decrypted JSON file in your game directory (or re-encrypt if required by your setup) and launch the game.
 
-- Look for files named `_decrypted_gsd2_Data*.json`
-  - **Always backup your original save files first!**
+---
 
-2. **Upload your decrypted save**
+## References & Credits
 
-- Click the upload button and select your `_decrypted_gsd2_Data*.json` file
+Special thanks to the following contributors and projects for their research and tools:
 
-3. **Edit your save data**
-
-- Navigate through the tabs (General, Battle Characters, Warehouse, etc.)
-- Modify values as needed
-- Use the Data Values tab as a reference for item IDs and names
-
-4. **Save your changes**
-
-- Click the Save button to download the modified JSON file
-
-5. **Load in game**
-
-- Place/overwrite the save file in the game directory
-- Load the game
-- **Note**: Sometimes you need to overwrite the save file twice, especially when modifying the most recent save
-
-## Reference
-
-Many thanks to the following contributors for their work on Suikoden II reference data:
-
-- **d3xMachina** - [SuikodenFix](https://github.com/d3xMachina/Suikoden-Fix)
+- **d3xMachina** - [SuikodenFix](https://github.com/d3xMachina/Suikoden-Fix) & [SuikodenSaveDecrypter](https://github.com/d3xMachina/SuikodenSaveDecrypter)
 - **Asilverthorn** - [Suikoden Reference Tables](https://github.com/asilverthorn/suikoden_ref/)
-- **Suikosource** - [Item Digits Guide](https://suikosource.com/games/gs2/guides/itemdigits.php)
-- **makotech222** - [Suikoden II data research](https://github.com/makotech222/suiko2edit)
+- **Suikosource** - [Suikosource Guides & Item Digits](https://suikosource.com/games/gs2/guides/itemdigits.php)
+- **makotech222** - [Suikoden II Data Research](https://github.com/makotech222/suiko2edit)
 
-Find me at my natural habitat and more mods at [Moogles and Mods](https://discord.gg/bSnpVBV)
+---
 
 ## Disclaimer
 
-This is a fan-made tool for personal use with Suikoden II HD Remaster save files. Use at your own risk.
+This is an unofficial, open-source fan-made utility for Suikoden II HD Remaster. Use at your own risk and always keep backups of your save files.
 
+---
 
 ## License
 

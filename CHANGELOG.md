@@ -5,6 +5,22 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.8] - 2026-10-31
+
+### Changed
+
+- **Decommissioned Service Worker in Favor of Standard HTTP Caching (`sw.js`, `index.html`)**:
+  - Completely decommissioned the legacy Service Worker to eliminate caching interference, stale code loops, and update desyncs.
+  - Web users and developers running locally in XAMPP or via GitHub Pages now receive fresh code updates immediately upon page reload.
+  - Added an automated cleanup script that unregisters any existing Service Workers and purges legacy browser cache stores on visit.
+
+### Added
+
+- **Standalone Tauri Desktop Application (`src-tauri/`)**:
+  - Introduced an official, native Windows desktop executable (`suisaveeditor.exe`) built with Tauri v2.
+  - Offers 100% full offline capability with zero internet dependency—all HTML, CSS, JavaScript, icons, and character portraits are embedded directly into the binary.
+  - Zero duplicate code: shares the exact same source assets with the web version, automatically bundled during build.
+
 ## [1.4.7] - 2026-10-29
 
 ### Added
