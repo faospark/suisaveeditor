@@ -187,6 +187,20 @@ export const RECRUITMENT_STORY_FLAGS = {
     flags: [
       { byte: 68, mask: 0x01, desc: 'Hans Kobold District Armory Recruited Flag (Mask 1)' }
     ]
+  },
+  115: { // Jude
+    name: 'Jude',
+    flags: [
+      { byte: 209, mask: 0x3C, desc: "Jude's Clay Quest & Recruited Flags (Mask 4 | 8 | 16 | 32)" }
+    ],
+    items: [
+      { id: 2125, altId: 54, name: 'Clay' }
+    ],
+    customReset: (gd) => {
+      if (Array.isArray(gd?.game_data?.parts_no) && gd.game_data.parts_no.length >= 4) {
+        gd.game_data.parts_no[3] = 0;
+      }
+    }
   }
 };
 
@@ -201,6 +215,14 @@ function removeAssociatedItems(itemsList, gameDataObj) {
       if (itemsList.some(it => slot.item_no === it.id || slot.item_no === it.altId)) {
         slot.item_no = 0;
         slot.use_cnt = 0;
+        countRemoved++;
+      }
+    });
+  }
+  if (Array.isArray(gameDataObj.party_data?.event_item)) {
+    gameDataObj.party_data.event_item.forEach((id, idx) => {
+      if (itemsList.some(it => id === it.id || id === it.altId)) {
+        gameDataObj.party_data.event_item[idx] = 0;
         countRemoved++;
       }
     });
@@ -471,7 +493,7 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
       resetBtn.type = 'button';
       resetBtn.className = 'outline secondary recruitment-reset-flags-btn';
       resetBtn.innerHTML = '🔄';
-      const flagNames = storyFlagsConfig.flags.map(f => `Flag ${f.byte}`).join(', ');
+      const flagNames = [...new Set(storyFlagsConfig.flags.map(f => `Flag ${f.byte}`))].join(', ');
       resetBtn.title = `Full reset: Sets ${charName} to 'Not Recruited', clears ${flagNames}${storyFlagsConfig.items ? ', and removes granted quest items' : ''}`;
       resetBtn.style.cssText = 'font-size: 0.72rem; padding: 0.25rem 0.45rem; margin-bottom: 0; line-height: 1; height: auto; flex-shrink: 0; margin-left: 0.35rem;';
 
@@ -489,6 +511,10 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
 
         if (storyFlagsConfig.items) {
           removeAssociatedItems(storyFlagsConfig.items, gameData);
+        }
+
+        if (typeof storyFlagsConfig.customReset === 'function') {
+          storyFlagsConfig.customReset(gameData);
         }
 
         updateCardState();
@@ -620,11 +646,16 @@ export function createRecruitmentEditor(arr, key, updateCallback, gameData = nul
       arr[index] = newStatus;
 
       // Auto-clear linked story flags if set to Not Recruited
-      if (newStatus === 0 && storyFlagsConfig && gameData && Array.isArray(gameData.event_flag)) {
-        storyFlagsConfig.flags.forEach(f => {
-          const cur = Number(gameData.event_flag[f.byte]) || 0;
-          gameData.event_flag[f.byte] = cur & ~f.mask;
-        });
+      if (newStatus === 0 && storyFlagsConfig && gameData) {
+        if (Array.isArray(gameData.event_flag)) {
+          storyFlagsConfig.flags.forEach(f => {
+            const cur = Number(gameData.event_flag[f.byte]) || 0;
+            gameData.event_flag[f.byte] = cur & ~f.mask;
+          });
+        }
+        if (typeof storyFlagsConfig.customReset === 'function') {
+          storyFlagsConfig.customReset(gameData);
+        }
       }
 
       updateCardState();

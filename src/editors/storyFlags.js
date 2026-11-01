@@ -216,6 +216,17 @@ export const KNOWN_STORY_FLAGS = {
       1: 'Spears Completed / Tsai Joins (Mask 2)'
     }
   },
+  209: {
+    name: "Greenhill & Forest Village (Jude's Clay Quest)",
+    area: 've07 / ve02',
+    desc: 'Master Sculptor Jude needs fine clay from Forest Village to craft statues and join the Dunan Army',
+    bits: {
+      2: "Jude Needs Clay / Quest Started (Bit 2 / Mask 4)",
+      3: "Forest Village Clay Obtained from Gatherer (Bit 3 / Mask 8)",
+      4: "Jude Join Offer Declined Re-prompt (Bit 4 / Mask 16)",
+      5: "Jude Recruited / Greenhill Academy Despawn (Bit 5 / Mask 32)"
+    }
+  },
   210: {
     name: 'Forest Path & Matilda Region (Viki Teleportation)',
     area: 've04 / ve01 / ve07',

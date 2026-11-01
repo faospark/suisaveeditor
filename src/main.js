@@ -188,7 +188,8 @@ async function checkForAutoSave() {
     
     if (restore) {
       try {
-        currentData = JSON.parse(savedData);
+        const cleanSaved = (typeof savedData === "string" && savedData.charCodeAt(0) === 0xFEFF) ? savedData.slice(1) : savedData;
+        currentData = JSON.parse(cleanSaved);
         currentFileName = savedFilename;
         renderEditor(editorContainer, currentData, (newData) => {
           currentData = newData;
@@ -2290,7 +2291,8 @@ function handleLoadedFile(rawText, fileName, diskPath, fileHandle = null) {
 
 
 
-    currentData = JSON.parse(rawText);
+    const cleanText = (typeof rawText === "string" && rawText.charCodeAt(0) === 0xFEFF) ? rawText.slice(1) : rawText;
+    currentData = JSON.parse(cleanText);
 
     renderEditor(editorContainer, currentData, (newData) => {
 

@@ -50,6 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Interactive 8-bit checkbox array (`b0` through `b7`) for every byte with descriptive bit tooltips.
   - Two-way synchronized decimal (`0..255`) and hex (`0x00..0xFF`) inputs with visual state highlighting.
 
+- **Smart Recruitment & Story Flags Reset (`src/editors/recruitment.js`, `src/editors/storyFlags.js`)`:
+  - Added full extensive reset mapping for **Sculptor Jude** (Slot 115, Flag 209 bits 4/8/16/32, Clay quest item #2125/altId 54, and Castle statue assembly state reset).
+  - Extended `removeAssociatedItems` to automatically scan and clear items across Key Items (`event_item`), Inventory (`party_item`), and Warehouse (`base_item`).
 - **Smart Recruitment & Story Flags Reset (`src/editors/recruitment.js`)**:
   - Added `RECRUITMENT_STORY_FLAGS` mapping characters with multi-step world state flags.
   - Integrated a compact `🔄 Reset` button directly on character cards for characters with linked story flags.
