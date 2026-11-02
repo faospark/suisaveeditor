@@ -12,3 +12,4 @@ export * from './guardianDeity.js';
 export * from './unlocksAndQuests.js';
 export * from './storyFlags.js';
 export * from './suggestionBox.js';
+export * from './windowSoundSets.js';

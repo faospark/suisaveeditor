@@ -143,6 +143,16 @@ export const FIELD_CONFIG = {
     renderer: 'suggestion_box',
     path: 'game_data'
   },
+  'window_sets': {
+    label: "Tenkou's Window Sets & Frame Customization",
+    group: 'Castle',
+    renderer: 'window_sets'
+  },
+  'sound_sets': {
+    label: "Connell's Sound Sets & Audio Customization",
+    group: 'Castle',
+    renderer: 'sound_sets'
+  },
 
   // Experimental / Unlocks & Quests Tab
   'hon_flag_raw': {
@@ -335,7 +345,7 @@ export const EDITOR_GROUPS = {
   'Warehouse': ['base_item', 'room_item'],
   'Cooking': ['cook_off_progress', 'food_num', 'food_menu', 'food_resipi'],
   'Investigations': ['tantei_lv'],
-  'Castle': ['parts_no', 'furo_item', 'lib_flag', 'hon_flag', 'tsuri_data', 'meyasu_box'],
+  'Castle': ['parts_no', 'furo_item', 'lib_flag', 'hon_flag', 'window_sets', 'sound_sets', 'tsuri_data', 'meyasu_box'],
   'Experimental': ['event_flag', 'hon_flag_raw', 't_box_flag', 'war_data']
 };
 

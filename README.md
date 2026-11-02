@@ -50,7 +50,7 @@ A minimal, fast, and feature-rich GUI editor for Suikoden II HD Remaster JSON sa
 ### 🎒 Inventories & Castle Customization
 - **Key Items Editor**: Dedicated 2-column grid for story-critical key items (`event_item`).
 - **Warehouse & Party Bag**: Full item inventory tables with item ID auto-lookup.
-- **Castle Facilities**: Bath Items, Room Decor, Greenhill Castle Aliases, Food Menus, and Guardian Deity customizer.
+- **Castle Facilities**: Tenkou's Window Sets, Connell's Sound Sets, Suggestion Box (Meyasubako), Bath Items, Room Decor, Greenhill Castle Aliases, Food Menus, and Guardian Deity customizer.
 
 ### ⚡ Platforms & Offline Utility
 - **Desktop Executable (Tauri v2)**: Standalone Windows `.exe` (`suisaveeditor.exe`) with all assets baked in for 100% full offline capability.

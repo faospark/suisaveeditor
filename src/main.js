@@ -24,7 +24,9 @@ import {
   createGuardianDeityEditor,
   createStoryFlagsEditor,
 
-  createSuggestionBoxEditor
+  createSuggestionBoxEditor,
+  createWindowSetsEditor,
+  createSoundSetsEditor
 
 } from './editors/index.js';
 import { COOK_OFF_STAGES, EVENT_FLAG_INDEX, CLIVE_MILESTONES } from './config/constants.js';
@@ -279,7 +281,9 @@ const editorFactories = {
 
   story_flags: createStoryFlagsEditor,
 
-  suggestion_box: createSuggestionBoxEditor
+  suggestion_box: createSuggestionBoxEditor,
+  window_sets: createWindowSetsEditor,
+  sound_sets: createSoundSetsEditor
 };
 
 /**
@@ -346,6 +350,10 @@ function createEditorElement(renderer, value, targetData, data, key, label, conf
 
     case 'side_quests':
       return editorFactory(data, onChange);
+
+    case 'window_sets':
+    case 'sound_sets':
+      return editorFactory(data, label, onChange);
 
     case 'suggestion_box':
 

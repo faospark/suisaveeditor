@@ -5,6 +5,20 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.10] - 2026-11-02
+
+### Added
+
+- **Tenkou's Window Sets & Frame Customization Editor (`src/editors/windowSoundSets.js`, `schema.js`, `main.js`)**:
+  - Added dedicated editor card under the **Castle** tab for delivered Window Sets and frame customization.
+  - Granular delivery toggles for Window Sets 1 through 7 mapped to `event_flag[77]` (bits 0–6) with quick "Deliver All" and "Clear All" actions.
+  - Active frame configuration controls for Active Window Style (`game_data.win_typ[0]`), Window Color (`game_data.win_col`), and Opacity/Transparency (`game_data.win_suke`).
+
+- **Connell's Sound Sets & Audio Customization Editor (`src/editors/windowSoundSets.js`, `schema.js`, `main.js`)**:
+  - Added dedicated editor card under the **Castle** tab for delivered Sound Sets and audio effect configuration.
+  - Granular delivery toggles for Sound Sets 1 through 7 mapped to `event_flag[78]` (bits 0–6) with quick "Deliver All" and "Clear All" actions.
+  - Active audio configuration selector for Active Sound Effect Set (`game_data.se_set`).
+
 ## [1.4.9] - 2026-11-01
 
 ### Added
