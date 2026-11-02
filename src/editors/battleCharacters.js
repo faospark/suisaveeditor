@@ -1315,9 +1315,10 @@ export function createBattleCharactersEditor(arr, key, updateCallback, createEle
         accessoriesHeader.appendChild(accessoriesTitle);
         itemContainer.appendChild(accessoriesHeader);
 
-        if (isBeast) {
+        // Bonaparte (ID 84) is a non-playable NPC; playable beasts can equip accessories/others
+        if (index === 84) {
           const disabledMsg = document.createElement('p');
-          disabledMsg.textContent = 'Beast/Monster character - Cannot equip accessories';
+          disabledMsg.textContent = 'Non-playable character - Cannot equip accessories';
           disabledMsg.style.cssText = 'color: var(--pico-muted-color); font-style: italic; margin: 0.5rem 0;';
           itemContainer.appendChild(disabledMsg);
           colGear.appendChild(itemContainer);
