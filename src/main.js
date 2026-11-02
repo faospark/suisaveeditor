@@ -541,6 +541,24 @@ function renderTabContent(container, group, data, onUpdate) {
         return;
       }
 
+      if (key === 'window_sets') {
+        const element = createWindowSetsEditor(data, config.label, onUpdate);
+        container.appendChild(element);
+        return;
+      }
+
+      if (key === 'sound_sets') {
+        const element = createSoundSetsEditor(data, config.label, onUpdate);
+        container.appendChild(element);
+        return;
+      }
+
+      if (key === 'meyasu_box') {
+        const element = createSuggestionBoxEditor(data, config.label, onUpdate);
+        container.appendChild(element);
+        return;
+      }
+
       let value, sourceData;
       if (key === 'hon_flag_raw') {
         value = data.hon_flag || data.game_data?.hon_flag;
@@ -2828,6 +2846,26 @@ document.addEventListener('DOMContentLoaded', () => {
       hint.className = 'shortcut-hint';
       hint.textContent = 'Ctrl+S';
       saveBtn.appendChild(hint);
+    }
+
+    // Tauri native drag-and-drop support with silent .bak creation
+    if (window.__TAURI__?.event?.listen) {
+      window.__TAURI__.event.listen('tauri://drag-drop', async (event) => {
+        const paths = event.payload?.paths;
+        if (paths && paths.length > 0) {
+          const filePath = paths[0];
+          if (filePath.toLowerCase().endsWith('.json')) {
+            try {
+              const result = await tauriInvoke('load_file_from_path_and_backup', { filePath });
+              if (result && result.content) {
+                handleLoadedFile(result.content, result.name, result.path, null);
+              }
+            } catch (err) {
+              console.error('Failed to load dropped file:', err);
+            }
+          }
+        }
+      });
     }
   }
 

@@ -77,6 +77,38 @@ fn create_backup_from_path(file_path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn load_file_from_path_and_backup(file_path: String) -> Result<OpenFileResult, String> {
+    let path = PathBuf::from(&file_path);
+    if !path.exists() {
+        return Err("Source file does not exist".to_string());
+    }
+    let file_name = path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+
+    let bak_path = format!("{}.bak", file_path);
+    let backup_path = match std::fs::copy(&path, &bak_path) {
+        Ok(_) => Some(bak_path),
+        Err(e) => {
+            log::warn!("Could not create backup at {}: {}", bak_path, e);
+            None
+        }
+    };
+
+    Ok(OpenFileResult {
+        path: file_path,
+        name: file_name,
+        content,
+        backup_path,
+    })
+}
+
+#[tauri::command]
 fn save_file_as_dialog(
     suggested_name: String,
     content: String,
@@ -137,6 +169,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             open_file_dialog_and_backup,
             create_backup_from_path,
+            load_file_from_path_and_backup,
             save_file_as_dialog
         ])
         .run(tauri::generate_context!())
