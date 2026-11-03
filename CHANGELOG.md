@@ -5,6 +5,16 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.12] - 2026-11-03
+
+### Changed
+
+- **Yuzu's Livestock Ranch Redesign (`hon_flag[32]`)**:
+  - Replaced technical bit checkboxes with human-readable **animal count selectors** (`0 (None)`, `1 Animal`, `2 (Max)`) for each species (Chickens, Pigs, Sheep, Cattle).
+  - Clarified the distinction between **pasture livestock delivered to Yuzu** (`hon_flag[32]`) versus **world pickup event flags / bag items**.
+  - Added dedicated **World Animal Locations & Pickups Guide** detailing exact world acquisition sources (Chicks: Lakewest dock, Tigermouth well; Pigs: Radat boy, Rokkaku, Greenhill; Lambs: Taro, Kobold Forest, Forest Village, Sajah; Calves: Highway Village, Drakemouth).
+  - Cleaned up pasture status badges showing live occupancy status (e.g., "1 in Pasture", "2 in Pasture (Max)").
+
 ## [1.4.11] - 2026-11-03
 
 ### Fixed

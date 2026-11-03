@@ -435,7 +435,7 @@ export function createCastleFlagsEditor(arr, key, updateCallback) {
   container.appendChild(farmDetails);
 
   // ==========================================================================
-  // SECTION 2: YUZU'S LIVESTOCK RANCH (hon_flag[32]) - DEDICATED SEPARATE CARD
+  // SECTION 2: YUZU\'S LIVESTOCK RANCH (hon_flag[32]) - DELIVERED ANIMALS & WORLD LOCATIONS
   // ==========================================================================
   const ranchDetails = document.createElement('div');
   ranchDetails.className = 'json-object';
@@ -443,60 +443,286 @@ export function createCastleFlagsEditor(arr, key, updateCallback) {
 
   const ranchSummary = document.createElement('div');
   ranchSummary.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 0.6rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.4rem;';
-  ranchSummary.innerHTML = "<strong>🐑 Yuzu's Livestock Ranch (hon_flag[32])</strong>";
+  ranchSummary.innerHTML = "<strong>🐑 Yuzu's Livestock Ranch (Castle Pasture & Animal Deliveries)</strong>";
   ranchDetails.appendChild(ranchSummary);
 
   const ranchBody = document.createElement('div');
   ranchBody.style.cssText = 'padding: 0.5rem 0;';
 
-  const livestockCard = buildByteCard({
-    byteIndex: 32,
-    title: 'Castle Pasture & Animal Pens (hon_flag[32])',
-    presets: [
-      { label: '✓ Full Ranch (255)', val: 255 },
-      { label: 'Default Recruited (17)', val: 17 },
-      { label: '✗ Clear All (0)', val: 0 }
-    ],
-    groups: [
-      {
-        heading: '🐥 Chickens (Chick Item #5)',
-        items: [
-          { bit: 0, label: '1st Chick (Bit 0 / +1) — Default / Lakewest / Tigermouth' },
-          { bit: 1, label: '2nd Chick (Bit 1 / +2) — Lakewest Dock / Tigermouth Well' }
-        ]
-      },
-      {
-        heading: '🐷 Pigs (Piglet Item #6)',
-        items: [
-          { bit: 2, label: '1st Piglet (Bit 2 / +4) — Radat / Rokkaku / Greenhill' },
-          { bit: 3, label: '2nd Piglet (Bit 3 / +8) — Radat / Rokkaku / Greenhill' }
-        ]
-      },
-      {
-        heading: '🐑 Sheep (Lamb Item #7)',
-        items: [
-          { bit: 4, label: '1st Lamb (Bit 4 / +16) — Default / Kobold / Forest / Sajah' },
-          { bit: 5, label: '2nd Lamb (Bit 5 / +32) — Kobold Forest / Forest Village / Sajah' }
-        ]
-      },
-      {
-        heading: '🐄 Cattle (Calf Item #8)',
-        items: [
-          { bit: 6, label: '1st Calf (Bit 6 / +64) — Highway Village / Drakemouth' },
-          { bit: 7, label: '2nd Calf (Bit 7 / +128) — Highway Village / Drakemouth' }
-        ]
-      }
-    ]
+  // --- SUBSECTION A: ANIMALS DELIVERED TO YUZU (hon_flag[32]) ---
+  const livestockCard = document.createElement('div');
+  livestockCard.style.cssText = 'padding: 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid var(--pico-muted-border-color); border-radius: 6px; margin-bottom: 0.75rem;';
+
+  const ranchHeader = document.createElement('div');
+  ranchHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;';
+
+  const titleDiv = document.createElement('div');
+  titleDiv.innerHTML = '<strong style="font-size: 0.9rem;">Livestock Delivered to Castle Ranch (hon_flag[32])</strong><div style="font-size: 0.75rem; color: var(--pico-muted-color);">Select how many animals are currently delivered to Yuzu and living in the castle pasture</div>';
+
+  const controls = document.createElement('div');
+  controls.style.cssText = 'display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;';
+
+  const byteLabel = document.createElement('span');
+  byteLabel.style.fontSize = '0.75rem';
+  byteLabel.style.color = 'var(--pico-muted-color)';
+  byteLabel.textContent = 'Raw Byte:';
+  controls.appendChild(byteLabel);
+
+  const byteInput = document.createElement('input');
+  byteInput.type = 'number';
+  byteInput.min = '0';
+  byteInput.max = '255';
+  byteInput.value = arr[32] || 0;
+  byteInput.style.cssText = 'width: 65px; height: 28px; padding: 2px 6px; font-size: 0.8rem; text-align: center; margin-bottom: 0;';
+  controls.appendChild(byteInput);
+
+  const presets = [
+    { label: '✓ Full Ranch (255)', val: 255 },
+    { label: 'Default Recruited (17)', val: 17 },
+    { label: '✗ Clear All (0)', val: 0 }
+  ];
+
+  presets.forEach(preset => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = preset.val === 0 ? 'secondary outline' : 'outline';
+    btn.textContent = preset.label;
+    btn.style.cssText = 'font-size: 0.7rem; padding: 0.25rem 0.5rem; margin-bottom: 0;';
+    btn.addEventListener('click', () => setLivestockByte(preset.val));
+    controls.appendChild(btn);
   });
+
+  ranchHeader.appendChild(titleDiv);
+  ranchHeader.appendChild(controls);
+  livestockCard.appendChild(ranchHeader);
+
+  // Species configuration: 2 bits each
+  const speciesList = [
+    {
+      id: 'chicks',
+      name: 'Chickens',
+      icon: '🐥',
+      item: 'Chick (Item #5)',
+      bit0: 0,
+      bit1: 1,
+      defaultNote: 'Yuzu starts with 1 by default upon recruitment'
+    },
+    {
+      id: 'pigs',
+      name: 'Pigs',
+      icon: '🐷',
+      item: 'Piglet (Item #6)',
+      bit0: 2,
+      bit1: 3,
+      defaultNote: '0 by default (bring Piglets to Yuzu)'
+    },
+    {
+      id: 'sheep',
+      name: 'Sheep',
+      icon: '🐑',
+      item: 'Lamb (Item #7)',
+      bit0: 4,
+      bit1: 5,
+      defaultNote: 'Yuzu starts with 1 by default (Taro the Sheep)'
+    },
+    {
+      id: 'cattle',
+      name: 'Cattle / Calves',
+      icon: '🐄',
+      item: 'Calf (Item #8)',
+      bit0: 6,
+      bit1: 7,
+      defaultNote: '0 by default (bring Calves to Yuzu)'
+    }
+  ];
+
+  const speciesButtons = {};
+  const speciesCountBadges = {};
+
+  const getCountForSpecies = (val, spec) => {
+    const b0 = (val & (1 << spec.bit0)) !== 0;
+    const b1 = (val & (1 << spec.bit1)) !== 0;
+    if (b0 && b1) return 2;
+    if (b0 || b1) return 1;
+    return 0;
+  };
+
+  const updateLivestockUI = (val) => {
+    byteInput.value = val;
+    speciesList.forEach(spec => {
+      const count = getCountForSpecies(val, spec);
+      if (speciesCountBadges[spec.id]) {
+        speciesCountBadges[spec.id].textContent = count === 2 ? '2 in Pasture (Max)' : count === 1 ? '1 in Pasture' : 'None (0)';
+        speciesCountBadges[spec.id].style.color = count > 0 ? '#4caf50' : 'var(--pico-muted-color)';
+      }
+      if (speciesButtons[spec.id]) {
+        speciesButtons[spec.id].forEach((btn, cIdx) => {
+          if (cIdx === count) {
+            btn.className = '';
+            btn.style.background = 'var(--pico-primary)';
+            btn.style.color = '#fff';
+            btn.style.borderColor = 'var(--pico-primary)';
+            btn.style.fontWeight = 'bold';
+          } else {
+            btn.className = 'outline secondary';
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--pico-muted-color)';
+            btn.style.borderColor = 'var(--pico-muted-border-color)';
+            btn.style.fontWeight = 'normal';
+          }
+        });
+      }
+    });
+  };
+
+  const setLivestockByte = (newVal) => {
+    const clamped = Math.max(0, Math.min(255, parseInt(newVal) || 0));
+    arr[32] = clamped;
+    updateLivestockUI(clamped);
+    if (updateCallback) updateCallback(arr);
+  };
+
+  byteInput.addEventListener('input', (e) => setLivestockByte(e.target.value));
+
+  // Render 4 species delivery count cards in grid
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.6rem;';
+
+  speciesList.forEach(spec => {
+    const cardDiv = document.createElement('div');
+    cardDiv.style.cssText = 'padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px solid var(--pico-muted-border-color); display: flex; flex-direction: column; gap: 0.45rem;';
+
+    const rowTop = document.createElement('div');
+    rowTop.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+
+    const nameSpan = document.createElement('div');
+    nameSpan.innerHTML = `<span style="font-size: 1rem; margin-right: 0.35rem;">${spec.icon}</span><strong>${spec.name}</strong>`;
+
+    const countBadge = document.createElement('span');
+    countBadge.style.cssText = 'font-size: 0.75rem; font-weight: bold;';
+    speciesCountBadges[spec.id] = countBadge;
+
+    rowTop.appendChild(nameSpan);
+    rowTop.appendChild(countBadge);
+    cardDiv.appendChild(rowTop);
+
+    const btnGroup = document.createElement('div');
+    btnGroup.style.cssText = 'display: flex; gap: 0.35rem; width: 100%;';
+
+    const btns = [];
+    [0, 1, 2].forEach(countVal => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.style.cssText = 'flex: 1; font-size: 0.75rem; padding: 0.25rem 0.2rem; margin-bottom: 0; text-align: center; border-radius: 4px;';
+      b.textContent = countVal === 0 ? '0 (None)' : countVal === 1 ? '1 Animal' : '2 (Max)';
+      b.addEventListener('click', () => {
+        let cur = arr[32] || 0;
+        cur &= ~(1 << spec.bit0);
+        cur &= ~(1 << spec.bit1);
+        if (countVal === 1) {
+          cur |= (1 << spec.bit0);
+        } else if (countVal === 2) {
+          cur |= (1 << spec.bit0);
+          cur |= (1 << spec.bit1);
+        }
+        setLivestockByte(cur);
+      });
+      btns.push(b);
+      btnGroup.appendChild(b);
+    });
+    speciesButtons[spec.id] = btns;
+    cardDiv.appendChild(btnGroup);
+
+    const subNote = document.createElement('div');
+    subNote.style.cssText = 'font-size: 0.7rem; color: var(--pico-muted-color); line-height: 1.25;';
+    subNote.textContent = spec.defaultNote;
+    cardDiv.appendChild(subNote);
+
+    grid.appendChild(cardDiv);
+  });
+
+  livestockCard.appendChild(grid);
+  updateLivestockUI(arr[32] || 0);
   ranchBody.appendChild(livestockCard);
 
-  const ranchTip = document.createElement('p');
-  ranchTip.style.cssText = 'font-size: 0.75rem; color: var(--pico-muted-color); margin-top: 0.5rem; margin-bottom: 0; line-height: 1.4;';
-  ranchTip.innerHTML = '<strong>💡 Tip:</strong> Yuzu begins with 1 Chick and 1 Lamb by default upon recruitment. You can also add animals directly to your Party Bag / Warehouse via the <strong>Items tab</strong> (Item #5 Chick, #6 Piglet, #7 Lamb, #8 Calf) to deliver them to Yuzu in-game.';
-  ranchBody.appendChild(ranchTip);
+  // --- SUBSECTION B: WORLD DISCOVERY LOCATIONS GUIDE ---
+  const worldLocationsCard = document.createElement('div');
+  worldLocationsCard.style.cssText = 'padding: 0.65rem 0.8rem; background: rgba(0,0,0,0.08); border: 1px solid var(--pico-muted-border-color); border-radius: 6px;';
 
+  const worldLocTitle = document.createElement('div');
+  worldLocTitle.style.cssText = 'font-size: 0.8rem; font-weight: bold; margin-bottom: 0.4rem; color: #f0b90b;';
+  worldLocTitle.textContent = '📍 World Animal Locations & Pickups (Inventory Items)';
+  worldLocationsCard.appendChild(worldLocTitle);
+
+  const locGrid = document.createElement('div');
+  locGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.5rem; font-size: 0.72rem; line-height: 1.4;';
+
+  const locs = [
+    {
+      title: '🐥 Chicks (Item #5)',
+      list: [
+        'Default: Recruited with Yuzu (Forest Village)',
+        'Lakewest: Walking near dock',
+        'Tigermouth Village: Walking around well'
+      ]
+    },
+    {
+      title: '🐷 Piglets (Item #6)',
+      list: [
+        'Radat: Boy outside Shu\'s house (5,000p)',
+        'Rokkaku Hamlet: Trading Post vendor (3,000p)',
+        'Greenhill Academy: Inside fenced area by gate'
+      ]
+    },
+    {
+      title: '🐑 Lambs (Item #7)',
+      list: [
+        'Default: Taro (recruited with Yuzu)',
+        'Kobold Forest: Clearing (missable if 1st chest opened)',
+        'Forest Village: Outside Trading Post',
+        'Sajah Village: Rare Finds in Item Shop'
+      ]
+    },
+    {
+      title: '🐄 Calves (Item #8)',
+      list: [
+        'Highway Village: Boy by road (6,000p)',
+        'Drakemouth Village: Guy with hat (7,000p / 5,000p)',
+        'Highway Village: Boy by Inn (after Rockaxe liberated)'
+      ]
+    }
+  ];
+
+  locs.forEach(l => {
+    const col = document.createElement('div');
+    col.style.cssText = 'background: rgba(255,255,255,0.02); padding: 0.4rem 0.5rem; border-radius: 4px;';
+    const h = document.createElement('div');
+    h.style.fontWeight = 'bold';
+    h.style.marginBottom = '0.2rem';
+    h.textContent = l.title;
+    col.appendChild(h);
+
+    const ul = document.createElement('ul');
+    ul.style.cssText = 'margin: 0; padding-left: 1.1rem; color: var(--pico-muted-color);';
+    l.list.forEach(itemText => {
+      const li = document.createElement('li');
+      li.textContent = itemText;
+      ul.appendChild(li);
+    });
+    col.appendChild(ul);
+    locGrid.appendChild(col);
+  });
+  worldLocationsCard.appendChild(locGrid);
+
+  const locNote = document.createElement('div');
+  locNote.style.cssText = 'font-size: 0.7rem; color: var(--pico-muted-color); margin-top: 0.45rem;';
+  locNote.innerHTML = '<strong>💡 Bag vs. Ranch:</strong> When found or bought in the world, animals are placed into your <strong>Party Bag as inventory items</strong>. Talking to Yuzu in the castle transfers them to her pasture (updating the count above). You can also add animals directly to your bag via the <strong>Items tab</strong>.';
+  worldLocationsCard.appendChild(locNote);
+
+  ranchBody.appendChild(worldLocationsCard);
   ranchDetails.appendChild(ranchBody);
   container.appendChild(ranchDetails);
+
 
   return container;
 }
