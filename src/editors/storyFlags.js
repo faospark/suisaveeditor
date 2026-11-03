@@ -230,12 +230,36 @@ export const KNOWN_STORY_FLAGS = {
     }
   },
   160: {
-    name: 'Ryube Village (Millie & Bonaparte)',
-    area: 'vb01 / vb05',
-    desc: 'Millie recruitment and Bonaparte pet recovery in Ryube Forest',
+    name: 'Mercenary Fortress - Arrival & Custody',
+    area: 'vb01 / vb11',
+    desc: 'Arrival at Mercenary Fort, sentencing by Viktor & Flik, and cell assignment',
     bits: {
-      0: 'Millie Recruited / Bonaparte Returned (Mask 1)',
-      6: 'Bonaparte Chase Active in Ryube Forest (Mask 64)'
+      0: 'Brought to Mercenary Fortress (Mask 1)',
+      6: 'Sentenced to cellar cell by Viktor & Flik (Mask 64)',
+      7: 'Placed in Pohl custody in cellar (Mask 128)'
+    }
+  },
+  161: {
+    name: "Mercenary Fortress - Pohl's Chores & Escape Tools",
+    area: 'vb11',
+    desc: 'Pohl chore progression and escape equipment collection in cellar',
+    bits: {
+      0: 'Chore #1 Assigned: Organize Storeroom Boxes (Mask 1)',
+      1: 'Chore #1 Completed: All Storeroom Boxes Organized (Mask 2)',
+      2: 'Escape Tool #1: Rope Acquired from Storeroom (Mask 4)'
+    }
+  },
+  236: {
+    name: 'Mercenary Fortress - Storeroom Pushable Boxes',
+    area: 'vb11',
+    desc: 'State tracking for each of the 5 pushable cargo boxes in the storeroom',
+    bits: {
+      0: 'Box Pushing Chore Initialized (Mask 1)',
+      1: 'Storage Box #1 In Position (Mask 2)',
+      2: 'Storage Box #2 In Position (Mask 4)',
+      3: 'Storage Box #3 In Position (Mask 8)',
+      4: 'Storage Box #4 In Position (Mask 16)',
+      5: 'Storage Box #5 In Position / All Boxes Placed (Mask 32)'
     }
   },
   164: {
