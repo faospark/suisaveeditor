@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.12] - 2026-11-03
 
-### Changed
+### Fixed & Grounded
 
-- **Yuzu's Livestock Ranch Redesign (`hon_flag[32]`)**:
-  - Replaced technical bit checkboxes with human-readable **animal count selectors** (`0 (None)`, `1 Animal`, `2 (Max)`) for each species (Chickens, Pigs, Sheep, Cattle).
-  - Clarified the distinction between **pasture livestock delivered to Yuzu** (`hon_flag[32]`) versus **world pickup event flags / bag items**.
-  - Added dedicated **World Animal Locations & Pickups Guide** detailing exact world acquisition sources (Chicks: Lakewest dock, Tigermouth well; Pigs: Radat boy, Rokkaku, Greenhill; Lambs: Taro, Kobold Forest, Forest Village, Sajah; Calves: Highway Village, Drakemouth).
-  - Cleaned up pasture status badges showing live occupancy status (e.g., "1 in Pasture", "2 in Pasture (Max)").
+- **Yuzu's Castle Pasture Livestock Synchronization (`food_num[4..7]` & `hon_flag[31..33]`)**:
+  - Completely grounded livestock mechanics in native decompiled engine bytecode (`EventOverlayClass.FarmBase$$RunchMain` at `0x181F81640`).
+  - Corrected primary data source: delivered animal counts are stored in `game_data.food_num[4..7]` (Chicks: 0–3, Pigs: 0–3, Sheep: 0–4, Cattle: 0–3; 13 total animals).
+  - Automatic flag synchronization: accurately calculates and sets all 13 threshold bits across `hon_flag[31]` (bits 4–7), `hon_flag[32]` (bits 0–7), and `hon_flag[33]` (bit 0) without corrupting adjacent vegetable plot flags in `hon_flag[31]` or flag bytes in `hon_flag[33]`.
+  - Removed misleading "World Locations" table to ensure users understand pasture stock is separate from world/map pickup event flags.
 
 ## [1.4.11] - 2026-11-03
 

@@ -364,6 +364,9 @@ function createEditorElement(renderer, value, targetData, data, key, label, conf
     case 'story_flags':
       return editorFactory(value || data.event_flag, label, onChange, data);
 
+    case 'castle_flags':
+      return editorFactory(value, label, onChange, data);
+
     case 'castle_flags_raw':
       return editorFactory(value, label, onChange);
     
