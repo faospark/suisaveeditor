@@ -8,6 +8,17 @@
  * Bits are bit indices (0-7, where bit N represents 1 << N).
  */
 export const KNOWN_STORY_FLAGS = {
+  0: {
+    name: 'Prologue - Highland Youth Brigade Camp',
+    area: 'va01',
+    desc: 'Opening camp sequence, night exploration, and sparring scene',
+    bits: {
+      0: "Spoke to Jowy in tent ('Let\\'s go outside' selected)",
+      3: 'Spoke to Captain Rowd in tent / Night ambush begins (Mask 8)',
+      4: 'Viewed 3 Youth Brigade soldiers sparring outside in camp (Mask 16)',
+      6: 'Moved east to clearing; witnessed Shadowy Figure (Luca Blight) & Rowd (Mask 64)',
+    }
+  },
   20: {
     name: 'Gregminster Alliance & Tomo Lockout',
     area: 'vf01 / vb10',
