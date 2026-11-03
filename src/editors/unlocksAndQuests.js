@@ -2,6 +2,7 @@
 // Provides granular bit/item controls alongside bulk Unlock All / Reset All actions
 
 import GameData from '../gamedata.js';
+import { CHESTS_DATA } from '../config/chests.js';
 
 /**
  * Helper to get base dish name for Recipe #1..40 from GameData.FOOD
@@ -829,11 +830,46 @@ export function createRichmondDetectiveEditor(arr, key, updateCallback, fullData
  * Granular 256 individual chest checkboxes + byte inputs + Open All / Reset All
  */
 export function createTreasureChestsEditor(arr, key, updateCallback) {
+  const chestsByByte = new Array(32).fill(null).map(() => []);
+  (CHESTS_DATA || []).forEach(c => {
+    if (c.byte >= 0 && c.byte < 32) {
+      chestsByByte[c.byte][c.bit] = c;
+    }
+  });
+
   return createGranularBitArrayEditor(
     arr,
     '🧰 World Map Treasure Chests (t_box_flag — 256 Individual Chests)',
-    (idx) => `Group ${idx + 1}: Chests #${idx * 8 + 1}–${idx * 8 + 8} (Byte ${idx})`,
-    (idx, bit) => `Chest #${idx * 8 + bit + 1}`,
+    (byteIdx) => {
+      const bChests = chestsByByte[byteIdx] || [];
+      const areas = [];
+      bChests.forEach(c => {
+        if (c && c.area && c.area !== 'Unused / Unassigned') {
+          const shortA = c.area.split('(')[0].split('&')[0].trim();
+          if (!areas.includes(shortA)) areas.push(shortA);
+        }
+      });
+      if (areas.length > 0) {
+        return `Group ${byteIdx + 1}: ${areas.slice(0, 2).join(' / ')} (Byte ${byteIdx})`;
+      }
+      return `Group ${byteIdx + 1}: Chests #${byteIdx * 8 + 1}–${byteIdx * 8 + 8} (Byte ${byteIdx}) — Unused`;
+    },
+    (byteIdx, bit) => {
+      const chestId = byteIdx * 8 + bit + 1;
+      const c = chestsByByte[byteIdx]?.[bit];
+      if (!c || c.area === 'Unused / Unassigned') {
+        return {
+          label: `#${chestId}: (Unused)`,
+          title: `Chest #${chestId} (Byte ${byteIdx}, Bit ${bit}) — Unused / Unassigned`,
+          search: `chest #${chestId} byte ${byteIdx} unused`
+        };
+      }
+      return {
+        label: `#${chestId}: ${c.item}`,
+        title: `Chest #${chestId} (Byte ${byteIdx}, Bit ${bit}): ${c.item}\nLocation: ${c.area}${c.map && c.map !== '-' ? ` [${c.map}]` : ''}`,
+        search: `chest #${chestId} byte ${byteIdx} ${c.item} ${c.area} ${c.map && c.map !== '-' ? c.map : ''}`
+      };
+    },
     updateCallback,
     true
   );
@@ -871,7 +907,7 @@ function createGranularBitArrayEditor(arr, titleText, getByteTitle, getBitLabel,
 
   const searchInput = document.createElement('input');
   searchInput.type = 'search';
-  searchInput.placeholder = 'Filter by chest #, character name, or byte index...';
+  searchInput.placeholder = 'Filter by chest #, item name, area, character name, or byte index...';
   searchInput.style.cssText = 'flex: 1; min-width: 220px; margin-bottom: 0; font-size: 0.75rem; padding: 0.35rem 0.6rem 0.35rem 2.1rem;';
 
   const setAllBtn = document.createElement('button');
@@ -949,12 +985,17 @@ function createGranularBitArrayEditor(arr, titleText, getByteTitle, getBitLabel,
     numInput.addEventListener('input', (e) => syncByte(e.target.value));
 
     for (let bit = 0; bit < 8; bit++) {
-      const bitText = getBitLabel(byteIdx, bit);
-      searchTokens += ' ' + bitText.toLowerCase();
+      const bitRes = getBitLabel(byteIdx, bit);
+      const isObj = typeof bitRes === 'object' && bitRes !== null;
+      const bitText = isObj ? bitRes.label : bitRes;
+      const bitTitle = isObj ? (bitRes.title || bitRes.label) : bitText;
+      const bitSearch = isObj ? (bitRes.search || bitRes.label) : bitText;
+
+      searchTokens += ' ' + bitSearch.toLowerCase();
 
       const bitLbl = document.createElement('label');
       bitLbl.style.cssText = 'display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; cursor: pointer; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-      bitLbl.title = bitText;
+      bitLbl.title = bitTitle;
 
       const cb = document.createElement('input');
       cb.type = 'checkbox';

@@ -5,6 +5,17 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.13] - 2026-11-03
+
+### Added & Grounded
+
+- **World Map Treasure Chests Human-Readable Labels & Locations (`t_box_flag[0..31]`)**:
+  - Fully reverse-engineered and grounded all 256 individual chest flags from `GameAssembly.dll` native routine `EVENTCON$$ECTkFlgSet` and map event bytecode in `Mobobehaviour/<map>.json`.
+  - Added comprehensive `src/config/chests.js` cataloging each chest's exact in-game item or reward (`Mega Medicine`, `Water Orb`, `Dragon Plans 2`, `Unicorn Plans 3`, `Cape of Darkness`, `Old book` volumes, seeds, armor, etc.), geographical area, and internal map ID.
+  - **Granular UI Labels**: Replaced generic `Chest #X` checkboxes with rich item names (e.g. `#1: Mega Medicine`, `#5: Water Orb`, `#148: Cape of Darkness`) alongside detailed tooltip descriptions showing exact map names and locations.
+  - **Contextual Byte Group Headers**: Card headers now display the primary geographical areas for each group (e.g. `Group 1: Ancient Sindar Ruins Caverns (Byte 0)`, `Group 3: Mt. Rakutei Dragon Cliffs (Byte 2)`, `Group 19: Two River Subterranean Sewers / Tinto Mines (Byte 18)`), clearly identifying unused slots.
+  - **Universal Search Filter**: Filter input now supports live searching across chest numbers, item names, runes, plans, equipment, location names, and byte indices.
+
 ## [1.4.12] - 2026-11-03
 
 ### Fixed & Grounded
