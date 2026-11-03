@@ -248,22 +248,22 @@ export const KNOWN_STORY_FLAGS = {
       1: 'Chore #1 Completed: All Storeroom Boxes Organized (Mask 2)',
       2: 'Escape Tool #1: Rope Acquired from Storeroom (Mask 4)',
       3: 'Day 1 Finished: Meal with Pohl / Locked in cell for night (Mask 8)',
-      4: 'Chore #2 Subtask: Acquired Iron Boots from Blacksmith (Mask 16)',
-      5: 'Chore #2 Subtask: Acquired Flour from Item Store (Mask 32)',
-      6: 'Chore #2 Assigned: Fetch Boots & Flour for Pohl (Mask 64)',
-      7: 'Chore #2 Completed: Delivered Boots & Flour to Pohl (Mask 128)'
+      4: 'Chore #2 Subtask: Acquired Flint Stones from Blacksmith (Mask 16)',
+      5: 'Chore #2 Subtask: Item Store is Out of Flour / Directed to Ryube (Mask 32)',
+      6: 'Chore #2 Assigned: Fetch Boots, Flint Stones & Flour (Mask 64)',
+      7: 'Chore #2 Subtask: Reported lack of flour to Pohl / Sent to Leona (Mask 128)'
     }
   },
   162: {
-    name: "Mercenary Fortress - Floor Cleaning & Escape",
-    area: 'vb11 / vb01 / vb02',
-    desc: 'Chore #3 floor wiping duty and nightly escape sequence',
+    name: "Mercenary Fortress - Ryube Flour Quest & Floor Cleaning",
+    area: 'vb11 / vb05',
+    desc: 'Escort to Ryube Village with Gengen & Tuta for Flour, and subsequent chores',
     bits: {
-      0: 'Chore #3 Assigned: Clean/wipe fortress floors (Mask 1)',
-      1: 'Floor Cleaning Phase 1 (Mask 2)',
-      2: 'Flik / Viktor hallway inspection (Mask 4)',
-      3: 'Chore #3 Errand Progression (Mask 8)',
-      4: 'Chore #3 Completed: Floor wiping finished (Mask 16)',
+      0: 'Ryube Flour Quest: Spoke to Leona; Gengen & Tuta join party! (Mask 1)',
+      1: 'Ryube Village Item Store: Flour Acquired (Mask 2)',
+      2: 'Ryube Village: Return to Mercenary Fort with Flour (Mask 4)',
+      3: 'Chore #2 Fully Completed: Delivered Flour to Pohl (Mask 8)',
+      4: 'Chore #3: Cleaning / Wiping Fortress Floors Assigned (Mask 16)',
       5: 'Night Escape Attempt Committed (Mask 32)'
     }
   },
