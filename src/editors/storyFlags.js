@@ -17,6 +17,20 @@ export const KNOWN_STORY_FLAGS = {
       3: 'Spoke to Captain Rowd in tent / Night ambush begins (Mask 8)',
       4: 'Viewed 3 Youth Brigade soldiers sparring outside in camp (Mask 16)',
       6: 'Moved east to clearing; witnessed Shadowy Figure (Luca Blight) & Rowd (Mask 64)',
+      5: 'Returned to tent after warning / suspecting ambush (Mask 32)',
+      7: 'Riou & Jowy pack up / agree to flee burning camp (Mask 128)',
+    }
+  },
+  1: {
+    name: 'Prologue - Youth Brigade Ambush & Escape',
+    area: 'va01',
+    desc: 'Escaping the burning camp, forest encounter, and flight to the cliff',
+    bits: {
+      0: 'Escaped tent into burning camp exterior (Mask 1)',
+      3: 'Confronted by Highland soldiers on camp path (Mask 8)',
+      4: 'Responded to Jowy warning / decided to turn back (Mask 16)',
+      5: 'Reached east forest clearing (Mask 32)',
+      7: 'Fleeing north towards waterfall cliff (Mask 128)'
     }
   },
   20: {
