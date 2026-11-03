@@ -30,6 +30,7 @@ export const KNOWN_STORY_FLAGS = {
       3: 'Confronted by Highland soldiers on camp path (Mask 8)',
       4: 'Responded to Jowy warning / decided to turn back (Mask 16)',
       5: 'Reached east forest clearing (Mask 32)',
+      6: 'Returned to camp to confront Captain Rowd; cutscene & battle (Mask 64)',
       7: 'Fleeing north towards waterfall cliff (Mask 128)'
     }
   },
