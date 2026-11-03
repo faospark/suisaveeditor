@@ -62,6 +62,13 @@ export const RECRUITMENT_STORY_FLAGS = {
       { byte: 216, mask: 0x30, desc: 'Tony Spoke & Recruited Flags (Mask 16 | 32)' }
     ]
   },
+  102: { // Yuzu
+    name: 'Yuzu',
+    flags: [
+      { byte: 68, mask: 0xF0, desc: 'Yuzu Kobold Village & Sheep Minigame Flags (Mask 16 | 32 | 64 | 128)' },
+      { byte: 70, mask: 0x01, desc: 'Yuzu Recruited Flag (Mask 1)' }
+    ]
+  },
   68: { // Wakaba
     name: 'Wakaba',
     flags: [
@@ -201,6 +208,12 @@ export const RECRUITMENT_STORY_FLAGS = {
         gd.game_data.parts_no[3] = 0;
       }
     }
+  },
+  116: { // Jeane
+    name: 'Jeane',
+    flags: [
+      { byte: 213, mask: 0x80, desc: 'Jeane Recruited Flag (Mask 128)' }
+    ]
   }
 };
 

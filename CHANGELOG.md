@@ -5,9 +5,29 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.14] - 2026-11-03
+
+### Fixed & Grounded
+
+- **Kobold Forest Treasure Chests & Stray Lamb Correction (`t_box_flag[6]` / Group 7)**:
+  - Corrected Group 7 (`t_box_flag` Byte 6) area designation from Lakewest Town to **Kobold Forest** (`vh10`).
+  - Grounded each of the 4 path chests (#49–52) containing **Collar** (the dog collar accessories placed along the Kobold Forest trail during the Unicorn quest), labeling them distinctly `#49: Collar (Path 1)` through `#52: Collar (Path 4)`.
+  - Retained `#53: Main-Gauche` and `#54: Guard Ring` (hidden behind the tree in the clearing).
+  - Grounded Chest #55 (Bit 6, Mask 64) as **Lamb (Yuzu Farm)**, which corresponds to finding Yuzu's stray sheep in the forest and registers via `vh10` Submap 2 event bytecode `[97, 6, 64]`.
+
 ## [1.4.13] - 2026-11-03
 
 ### Added & Grounded
+
+- **Jeane Recruitment Flag Grounding (`event_flag[213]` Bit 7 / `0x80`)**:
+  - Live-captured Jeane's recruitment in Two River City Rune Shop (`vh11`).
+  - Added Jeane (Character 116) to `RECRUITMENT_STORY_FLAGS` in `src/editors/recruitment.js` with flag byte 213 mask `0x80`.
+  - Annotated byte 213 (bit 7) in `src/editors/storyFlags.js`.
+
+- **Yuzu Recruitment & Sheep Minigame Story Flags Grounding (`event_flag[68]` & `event_flag[70]`)**:
+  - Captured exact runtime flag transitions using PKCore's live flag monitor during Kobold Village quest progression (`vh03` / `vh10`).
+  - Added Yuzu (Character 102) to `RECRUITMENT_STORY_FLAGS` in `src/editors/recruitment.js`, linking byte 68 mask `0xF0` (dialogue & sheep 1–3 minigame triggers) and byte 70 mask `0x01` (HQ recruitment status) for synchronized reset and status management.
+  - Annotated byte 68 (bits 4, 5, 6, 7) and byte 70 (bit 0) in `src/editors/storyFlags.js` with human-readable labels and area info.
 
 - **World Map Treasure Chests Human-Readable Labels & Locations (`t_box_flag[0..31]`)**:
   - Fully reverse-engineered and grounded all 256 individual chest flags from `GameAssembly.dll` native routine `EVENTCON$$ECTkFlgSet` and map event bytecode in `Mobobehaviour/<map>.json`.

@@ -45,11 +45,23 @@ export const KNOWN_STORY_FLAGS = {
     }
   },
   68: {
-    name: 'Two River Kobold District (Hans Armory)',
-    area: 'vf02',
-    desc: 'Two River Kobold armor shop and Hans recruitment status',
+    name: 'Two River Kobold District & Yuzu Sheep Chase',
+    area: 'vf02 / vh03 / vh10',
+    desc: 'Hans armory recruitment & Yuzu Kobold Village sheep quest',
     bits: {
-      0: 'Hans Recruited / Armory Opened (Mask 1)'
+      0: 'Hans Recruited / Armory Opened (Mask 1)',
+      4: 'Yuzu Quest Accepted / Minigame Started (Mask 16)',
+      5: 'Yuzu Sheep 1 Captured (Mask 32)',
+      6: 'Yuzu Sheep 2 Captured (Mask 64)',
+      7: 'Yuzu Sheep 3 Captured (Mask 128)'
+    }
+  },
+  70: {
+    name: 'Yuzu Recruitment',
+    area: 'vh03',
+    desc: 'Kobold Village Yuzu recruitment completion status',
+    bits: {
+      0: 'Yuzu Recruited into Castle HQ (Mask 1)'
     }
   },
   92: {
@@ -259,6 +271,14 @@ export const KNOWN_STORY_FLAGS = {
     bits: {
       0: 'Spoke to Alberto in Tinto (Mask 1)',
       1: 'Heard Annallee & Pico in Castle HQ (Mask 2)'
+    }
+  },
+  213: {
+    name: 'Two River Rune Shop (Jeane Recruitment)',
+    area: 'vh11',
+    desc: 'Two River rune sage Jeane recruitment status',
+    bits: {
+      7: 'Jeane Recruited into Castle HQ (Mask 128)'
     }
   },
   215: {
