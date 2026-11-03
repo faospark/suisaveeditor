@@ -43,8 +43,26 @@ export const KNOWN_STORY_FLAGS = {
       1: 'First battle at cliff edge initiated (Mask 2)',
       2: 'First cliff battle won (Mask 4)',
       3: 'Reached cliff edge; jump decision dialogue (Mask 8)',
-      6: 'Refused jump ("Look at the current..."); triggers next soldier wave (Mask 64)',
-      7: 'Marked rock with X and jumped off waterfall cliff (Mask 128)'
+      4: "Agreed to jump; carved 'X' mark on rock with Jowy (Mask 16)",
+      5: 'Plunged off waterfall cliff into river (Mask 32)',
+      6: 'Refused jump ("Look at the current..."); triggers next soldier wave (Mask 64)'
+    }
+  },
+  3: {
+    name: 'Prologue - Foggy River Rescue & Dream',
+    area: 'va04 / va13',
+    desc: 'Fished out of foggy riverbank by Viktor & Flik; dream cutscene',
+    bits: {
+      0: 'Fished out of river by Viktor & Flik on riverbank (Mask 1)',
+      1: 'Foggy river dream / flashback cutscene completed (Mask 2)'
+    }
+  },
+  5: {
+    name: 'Prologue - Chapter Milestone',
+    area: 'va09 / vb01',
+    desc: 'Prologue master progression and transition to Mercenary Fortress',
+    bits: {
+      7: 'Prologue Completed / Jump Committed; Mercenary Fort unlocked (Mask 128)'
     }
   },
   20: {
