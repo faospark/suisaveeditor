@@ -34,6 +34,19 @@ export const KNOWN_STORY_FLAGS = {
       7: 'Fleeing north towards waterfall cliff (Mask 128)'
     }
   },
+  2: {
+    name: 'Prologue - Tenzan Pass Cliff Escape',
+    area: 'va09',
+    desc: 'Cliff edge decision, repeated refusal waves, and waterfall jump',
+    bits: {
+      0: 'Reached Tenzan Pass cliff approach (Mask 1)',
+      1: 'First battle at cliff edge initiated (Mask 2)',
+      2: 'First cliff battle won (Mask 4)',
+      3: 'Reached cliff edge; jump decision dialogue (Mask 8)',
+      6: 'Refused jump ("Look at the current..."); triggers next soldier wave (Mask 64)',
+      7: 'Marked rock with X and jumped off waterfall cliff (Mask 128)'
+    }
+  },
   20: {
     name: 'Gregminster Alliance & Tomo Lockout',
     area: 'vf01 / vb10',
