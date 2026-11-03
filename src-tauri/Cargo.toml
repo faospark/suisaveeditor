@@ -1,6 +1,6 @@
 [package]
 name = "suisaveeditor"
-version = "1.4.10"
+version = "1.4.11"
 description = "Suikoden 2 Remaster Save Editor"
 authors = ["you"]
 license = ""

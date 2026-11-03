@@ -5,6 +5,22 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.11] - 2026-11-03
+
+### Fixed
+
+- **Hai Yo's Kitchen Seasonings (`taste_flag`)**:
+  - Corrected Row 0 to "No Seasoning" (Text ID 3606, baseline cooking menu option requiring no item or flag).
+  - Fixed Bit 5 mapping from non-existent "White Sauce" to "Salt (Bit 5 / +32)".
+  - Updated quick-action reset button to "Reset (No Seasonings)".
+
+### Changed
+
+- **Yuzu's Livestock Ranch (`hon_flag[32]`)**:
+  - Replaced generic "Pen 1 / Pen 2" labels with acquisition location context matching in-game discovery (Chickens: Lakewest/Tigermouth; Pigs: Radat/Rokkaku/Greenhill; Sheep: Kobold Forest/Forest Village/Sajah; Cattle: Highway Village/Drakemouth).
+  - Added "Default Recruited (17)" preset reflecting Yuzu's starting stock (1 Chick + 1 Lamb).
+  - Added helpful guidance noting that animal items (#5, #6, #7, #8) can also be added directly to the inventory in the Items tab.
+
 ## [1.4.10] - 2026-11-02
 
 ### Added

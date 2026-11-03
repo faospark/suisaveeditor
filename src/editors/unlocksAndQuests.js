@@ -454,41 +454,47 @@ export function createCastleFlagsEditor(arr, key, updateCallback) {
     title: 'Castle Pasture & Animal Pens (hon_flag[32])',
     presets: [
       { label: '✓ Full Ranch (255)', val: 255 },
-      { label: 'Standard Ranch (221)', val: 221 },
+      { label: 'Default Recruited (17)', val: 17 },
       { label: '✗ Clear All (0)', val: 0 }
     ],
     groups: [
       {
         heading: '🐥 Chickens (Chick Item #5)',
         items: [
-          { bit: 0, label: 'Chick Pen 1 (Bit 0)' },
-          { bit: 1, label: 'Chick Pen 2 (Bit 1)' }
+          { bit: 0, label: '1st Chick (Bit 0 / +1) — Default / Lakewest / Tigermouth' },
+          { bit: 1, label: '2nd Chick (Bit 1 / +2) — Lakewest Dock / Tigermouth Well' }
         ]
       },
       {
         heading: '🐷 Pigs (Piglet Item #6)',
         items: [
-          { bit: 2, label: 'Piglet Pen 1 (Bit 2)' },
-          { bit: 3, label: 'Piglet Pen 2 (Bit 3)' }
+          { bit: 2, label: '1st Piglet (Bit 2 / +4) — Radat / Rokkaku / Greenhill' },
+          { bit: 3, label: '2nd Piglet (Bit 3 / +8) — Radat / Rokkaku / Greenhill' }
         ]
       },
       {
         heading: '🐑 Sheep (Lamb Item #7)',
         items: [
-          { bit: 4, label: 'Lamb Pen 1 (Bit 4)' },
-          { bit: 5, label: 'Lamb Pen 2 (Bit 5)' }
+          { bit: 4, label: '1st Lamb (Bit 4 / +16) — Default / Kobold / Forest / Sajah' },
+          { bit: 5, label: '2nd Lamb (Bit 5 / +32) — Kobold Forest / Forest Village / Sajah' }
         ]
       },
       {
         heading: '🐄 Cattle (Calf Item #8)',
         items: [
-          { bit: 6, label: 'Calf Pen 1 (Bit 6)' },
-          { bit: 7, label: 'Calf Pen 2 (Bit 7)' }
+          { bit: 6, label: '1st Calf (Bit 6 / +64) — Highway Village / Drakemouth' },
+          { bit: 7, label: '2nd Calf (Bit 7 / +128) — Highway Village / Drakemouth' }
         ]
       }
     ]
   });
   ranchBody.appendChild(livestockCard);
+
+  const ranchTip = document.createElement('p');
+  ranchTip.style.cssText = 'font-size: 0.75rem; color: var(--pico-muted-color); margin-top: 0.5rem; margin-bottom: 0; line-height: 1.4;';
+  ranchTip.innerHTML = '<strong>💡 Tip:</strong> Yuzu begins with 1 Chick and 1 Lamb by default upon recruitment. You can also add animals directly to your Party Bag / Warehouse via the <strong>Items tab</strong> (Item #5 Chick, #6 Piglet, #7 Lamb, #8 Calf) to deliver them to Yuzu in-game.';
+  ranchBody.appendChild(ranchTip);
+
   ranchDetails.appendChild(ranchBody);
   container.appendChild(ranchDetails);
 
@@ -1420,7 +1426,7 @@ export function createKitchenStockEditor(arr, key, updateCallback, fullData) {
     const clearTasteBtn = document.createElement('button');
     clearTasteBtn.type = 'button';
     clearTasteBtn.className = 'secondary outline';
-    clearTasteBtn.textContent = '✗ Reset (Salt Only)';
+    clearTasteBtn.textContent = '✗ Reset (No Seasonings)';
     clearTasteBtn.style.cssText = 'font-size: 0.72rem; padding: 0.25rem 0.55rem; margin-bottom: 0;';
 
     tasteBtns.appendChild(rawTasteLabel);
@@ -1431,12 +1437,12 @@ export function createKitchenStockEditor(arr, key, updateCallback, fullData) {
     tasteCard.appendChild(tasteHeader);
 
     const seasonings = [
-      { bit: null, name: '🧂 Salt (Row 0 — Always Unlocked)', always: true },
+      { bit: null, name: '🥣 No Seasoning (Row 0 — Always Available)', always: true },
       { bit: 1,    name: '🥫 Mayonnaise (Bit 1 / +2)' },
       { bit: 2,    name: '🌶️ Red Pepper (Bit 2 / +4)' },
       { bit: 3,    name: '🍬 Sugar (Bit 3 / +8)' },
       { bit: 4,    name: '🍶 Soy Sauce (Bit 4 / +16)' },
-      { bit: 5,    name: '🥛 White Sauce (Bit 5 / +32)' }
+      { bit: 5,    name: '🧂 Salt (Bit 5 / +32)' }
     ];
 
     const tasteGrid = document.createElement('div');
