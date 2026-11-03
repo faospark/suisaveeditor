@@ -1,6 +1,6 @@
 # Suikoden II HD Remaster Save Editor
 
-A minimal, fast, and feature-rich GUI editor for Suikoden II HD Remaster JSON save files decrypted via SuikodenFix or SuikodenSaveDecrypter.
+A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation.
 
 **🌐 Web App:** [https://faospark.github.io/suisaveeditor/](https://faospark.github.io/suisaveeditor/)  
 **💻 Offline Desktop App:** Standalone Windows executable powered by Tauri v2 (100% offline, zero installation)  
