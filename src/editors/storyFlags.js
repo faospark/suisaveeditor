@@ -246,7 +246,25 @@ export const KNOWN_STORY_FLAGS = {
     bits: {
       0: 'Chore #1 Assigned: Organize Storeroom Boxes (Mask 1)',
       1: 'Chore #1 Completed: All Storeroom Boxes Organized (Mask 2)',
-      2: 'Escape Tool #1: Rope Acquired from Storeroom (Mask 4)'
+      2: 'Escape Tool #1: Rope Acquired from Storeroom (Mask 4)',
+      3: 'Day 1 Finished: Meal with Pohl / Locked in cell for night (Mask 8)',
+      4: 'Chore #2 Subtask: Acquired Iron Boots from Blacksmith (Mask 16)',
+      5: 'Chore #2 Subtask: Acquired Flour from Item Store (Mask 32)',
+      6: 'Chore #2 Assigned: Fetch Boots & Flour for Pohl (Mask 64)',
+      7: 'Chore #2 Completed: Delivered Boots & Flour to Pohl (Mask 128)'
+    }
+  },
+  162: {
+    name: "Mercenary Fortress - Floor Cleaning & Escape",
+    area: 'vb11 / vb01 / vb02',
+    desc: 'Chore #3 floor wiping duty and nightly escape sequence',
+    bits: {
+      0: 'Chore #3 Assigned: Clean/wipe fortress floors (Mask 1)',
+      1: 'Floor Cleaning Phase 1 (Mask 2)',
+      2: 'Flik / Viktor hallway inspection (Mask 4)',
+      3: 'Chore #3 Errand Progression (Mask 8)',
+      4: 'Chore #3 Completed: Floor wiping finished (Mask 16)',
+      5: 'Night Escape Attempt Committed (Mask 32)'
     }
   },
   236: {
