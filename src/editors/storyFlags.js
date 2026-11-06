@@ -335,7 +335,9 @@ export const KNOWN_STORY_FLAGS = {
       2: "Jude Needs Clay / Quest Started (Bit 2 / Mask 4)",
       3: "Forest Village Clay Obtained from Gatherer (Bit 3 / Mask 8)",
       4: "Jude Join Offer Declined Re-prompt (Bit 4 / Mask 16)",
-      5: "Jude Recruited / Greenhill Academy Despawn (Bit 5 / Mask 32)"
+      5: "Jude Recruited / Greenhill Academy Despawn (Bit 5 / Mask 32)",
+      6: "Emilia: Revealed True Identity During Recon Mission (Bit 6 / Mask 64)",
+      7: "Emilia: Used Flattery Dialogue Option (Bit 7 / Mask 128)"
     }
   },
   210: {
@@ -343,11 +345,11 @@ export const KNOWN_STORY_FLAGS = {
     area: 've04 / ve01 / ve07',
     desc: 'Forest Path wandering encounter where Viki sneezes and teleports to Castle HQ',
     bits: {
-      0: 'Forest Village Entry Event (Mask 1)',
-      1: 'Matilda Border Gate Interaction (Mask 2)',
+      0: 'Emilia Recruited at New Leaf Academy (Mask 1)',
+      1: 'Emilia Join Offer Declined Re-prompt (Mask 2)',
       3: 'Rockaxe Town Event Step 1 (Mask 8)',
       4: 'Rockaxe Town Event Step 2 (Mask 16)',
-      5: 'Highway Path Event (Mask 32)',
+      5: 'Pico Recruited in Greenhill Inn (Mask 32)',
       6: 'Viki Encountered on Forest Path (Mask 64)',
       7: 'Viki Recruited / Teleports to Castle (Mask 128)'
     }
@@ -377,6 +379,7 @@ export const KNOWN_STORY_FLAGS = {
     area: 'vh11',
     desc: 'Two River rune sage Jeane recruitment status',
     bits: {
+      5: 'Spoke to Jeane in New Leaf Academy Classroom (Mask 32)',
       7: 'Jeane Recruited into Castle HQ (Mask 128)'
     }
   },
@@ -427,6 +430,62 @@ export const KNOWN_STORY_FLAGS = {
       1: 'Feather / Ayda Quest Active (Mask 2)',
       2: 'Abizboah Recruited with Crystal (Mask 4)',
       3: 'Rulodia Recruited with Crystal (Mask 8)'
+    }
+  },
+  172: {
+    name: 'Greenhill Checkpoint & Town Square Choices (Fitcher & Nina)',
+    area: 've01',
+    desc: 'Greenhill city entrance checkpoint inspection and Town Square Nina helper choice',
+    bits: {
+      0: 'Town Square: Picked Riou & Nanami to Help Nina (Mask 1)',
+      1: 'Outside Greenhill Inn: Chose to Intervene vs Keep Heads Down (Mask 2)',
+      6: 'Greenhill Gate: Fitcher Checkpoint Inspection Passed (Mask 64)',
+      7: 'Greenhill Gate: Stepped Past Checkpoint into City (Mask 128)'
+    }
+  },
+  173: {
+    name: 'Greenhill Town Square & New Leaf Academy Registration (Nina & Emilia)',
+    area: 've01',
+    desc: 'Greenhill Town Square arrival and Nina encounter with Highland soldiers',
+    bits: {
+      0: 'Town Square: Initial Arrival Cutscene Completed (Mask 1)',
+      1: 'Town Square: Encountered Nina on the Square (Mask 2)',
+      2: 'New Leaf Academy: Entered Reception / Met Emilia (Mask 4)',
+      3: 'New Leaf Academy: Spoke with Emilia / Student Registration Completed (Mask 8)',
+      4: 'Academy Courtyard: Nina Obsessing Over Flik Cutscene (Mask 16)',
+      5: 'Academy Dormitory: Checked In with Dormitory Matron (Mask 32)',
+      6: 'Academy Dormitory: Chose to Walk Around First Upstairs (Mask 64)'
+    }
+  },
+  174: {
+    name: 'Academy Dormitory Night & Investigation Progression (Nina & Shin)',
+    area: 've07 / ve06 / ve01',
+    desc: 'Academy Dormitory evening/night sequence, Nina hallway encounter, and campus investigation',
+    bits: {
+      0: 'Dormitory Night: Decided to Sleep / Supper; Spawns Nina in 2F Hallway (Mask 1)',
+      1: 'Dormitory Night: Completed Nina 2F Hallway Encounter (Mask 2)',
+      2: 'Academy Courtyard: Exited Dormitory Next Morning (Mask 4)',
+      3: 'Academy Courtyard: Met Flik Outside ("Meet up with Fitcher in town") (Mask 8)',
+      4: 'Outside Greenhill Inn: Witnessed Shin, Rowd & Fitcher Cutscene (Mask 16)'
+    }
+  },
+  238: {
+    name: 'Greenhill City Gate State',
+    area: 've01',
+    desc: 'Pre-infiltration peacetime checkpoint guard state at Greenhill gate',
+    bits: {
+      0: 'Peacetime Gate State Active (Cleared when Recon Mission starts)'
+    }
+  },
+  239: {
+    name: 'Greenhill Reconnaissance & Academy Infiltration',
+    area: 've01 / ve07 / ve14',
+    desc: 'Master state machine for the Greenhill student disguise & New Leaf Academy infiltration arc',
+    bits: {
+      0: 'Phase 1: Arrived at Greenhill Gate & Met Fitcher (Mask 1)',
+      1: 'Phase 2: Spoke with Fitcher; Entry Briefing Active (Mask 2)',
+      2: 'Phase 3: Named Nanami & Flik Student Aliases / Disguises Active (Mask 4)',
+      3: 'Phase 4: Registered at New Leaf Academy with Emilia (Mask 8)'
     }
   }
 };

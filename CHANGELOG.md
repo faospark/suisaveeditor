@@ -5,6 +5,24 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.15] - 2026-11-03
+
+### Added & Grounded
+
+- **Pico Recruitment Flag Grounding (`event_flag[210]` Bit 5 / `0x20`)**:
+  - Live-captured and diff-verified (`Data150.json` -> `Data151.json`) Pico's recruitment inside Greenhill Inn (`ve10_00`).
+  - Added Pico (Character 113) to `RECRUITMENT_STORY_FLAGS` in `src/editors/recruitment.js` with flag byte 210 mask `0x20`.
+  - Updated byte 210 bit 5 (`Mask 32`) in `src/editors/storyFlags.js` to `Pico Recruited in Greenhill Inn (Mask 32)`.
+
+- **Greenhill Reconnaissance, Checkpoint & Nina Town Square Flags (`event_flag[172]`, `event_flag[173]`, `event_flag[238]`, `event_flag[239]`)**:
+  - Live-captured and bytecode-verified the Greenhill City entrance (`ve01_00`) and Town Square (`ve01_01`) progression.
+  - Added Byte `238` (`0xEE` Bit 0: Peacetime Gate State cleared upon starting recon mission).
+  - Added Byte `239` (`0xEF` Bits 0–3: Master Greenhill Recon & Student Disguise state machine — meeting Fitcher, checkpoint briefing, naming Nanami & Flik student aliases, and Academy registration).
+  - Added Byte `172` (`0xAC` Bit 0: Picked Riou & Nanami to help Nina; Bit 1: Picked Flik to help Nina; Bit 6: Fitcher checkpoint inspection passed; Bit 7: Stepped past checkpoint into city).
+  - Added Byte `173` (`0xAD` Bit 0: Town Square initial arrival cutscene; Bit 1: Encountered Nina on the Town Square; Bit 2: Entered New Leaf Academy Reception / Met Emilia; Bit 3: Spoke with Emilia / Student Registration completed; Bit 4: Nina obsessing over Flik in front of the Academy; Bit 5: Checked in with Dormitory Matron; Bit 6: Chose to walk around first upstairs in Dormitory).
+  - Added Byte `174` (`0xAE` Bit 0: Decided to sleep/eat supper in upstairs dorm room, transitioning to night and spawning Nina in the 2F dorm hallway; Bit 1: Completed Nina 2F night hallway encounter & woke up next morning; Bit 2: Exited dormitory next morning; Bit 3: Met Flik outside dormitory to head into town to meet Fitcher; Bit 4: Witnessed Shin, Rowd & Fitcher cutscene in front of the Greenhill Inn).
+  - Grounded **Emilia** (`Character 96`) & **Jeane** Academy flags in `ve07_00`: added Emilia to `RECRUITMENT_STORY_FLAGS` (`Byte 209` Bits 6–7 for revealing true identity / flattery during recon mission; `Byte 210` Bits 0–1 for Emilia recruitment / decline) and annotated `Byte 213` Bit 5 (`0x20`) as speaking to Jeane in the New Leaf Academy Rune classroom.
+
 ## [1.4.14] - 2026-11-03
 
 ### Fixed & Grounded

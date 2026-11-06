@@ -214,6 +214,19 @@ export const RECRUITMENT_STORY_FLAGS = {
     flags: [
       { byte: 213, mask: 0x80, desc: 'Jeane Recruited Flag (Mask 128)' }
     ]
+  },
+  113: { // Pico
+    name: 'Pico',
+    flags: [
+      { byte: 210, mask: 0x20, desc: 'Pico Greenhill Inn Recruited Flag (Mask 32)' }
+    ]
+  },
+  96: { // Emilia
+    name: 'Emilia',
+    flags: [
+      { byte: 209, mask: 0xC0, desc: 'Emilia Recon Secret & Flattery Flags (Mask 64 | 128)' },
+      { byte: 210, mask: 0x03, desc: 'Emilia Recruited & Declined Flags (Mask 1 | 2)' }
+    ]
   }
 };
 
