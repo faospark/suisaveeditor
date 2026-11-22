@@ -2,9 +2,10 @@
 
 A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation.
 
-**🌐 Web App:** [https://faospark.github.io/suisaveeditor/](https://faospark.github.io/suisaveeditor/)  
-**💻 Offline Desktop App:** Standalone Windows executable powered by Tauri v2 (100% offline, zero installation)  
-**📦 Repository:** [https://github.com/faospark/suisaveeditor](https://github.com/faospark/suisaveeditor)  
+**🦀 Native Rust Desktop (`v1.4.16` — Recommended):** Standalone Windows `.zip` (`SuiSaveEditor-Rust-win64.zip`) — pure native GUI (`iced`), zero WebView overhead  
+**💻 Tauri Desktop (`v1.4.14` — Future Legacy):** Standalone Windows `.zip` (`SuiSaveEditor-Tauri-win64.zip`) — classic Web UI wrapped in Tauri v2  
+**🌐 Web Edition (`v1.4.14` — Future Legacy):** [https://faospark.github.io/suisaveeditor/](https://faospark.github.io/suisaveeditor/) (direct editor at `editor.html`)  
+**📦 Repository & Releases:** [https://github.com/faospark/suisaveeditor](https://github.com/faospark/suisaveeditor)  
 **💬 Community & Mods:** [Moogles and Mods Discord](https://discord.gg/bSnpVBV)
 
 ---
@@ -52,9 +53,10 @@ A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuri
 - **Warehouse & Party Bag**: Full item inventory tables with item ID auto-lookup.
 - **Castle Facilities**: Tenkou's Window Sets, Connell's Sound Sets, Suggestion Box (Meyasubako), Bath Items, Room Decor, Greenhill Castle Aliases, Food Menus, and Guardian Deity customizer.
 
-### ⚡ Platforms & Offline Utility
-- **Desktop Executable (Tauri v2)**: Standalone Windows `.exe` (`suisaveeditor.exe`) with all assets baked in for 100% full offline capability.
-- **Clean Web Version**: Fast static web app with zero service worker cache interference—fresh code loads immediately upon refresh.
+### ⚡ Editions & Offline Utility
+- **Native Rust Desktop (`v1.4.16` — Primary / Active)**: Pure native Rust (`iced`) Windows executable (`SuiSaveEditor-Rust-win64.zip`) with fast parallel portrait caching, Party Bag / Warehouse Copy & Paste, non-blocking native file dialogs, silent `.bak` backups, Save As folder memory, shortcuts (`Ctrl+O`, `Ctrl+S`, `Ctrl+D`, `Esc`), and Drag-and-Drop `.json` loading. All new features and future updates target this edition.
+- **Tauri Desktop (`v1.4.14` — Future Legacy)**: Portable Windows `.zip` (`SuiSaveEditor-Tauri-win64.zip`) packaging the classic Web UI for 100% offline use with silent `.bak` backups.
+- **Web Edition (`v1.4.14` — Future Legacy)**: Instant browser-based editor at `editor.html` (reachable from the `index.html` 3-edition landing page) with zero install and silent `localStorage` `.bak` snapshots.
 
 ---
 

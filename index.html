@@ -9,10 +9,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Primary Meta Tags -->
-  <title>SuiSaveEditor - Suikoden II HD Remaster Save Editor</title>
-  <meta name="title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
-  <meta name="description" content="A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation." />
-  <meta name="keywords" content="Suikoden 2, Suikoden II, HD Remaster, save editor, JSON editor, game save, character editor, SuikodenFix, Suikoden save file" />
+  <title>SuiSaveEditor — Suikoden II HD Remaster Save Editor</title>
+  <meta name="title" content="SuiSaveEditor — Suikoden II HD Remaster Save Editor" />
+  <meta name="description" content="Choose your edition of SuiSaveEditor for Suikoden II HD Remaster: Native Rust Desktop, Tauri Desktop, or Instant Web Editor." />
+  <meta name="keywords" content="Suikoden 2, Suikoden II, HD Remaster, save editor, JSON editor, game save, character editor, SuikodenFix" />
   <meta name="author" content="faospark" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://faospark.github.io/suisaveeditor/" />
@@ -20,152 +20,735 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://faospark.github.io/suisaveeditor/" />
-  <meta property="og:title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
-  <meta property="og:description" content="A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation." />
+  <meta property="og:title" content="SuiSaveEditor — Suikoden II HD Remaster Save Editor" />
+  <meta property="og:description" content="Choose your edition of SuiSaveEditor for Suikoden II HD Remaster: Native Rust Desktop, Tauri Desktop, or Instant Web Editor." />
   <meta property="og:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
   <meta property="og:site_name" content="SuiSaveEditor" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://faospark.github.io/suisaveeditor/" />
-  <meta property="twitter:title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
-  <meta property="twitter:description" content="A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation." />
+  <meta property="twitter:title" content="SuiSaveEditor — Suikoden II HD Remaster Save Editor" />
+  <meta property="twitter:description" content="Choose your edition of SuiSaveEditor for Suikoden II HD Remaster: Native Rust Desktop, Tauri Desktop, or Instant Web Editor." />
   <meta property="twitter:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
 
-  <!-- GitHub Repository -->
-  <link rel="alternate" type="application/json" href="https://github.com/faospark/suisaveeditor" />
-
   <link rel="stylesheet" href="./css/pico.css">
-  <link rel="stylesheet" href="./src/style.css">
+  <style>
+    :root {
+      --bg-base: #0e1117;
+      --bg-surface: #161b26;
+      --bg-elevated: #1e2536;
+      --border-subtle: #2c3548;
+      --border-gold: #b88f29;
+      --accent-gold: #f0b90b;
+      --accent-cyan: #38bdf8;
+      --accent-green: #22c55e;
+      --text-primary: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    html {
+      font-size: 16px;
+    }
+
+    body {
+      background: radial-gradient(circle at top center, #182032 0%, var(--bg-base) 60%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    code {
+      padding: 1px 5px;
+      font-size: 12px;
+      border-radius: 4px;
+      background: rgba(148, 163, 184, 0.14);
+      color: #e2e8f0;
+    }
+
+    .landing-wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 2.25rem;
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      margin-bottom: 1.35rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand img {
+      width: 44px;
+      height: 44px;
+      border-radius: 9px;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent-gold);
+      line-height: 1.15;
+    }
+
+    .brand-sub {
+      margin: 2px 0 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 0.55rem;
+      align-items: center;
+    }
+
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.48rem 0.95rem;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .nav-btn-gh {
+      background: #24292e;
+      color: #fff;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .nav-btn-donate {
+      background: linear-gradient(135deg, #f5d020 0%, #f0b90b 100%);
+      color: #0b0e14;
+      font-weight: 700;
+    }
+
+    .status-banner {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--accent-gold);
+      border-radius: 9px;
+      padding: 0.95rem 1.15rem;
+      margin-bottom: 1.35rem;
+    }
+
+    .status-banner-head {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .note-trigger-btn {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(240, 185, 11, 0.12);
+      color: var(--accent-gold);
+      border: 1px solid rgba(240, 185, 11, 0.4);
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .note-trigger-btn:hover {
+      background: rgba(240, 185, 11, 0.22);
+      transform: translateY(-1px);
+    }
+
+    dialog.author-modal {
+      padding: 1.25rem;
+      margin: 0;
+      border: none;
+      border-radius: 0;
+      background: rgba(6, 9, 15, 0.72);
+      backdrop-filter: blur(4px);
+      color: var(--text-primary);
+      width: 100vw;
+      height: 100vh;
+      max-width: 100vw;
+      max-height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+
+    dialog.author-modal[open] {
+      display: flex;
+    }
+
+    dialog.author-modal::backdrop {
+      background: transparent;
+    }
+
+    .author-modal-inner {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 640px;
+      max-height: 82vh;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-gold);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.75);
+    }
+
+    .author-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+    }
+
+    .author-modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--accent-gold);
+    }
+
+    .author-modal-close {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 2px 9px;
+      font-size: 16px;
+      line-height: 1.2;
+      cursor: pointer;
+      margin: 0;
+      width: auto;
+    }
+
+    .author-modal-close:hover {
+      color: var(--text-primary);
+      border-color: var(--border-gold);
+    }
+
+    .author-modal-body {
+      padding: 1.2rem 1.35rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    .author-modal-body p {
+      margin: 0;
+      color: #cbd5e1;
+    }
+
+    .author-modal-body h4 {
+      margin: 0.35rem 0 -0.35rem;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .author-modal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .author-modal-done {
+      background: var(--accent-gold);
+      color: #0b0e14;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 0;
+      width: auto;
+    }
+
+    .version-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: rgba(240, 185, 11, 0.16);
+      color: var(--accent-gold);
+      border: 1px solid rgba(240, 185, 11, 0.45);
+    }
+
+    .status-banner p {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .editions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.1rem;
+      margin-bottom: 1.35rem;
+    }
+
+    @media (max-width: 920px) {
+      .editions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .edition-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 1.2rem 1.25rem;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .edition-card:hover {
+      border-color: rgba(240, 185, 11, 0.55);
+      transform: translateY(-2px);
+    }
+
+    .edition-card.featured {
+      border: 1.5px solid var(--accent-gold);
+      background: linear-gradient(180deg, rgba(240, 185, 11, 0.10) 0%, var(--bg-surface) 45%);
+      box-shadow: 0 8px 24px rgba(240, 185, 11, 0.10), 0 6px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    .edition-card.legacy {
+      opacity: 0.9;
+      border-color: var(--border-subtle);
+      background: rgba(22, 27, 38, 0.78);
+    }
+
+    .edition-card.legacy:hover {
+      opacity: 1;
+    }
+
+    .legacy-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 6px;
+      padding: 0.45rem 0.65rem;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    .edition-badges {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+
+    .badge-gold {
+      background: rgba(240, 185, 11, 0.16);
+      color: var(--accent-gold);
+      border: 1px solid rgba(240, 185, 11, 0.45);
+    }
+
+    .badge-cyan {
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .badge-green {
+      background: rgba(34, 197, 94, 0.14);
+      color: var(--accent-green);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .edition-format {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      white-space: nowrap;
+    }
+
+    .edition-card h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.25;
+    }
+
+    .edition-desc {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    ul.feature-list {
+      list-style: none !important;
+      padding: 0;
+      margin: 0.2rem 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    ul.feature-list li {
+      list-style: none !important;
+      margin: 0;
+      padding: 0;
+      line-height: 1.45;
+    }
+
+    ul.feature-list li::before {
+      content: "• ";
+      color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    .card-cta {
+      display: block;
+      text-align: center;
+      padding: 0.62rem 0.95rem;
+      border-radius: 7px;
+      font-weight: 700;
+      font-size: 13.5px;
+      text-decoration: none;
+      margin-top: 0.4rem;
+      transition: filter 0.15s ease, transform 0.15s ease;
+    }
+
+    .card-cta:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .cta-primary {
+      background: var(--accent-gold);
+      color: #0b0e14;
+    }
+
+    .cta-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .cta-web {
+      background: rgba(34, 197, 94, 0.16);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.45);
+    }
+
+    .info-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.9rem 1.15rem;
+      margin-bottom: 1.35rem;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .info-box strong {
+      color: var(--text-primary);
+    }
+
+    .mods-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 1rem;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    ul.mods-grid {
+      list-style: none !important;
+      padding: 0;
+      margin: 0.55rem 0 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.5rem;
+    }
+
+    ul.mods-grid li {
+      list-style: none !important;
+      margin: 0;
+    }
+
+    ul.mods-grid a {
+      display: block;
+      padding: 0.45rem 0.7rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 12.5px;
+    }
+
+    ul.mods-grid a:hover {
+      border-color: var(--border-gold);
+      color: var(--accent-gold);
+    }
+  </style>
 </head>
 
 <body>
-  <main class="container">
-    <header class="pads-1">
-
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div style="display: flex; align-items: center; gap: 0.85rem;">
-          <img src="./public/favicon.png" alt="Bright Shield Rune" width="44" height="44" style="border-radius: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); flex-shrink: 0;" />
-          <div>
-            <h1 style="margin-bottom: 0.2rem;">Suikoden 2 Remaster Save Editor <span id="app-version" style="font-size: 0.6em; color: var(--pico-muted-color); font-weight: normal;"></span></h1>
-            <p style="margin: 0;">A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation.</p>
-          </div>
+  <main class="landing-wrap">
+    <header class="top-nav">
+      <div class="brand">
+        <img src="./public/favicon.png" alt="Bright Shield Rune" width="48" height="48" />
+        <div>
+          <h1 class="brand-title">SuiSaveEditor</h1>
+          <p class="brand-sub">Suikoden II HD Remaster Save Editor — Choose Your Edition</p>
         </div>
-        <div style="display: flex; gap: 0.75rem; align-items: center;">
-          <a href="https://github.com/faospark/suisaveeditor" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: #24292e; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
-            <svg style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            GitHub
-          </a>
-          <a href="https://paypal.me/thefaospark?country.x=PH&locale.x=en_US" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: linear-gradient(135deg, #f5d020 0%, #f0b90b 100%); color: #000; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
-            ❤️ Donate
-          </a>
-        </div>
+      </div>
+      <div class="nav-actions">
+        <a href="https://github.com/faospark/suisaveeditor/releases" target="_blank" rel="noopener noreferrer" class="nav-btn nav-btn-gh">
+          Releases
+        </a>
+        <a href="https://github.com/faospark/suisaveeditor" target="_blank" rel="noopener noreferrer" class="nav-btn nav-btn-gh">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+          GitHub
+        </a>
+        <a href="https://paypal.me/thefaospark?country.x=PH&locale.x=en_US" target="_blank" rel="noopener noreferrer" class="nav-btn nav-btn-donate">
+          ❤️ Donate
+        </a>
       </div>
     </header>
-    <article>
-      <header>
-        <div class="status-bar"></div>
-        <div class="file-action-bar">
-          <div class="file-action-left">
-            <input type="file" id="file-input" accept=".json" style="display: none;" />
-            <button type="button" class="file-upload-btn" id="file-upload-label" style="cursor: pointer; margin: 0;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.45rem;">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              <span>Choose File</span>
-            </button>
-            <div id="file-status-badge" class="file-status-badge">
-              <span class="file-status-text">No file chosen</span>
-            </div>
-          </div>
-          <div class="file-action-right">
-            <button id="save-btn" class="save-btn-action" disabled>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.45rem;">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                <polyline points="7 3 7 8 15 8"></polyline>
-              </svg>
-              Save As...
-            </button>
-          </div>
-        </div>
-        <div class="grid-12 d-grid">
-          <blockquote class="g-span-8" style="font-size: smaller; margin:0;">
-            This Save Editor works only with JSON files generated from Suikoden II Remaster using SuikodenFix. To use the editor, make sure the save edit feature is enabled in SuikodenFix so it can produce the required JSON file or you can use <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter">SuikodenSaveDecrypter</a> to decrypt your save file. As of the moment json save files are in the game root folder but a newer version of SuikodenFix will have (GAME_PATH)\SuikodenFix\Backup\gsd2\ folder where the JSON file will be generated.
-            <p style="margin: 0; color: #f0b90b;">Note: It is highly recommended that you turn off cloud saving for the game before editing save files and create your own back up</p>
-            <p style="margin: 0; color: crimson;">Warning: Always backup your original save files first!</p><p class="desktop-app-notice" style="margin: 0.4rem 0 0 0; color: #4fc3f7;">Recommended: Use the <a href="https://github.com/faospark/suisaveeditor/releases" target="_blank" rel="noopener noreferrer">Desktop App</a> for best reliability. It silently creates a <code>.bak</code> next to your save on open and saves back to the same folder. Browsers cannot write to your save folder directly, so the web version may save to Downloads.</p>
-          </blockquote>
-          <div class="g-span-4">
-            <div class="tabs-right" style="display: flex; align-items: center; justify-content: end; height: 100%;"><button class="tab-button outline data-values-tab" id="tab-data-values" data-tab-name="Data Values">Data Values</button><button class="tab-button outline about-tab" id="tab-about" data-tab-name="About">About</button><button class="tab-button outline changelog-tab" id="tab-changelog" data-tab-name="Changelog">Changelog</button></div>
-          </div>
-        </div>
-      </header>
-      <div id="editor-tabs">
-      </div>
-      <section id="editor-container">
-        <div id="tab-panels-container" class="tab-content">
-          <p>Please load a JSON file to start editing.</p>
-        </div>
-      </section>
-      <footer class="pads-1 b2">
-        <div style="font-size: .75rem;">
-          <p> Here are my other mods for Suikoden 1 and 2 HD Remaster</p>
-          <ul class="tiles tiles-manage mods d-grid ls-none g-3-col">
-            <li class="mod-tile" id="editable-mod-7402-6">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/6">Project Kyaro Mod</a>
-            </li>
-            <li class="mod-tile" id="editable-mod-7402-16">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/16">Early Recruitment Patch</a>
-            </li>
-            <li class="mod-tile" id="editable-mod-7402-18">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/18">Kraken Patch</a>
-            </li>
-            <li class="mod-tile" id="editable-mod-7402-17">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/17">Open Paths Mod</a>
-            </li>
-            <li class="mod-tile" id="editable-mod-7402-14">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/14">True Matilda Glitch Restoration</a>
-            </li>
-            <li class="mod-tile" id="editable-mod-7402-12">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/12">Alternate Portraits</a>
-            </li>
-            <li class="mod-tile" id="editable-mod-7402-5">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/5">Suikoden Reworded Plus</a>
-            </li>
-            <li class="mod-tile" id="editable-mod-7402-2">
-              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/2">Genso Force PSX Buttons</a>
-            </li>
-          </ul>
-        </div>
-      </footer>
-    </article>
 
+    <section class="status-banner">
+      <div class="status-banner-head">
+        <span class="version-pill">Native Rust v1.4.16</span>
+        <span class="version-pill" style="background: rgba(148, 163, 184, 0.14); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.35);">Web &amp; Tauri v1.4.14</span>
+        <strong style="color: var(--text-primary); font-size: 0.95rem;">Current State &amp; Upcoming Direction</strong>
+        <button type="button" id="open-author-note" class="note-trigger-btn">
+          Read Author's Note: Why Native Rust?
+        </button>
+      </div>
+      <p>
+        SuiSaveEditor is transitioning to the <strong>Native Rust Desktop Edition</strong> (<code>v1.4.16</code>) as its primary, actively developed version going forward.
+        The <strong>Tauri Desktop</strong> and <strong>Web</strong> editions remain at <code>v1.4.14</code> with full core save-editing parity and will gradually move into <strong>Legacy (maintenance-only)</strong> status while new features focus on the Native Rust build.
+      </p>
+    </section>
+
+    <section class="editions-grid">
+      <!-- Edition 1: Native Rust (Primary / Recommended) -->
+      <article class="edition-card featured">
+        <div class="edition-badges">
+          <span class="badge badge-gold">Recommended • v1.4.16</span>
+          <span class="edition-format">.zip • Windows x64</span>
+        </div>
+        <h2>Native Rust Desktop</h2>
+        <p class="edition-desc">
+          The primary edition moving forward — pure native Rust GUI (<code>iced</code>) with zero browser or WebView overhead, instant tab switching, and low memory usage.
+        </p>
+        <ul class="feature-list">
+          <li>All future features &amp; updates land here first</li>
+          <li>Full save parity + Party/Warehouse Copy &amp; Paste</li>
+          <li>Silent on-disk <code>.bak</code> backup &amp; Save As folder memory</li>
+          <li>Shortcuts (<code>Ctrl+O</code>, <code>Ctrl+S</code>, <code>Esc</code>) &amp; Drag-and-Drop</li>
+        </ul>
+        <a href="https://github.com/faospark/suisaveeditor/releases/latest/download/SuiSaveEditor-Rust-win64.zip" class="card-cta cta-primary">
+          Download Native Rust (.zip)
+        </a>
+      </article>
+
+      <!-- Edition 2: Tauri Desktop (Transitioning to Legacy) -->
+      <article class="edition-card legacy">
+        <div class="edition-badges">
+          <span class="badge badge-cyan">Tauri • v1.4.14</span>
+          <span class="edition-format">.zip • Windows x64</span>
+        </div>
+        <h2>Tauri Desktop Edition</h2>
+        <p class="edition-desc">
+          Standalone Windows desktop build powered by Tauri, pairing the classic Web UI with native filesystem access and offline reliability.
+        </p>
+        <ul class="feature-list">
+          <li>Classic Web UI in a standalone Windows app</li>
+          <li>Silent on-disk <code>.bak</code> backup next to your save</li>
+          <li>Save As opens directly in your loaded save folder</li>
+        </ul>
+        <p class="legacy-note">
+          Frozen at <code>v1.4.14</code> parity. Transitioning to legacy status as active development moves forward on Native Rust.
+        </p>
+        <a href="https://github.com/faospark/suisaveeditor/releases/latest/download/SuiSaveEditor-Tauri-win64.zip" class="card-cta cta-secondary">
+          Download Tauri (.zip)
+        </a>
+      </article>
+
+      <!-- Edition 3: Web Edition (Transitioning to Legacy) -->
+      <article class="edition-card legacy">
+        <div class="edition-badges">
+          <span class="badge badge-green">Web • v1.4.14</span>
+          <span class="edition-format">Browser • Zero Install</span>
+        </div>
+        <h2>Web Save Editor</h2>
+        <p class="edition-desc">
+          Run the classic editor directly in your browser without downloading anything. Everything runs locally on your device — nothing is uploaded.
+        </p>
+        <ul class="feature-list">
+          <li>Instant access on any OS with a modern browser</li>
+          <li>Silent <code>.bak</code> snapshot cached in <code>localStorage</code></li>
+          <li>Note: browsers may save exported files to Downloads</li>
+        </ul>
+        <p class="legacy-note">
+          Frozen at <code>v1.4.14</code> parity. Will remain online as a legacy browser option while new features target Native Rust.
+        </p>
+        <a href="./editor.html" class="card-cta cta-web">
+          Launch Web Editor &rarr;
+        </a>
+      </article>
+    </section>
+
+    <section class="info-box">
+      <strong>Requirements:</strong> SuiSaveEditor edits decrypted JSON save files from <strong>Suikoden II HD Remaster</strong> generated by <strong>SuikodenFix</strong> or <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter" target="_blank" rel="noopener noreferrer">SuikodenSaveDecrypter</a>.
+      <span style="color: var(--accent-gold);">Turn off Steam Cloud saving before editing, and always keep a backup of your original save files.</span>
+    </section>
+
+    <footer class="mods-footer">
+      <div>Other mods for Suikoden I &amp; II HD Remaster:</div>
+      <ul class="mods-grid">
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/6" target="_blank" rel="noopener noreferrer">Project Kyaro Mod</a></li>
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/16" target="_blank" rel="noopener noreferrer">Early Recruitment Patch</a></li>
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/18" target="_blank" rel="noopener noreferrer">Kraken Patch</a></li>
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/17" target="_blank" rel="noopener noreferrer">Open Paths Mod</a></li>
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/14" target="_blank" rel="noopener noreferrer">True Matilda Glitch Restoration</a></li>
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/12" target="_blank" rel="noopener noreferrer">Alternate Portraits</a></li>
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/5" target="_blank" rel="noopener noreferrer">Suikoden Reworded Plus</a></li>
+        <li><a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/2" target="_blank" rel="noopener noreferrer">Genso Force PSX Buttons</a></li>
+      </ul>
+    </footer>
   </main>
+
+  <dialog id="author-note-modal" class="author-modal">
+    <div class="author-modal-inner">
+      <div class="author-modal-header">
+        <h3>Why Native Rust? — A Note from the Author</h3>
+        <button type="button" id="close-author-note-x" class="author-modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="author-modal-body">
+        <p>
+          I wanted to share a quick, honest explanation of why SuiSaveEditor is moving toward a <strong>Native Rust</strong> desktop app instead of staying purely web-based.
+        </p>
+
+        <h4>From Hand-Built Web Editor to Tauri</h4>
+        <p>
+          Almost the entire Web Save Editor was built by hand — the game research, the save-structure mapping, the manual coding, even picking the CSS framework. After accomplishing a lot with the web version, I packaged a <strong>Tauri</strong> desktop build to work around browser restrictions. While Tauri solved a few pain points, at the end of the day it is still the web editor wrapped in an executable — there are still native Windows capabilities that a web wrapper just isn't built for.
+        </p>
+
+        <h4>Moving to Native Rust (with Transparency About AI)</h4>
+        <p>
+          With AI assistance, I ported the editor into a pure <strong>Native Rust</strong> application. I want to be completely upfront about that: when you already know the domain and exactly what needs to be built, pairing Rust with AI assistance makes it possible to build fast, reliable native software at a pace that would otherwise take forever. If anyone wants to judge that, that's fine — what matters to me is delivering a genuinely better tool.
+        </p>
+
+        <h4>Reaching Maturity &amp; What's Next</h4>
+        <p>
+          A save editor doesn't grow forever — every project like this eventually reaches maturity and feature saturation, and SuiSaveEditor is getting close to that finish line. The remaining major features I want to build simply aren't practical in a browser:
+        </p>
+        <ul class="feature-list">
+          <li><strong>Built-in native save decryption &amp; conversion</strong> — so you can edit saves directly without needing SuikodenFix or an external decrypter first.</li>
+          <li><strong>Automatic game &amp; save folder detection</strong> on Windows — less manual hunting for files, smoother backups, and cleaner workflow.</li>
+        </ul>
+        <p>
+          At the end of the day, this is the kind of tool you'll revisit whenever you start a fresh playthrough of Suikoden II. Before development wraps up, I want to leave you with a fast, polished, truly native Windows experience.
+        </p>
+        <p>
+          Thank you for using and supporting SuiSaveEditor — I hope you appreciate it for what it is and enjoy the native edition!
+        </p>
+      </div>
+      <div class="author-modal-footer">
+        <span>— faospark</span>
+        <button type="button" id="close-author-note-btn" class="author-modal-done">Close</button>
+      </div>
+    </div>
+  </dialog>
+
   <script>
-    // Decommission legacy Service Workers & purge caches to ensure immediate web updates
-    // For 100% full offline usage, use the official standalone Tauri desktop version
+    const authorModal = document.getElementById('author-note-modal');
+    const openAuthorBtn = document.getElementById('open-author-note');
+    const closeAuthorX = document.getElementById('close-author-note-x');
+    const closeAuthorBtn = document.getElementById('close-author-note-btn');
+
+    if (authorModal && openAuthorBtn) {
+      openAuthorBtn.addEventListener('click', () => authorModal.showModal());
+      closeAuthorX?.addEventListener('click', () => authorModal.close());
+      closeAuthorBtn?.addEventListener('click', () => authorModal.close());
+      authorModal.addEventListener('click', (e) => {
+        if (e.target === authorModal) authorModal.close();
+      });
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         for (const registration of registrations) {
           registration.unregister();
-          console.log('🧹 Unregistered legacy Service Worker:', registration.scope);
         }
       });
       if ('caches' in window) {
         caches.keys().then((keys) => {
           for (const key of keys) {
             caches.delete(key);
-            console.log('🧹 Purged cache:', key);
           }
         });
       }
     }
   </script>
-  <script type="module" src="./src/main.js"></script>
 </body>
 
 </html>

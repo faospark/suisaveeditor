@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="./public/favicon.png" />
+  <link rel="icon" type="image/x-icon" href="./public/favicon.ico" />
+  <link rel="apple-touch-icon" href="./public/icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary Meta Tags -->
+  <title>SuiSaveEditor - Web Save Editor (Suikoden II HD Remaster)</title>
+  <meta name="title" content="SuiSaveEditor - Web Save Editor (Suikoden II HD Remaster)" />
+  <meta name="description" content="Browser-based save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation." />
+  <meta name="keywords" content="Suikoden 2, Suikoden II, HD Remaster, save editor, JSON editor, game save, character editor, SuikodenFix, Suikoden save file" />
+  <meta name="author" content="faospark" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://faospark.github.io/suisaveeditor/editor.html" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://faospark.github.io/suisaveeditor/editor.html" />
+  <meta property="og:title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
+  <meta property="og:description" content="A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation." />
+  <meta property="og:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
+  <meta property="og:site_name" content="SuiSaveEditor" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://faospark.github.io/suisaveeditor/editor.html" />
+  <meta property="twitter:title" content="SuiSaveEditor - Suikoden II HD Remaster Save Editor" />
+  <meta property="twitter:description" content="A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation." />
+  <meta property="twitter:image" content="https://faospark.github.io/suisaveeditor/image/preview.png" />
+
+  <!-- GitHub Repository -->
+  <link rel="alternate" type="application/json" href="https://github.com/faospark/suisaveeditor" />
+
+  <link rel="stylesheet" href="./css/pico.css">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+
+<body>
+  <main class="container">
+    <header class="pads-1">
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <img src="./public/favicon.png" alt="Bright Shield Rune" width="44" height="44" style="border-radius: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); flex-shrink: 0;" />
+          <div>
+            <h1 style="margin-bottom: 0.2rem;">Suikoden 2 Remaster Save Editor <span id="app-version" style="font-size: 0.6em; color: var(--pico-muted-color); font-weight: normal;"></span></h1>
+            <p style="margin: 0;">A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <a href="./index.html" class="desktop-app-notice" style="display: inline-block; padding: 0.5rem 1rem; background: #1e2433; color: #e2e8f0; border: 1px solid #2c3548; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">
+            &larr; All Editions
+          </a>
+          <a href="https://github.com/faospark/suisaveeditor" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: #24292e; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
+            <svg style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            GitHub
+          </a>
+          <a href="https://paypal.me/thefaospark?country.x=PH&locale.x=en_US" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.5rem 1.25rem; background: linear-gradient(135deg, #f5d020 0%, #f0b90b 100%); color: #000; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)';">
+            ❤️ Donate
+          </a>
+        </div>
+      </div>
+    </header>
+    <article>
+      <header>
+        <div class="status-bar"></div>
+        <div class="file-action-bar">
+          <div class="file-action-left">
+            <input type="file" id="file-input" accept=".json" style="display: none;" />
+            <button type="button" class="file-upload-btn" id="file-upload-label" style="cursor: pointer; margin: 0;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.45rem;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Choose File</span>
+            </button>
+            <div id="file-status-badge" class="file-status-badge">
+              <span class="file-status-text">No file chosen</span>
+            </div>
+          </div>
+          <div class="file-action-right">
+            <button id="save-btn" class="save-btn-action" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.45rem;">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Save As...
+            </button>
+          </div>
+        </div>
+        <div class="grid-12 d-grid">
+          <blockquote class="g-span-8" style="font-size: smaller; margin:0;">
+            This Save Editor works only with JSON files generated from Suikoden II Remaster using SuikodenFix. To use the editor, make sure the save edit feature is enabled in SuikodenFix so it can produce the required JSON file or you can use <a href="https://github.com/d3xMachina/SuikodenSaveDecrypter">SuikodenSaveDecrypter</a> to decrypt your save file. As of the moment json save files are in the game root folder but a newer version of SuikodenFix will have (GAME_PATH)\SuikodenFix\Backup\gsd2\ folder where the JSON file will be generated.
+            <p style="margin: 0; color: #f0b90b;">Note: It is highly recommended that you turn off cloud saving for the game before editing save files and create your own back up</p>
+            <p style="margin: 0; color: crimson;">Warning: Always backup your original save files first!</p><p class="desktop-app-notice" style="margin: 0.4rem 0 0 0; color: #4fc3f7;">Recommended: Use a <a href="./index.html">Desktop Edition</a> for best reliability. Desktop builds silently create a <code>.bak</code> next to your save on open and save back to the same folder. Browsers cannot write to your save folder directly, so the web version may save to Downloads.</p>
+          </blockquote>
+          <div class="g-span-4">
+            <div class="tabs-right" style="display: flex; align-items: center; justify-content: end; height: 100%;"><button class="tab-button outline data-values-tab" id="tab-data-values" data-tab-name="Data Values">Data Values</button><button class="tab-button outline about-tab" id="tab-about" data-tab-name="About">About</button><button class="tab-button outline changelog-tab" id="tab-changelog" data-tab-name="Changelog">Changelog</button></div>
+          </div>
+        </div>
+      </header>
+      <div id="editor-tabs">
+      </div>
+      <section id="editor-container">
+        <div id="tab-panels-container" class="tab-content">
+          <p>Please load a JSON file to start editing.</p>
+        </div>
+      </section>
+      <footer class="pads-1 b2">
+        <div style="font-size: .75rem;">
+          <p> Here are my other mods for Suikoden 1 and 2 HD Remaster</p>
+          <ul class="tiles tiles-manage mods d-grid ls-none g-3-col">
+            <li class="mod-tile" id="editable-mod-7402-6">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/6">Project Kyaro Mod</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-16">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/16">Early Recruitment Patch</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-18">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/18">Kraken Patch</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-17">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/17">Open Paths Mod</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-14">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/14">True Matilda Glitch Restoration</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-12">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/12">Alternate Portraits</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-5">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/5">Suikoden Reworded Plus</a>
+            </li>
+            <li class="mod-tile" id="editable-mod-7402-2">
+              <a href="https://www.nexusmods.com/suikoden1and2hdremaster/mods/2">Genso Force PSX Buttons</a>
+            </li>
+          </ul>
+        </div>
+      </footer>
+    </article>
+
+  </main>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          for (const key of keys) {
+            caches.delete(key);
+          }
+        });
+      }
+    }
+  </script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+
+</html>

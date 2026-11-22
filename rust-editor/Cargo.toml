@@ -1,0 +1,17 @@
+[package]
+name = "suisaveeditor-rust"
+version = "1.4.16"
+edition = "2021"
+description = "Native Rust (iced) edition of the Suikoden II HD Remaster Save Editor"
+
+[dependencies]
+iced = { version = "0.13", features = ["image"] }
+image = { version = "0.24", default-features = false, features = ["png"] }
+rfd = "0.15"
+serde_json = { version = "1.0", features = ["preserve_order"] }
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
+[profile.dev.package."*"]
+opt-level = 2

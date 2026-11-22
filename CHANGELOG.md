@@ -5,6 +5,27 @@ All notable changes to the Suikoden II HD Remaster Save Editor will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.16] - 2026-11-22 (Native Rust Desktop & 3-Edition Landing Page)
+
+### Added
+
+- **Native Rust Desktop Edition (`rust-editor/`, `v1.4.16`)**:
+  - Full feature parity across all 9 editor tabs (`General`, `Battle Characters`, `Recruited Characters`, `Party Bag`, `Warehouse`, `Cooking`, `Investigations`, `Castle`, `Experimental`) and 3 utility tabs (`Data Values`, `Changelog`, `About`).
+  - **Party Bag & Warehouse Copy/Paste**: Per-slot `Copy` / `Paste` actions, toolbar clipboard indicator, and one-click `+ Paste to Empty` working across both Party Bag and Warehouse.
+  - **Full 240 Food Dish Support**: Complete `GameData.FOOD` lookup, `use_cnt >= 96` (`0x60+`) detection, `Food (96+)` picker tab, named Restaurant Menu (`food_menu`) dropdowns, and `FOOD` category in Data Values.
+  - **Side-Quests & Story Flags Parity**: Added Listening Crystal Beasts (`l_mon_no[0..1]`), Luca Ambush HP (`luka_hp`), Chaco's Pickpocketed Potch (`suri_potch`) with portrait, and all 36 annotated `KNOWN_STORY_FLAGS` with per-bit labels and search.
+  - **Desktop QoL & Performance**: Parallel pre-decoded `96×96` RGBA portrait cache (`PortraitCache`) for instant tab switching, non-blocking async native file dialogs (`rfd::AsyncFileDialog`), silent on-disk `.bak` backups, Save As directory memory, dark/gold themed scrollbars, Windows taskbar `ICON_BIG` support, console-free GUI launch, keyboard shortcuts (`Ctrl+O`, `Ctrl+S`, `Ctrl+D`, `Esc`), and Drag-and-Drop `.json` loading.
+- **3-Edition Landing Page (`index.html` & `editor.html`)**:
+  - Moved the Web Save Editor to `editor.html` and built a dedicated landing page at `index.html` presenting all three editions (**Native Rust `v1.4.16`**, **Tauri Desktop `v1.4.14`**, and **Web Edition `v1.4.14`**), plus an Author's Note modal explaining the transition to Native Rust.
+  - Added `tools/build_release_zips.ps1` to package both portable Windows `.zip` releases (`SuiSaveEditor-Rust-win64.zip` and `SuiSaveEditor-Tauri-win64.zip`).
+
+### Fixed & Improved
+
+- **Cook-Off Progress Indicator**: Masked battle bits in `event_flag[153]` (`& 0x0F`) so saves without bit 5 match accurately, with a live `X / 12 Won` progress badge and defeated/current/upcoming visual states.
+- **Tony's Vegetable Farm**: Simplified to a single unified toggle per plot across 4 crop columns (`Cabbage`, `Potato`, `Spinach`, `Tomato`) matching in-game mechanics.
+- **Yuzu's Castle Pasture**: Added per-species default notes, synced `hon_flag[31..33]` bit references, 4-sheep HD Remaster cap, and `Max All (13)` / `Default Recruited (2)` / `Clear All (0)` presets.
+- **Item Modal**: Fixed scroll-to-top reset on modal open/close, sorted `Equip (16)` strictly by ID (`#001`–`#087` including Mole equipment), and fixed the modal Close button glyph.
+
 ## [1.4.15] - 2026-11-03
 
 ### Added & Grounded

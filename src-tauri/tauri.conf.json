@@ -11,6 +11,7 @@
     "windows": [
       {
         "title": "Suikoden 2 Remaster Save Editor",
+        "url": "editor.html",
         "width": 1280,
         "height": 850,
         "minWidth": 900,
