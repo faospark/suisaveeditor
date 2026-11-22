@@ -4,13 +4,14 @@ use iced::widget::{
 use iced::{Alignment, Element, Length};
 
 use crate::data::catalog::{
-    FISH_BOARD, GUARDIAN_BEASTS, GUARDIAN_BLUEPRINTS, SOUND_SET_DEFS, WINDOW_SET_DEFS,
+    find_labeled_option, BATH_ORNAMENT_OPTIONS, BATH_PAINTING_OPTIONS, FISH_BOARD,
+    GUARDIAN_BEASTS, GUARDIAN_BLUEPRINTS, LabeledOption, SOUND_SET_DEFS, SOUND_SET_OPTIONS,
+    WINDOW_COLOR_OPTIONS, WINDOW_OPACITY_OPTIONS, WINDOW_SET_DEFS, WINDOW_STYLE_OPTIONS,
 };
-use crate::data::{find_option, resolve_inventory_item};
+use crate::data::find_option;
 use crate::gamedata::{character_name, PortraitCache};
 use crate::save_file::SaveDocument;
 use crate::theme;
-use crate::views::item_modal::ModalTarget;
 use crate::Message;
 
 pub fn view<'a>(
@@ -21,11 +22,8 @@ pub fn view<'a>(
     let guardian_card = view_guardian_deity(doc, portraits);
     let farm_card = view_farm_ranch(doc, portraits);
     let yuzu_card = view_yuzu_pasture(doc, portraits);
-    let window_sound_row = row![
-        container(view_window_sets(doc, portraits)).width(Length::FillPortion(1)),
-        container(view_sound_sets(doc, portraits)).width(Length::FillPortion(1)),
-    ]
-    .spacing(16);
+    let window_card = view_window_sets(doc, portraits);
+    let sound_card = view_sound_sets(doc, portraits);
     let library_card = view_library_books(doc, portraits);
     let bath_card = view_bath_items(doc, portraits);
     let fishing_card = view_fishing_records(doc, portraits);
@@ -44,7 +42,8 @@ pub fn view<'a>(
         guardian_card,
         farm_card,
         yuzu_card,
-        window_sound_row,
+        window_card,
+        sound_card,
         library_card,
         bath_card,
         fishing_card,
@@ -421,9 +420,21 @@ fn view_window_sets<'a>(
         .filter(|w| (flag & w.mask) != 0)
         .count();
 
-    let win_typ = doc.get_array_i64(Some("game_data"), "win_typ", 0);
-    let win_col = doc.get_i64(Some("game_data"), "win_col");
-    let win_suke = doc.get_i64(Some("game_data"), "win_suke");
+    let win_typ = doc.get_array_i64(Some("game_data"), "win_typ", 0).clamp(0, 7);
+    let win_col = doc.get_i64(Some("game_data"), "win_col").clamp(0, 7);
+    let win_suke = doc.get_i64(Some("game_data"), "win_suke").clamp(0, 3);
+
+    let selected_style = find_labeled_option(WINDOW_STYLE_OPTIONS, win_typ);
+    let selected_color = find_labeled_option(WINDOW_COLOR_OPTIONS, win_col);
+    let selected_opacity = find_labeled_option(WINDOW_OPACITY_OPTIONS, win_suke);
+
+    let badge_color = if unlocked == 7 {
+        theme::ACCENT_GREEN
+    } else if unlocked > 0 {
+        theme::ACCENT_CYAN
+    } else {
+        theme::TEXT_MUTED
+    };
 
     let mut header = row![].spacing(10).align_y(Alignment::Center);
     if let Some(p) = portrait_thumb(portraits, 97) {
@@ -431,66 +442,141 @@ fn view_window_sets<'a>(
     }
     header = header
         .push(
-            text(format!("Tenkou's Window Sets ({} / 7)", unlocked))
+            text("Tenkou's Window Sets & Frame Customization")
                 .size(15)
                 .color(theme::ACCENT_GOLD),
         )
         .push(Space::with_width(Length::Fill))
         .push(
-            button(text("Unlock All 7").size(11))
-                .padding([4, 9])
-                .style(theme::primary_button_style)
-                .on_press(Message::SetArrayIntField(None, "event_flag", 77, "127".to_string())),
+            container(
+                text(format!("{} / 7 Delivered to Tenkou", unlocked))
+                    .size(11)
+                    .color(badge_color),
+            )
+            .padding([3, 8])
+            .style(theme::badge_style(badge_color)),
         );
 
-    let mut col = column![
-        header,
+    let settings_box = container(
         row![
-            text("Style (0–7):").size(11).color(theme::TEXT_MUTED),
-            text_input("0", &win_typ.to_string())
-                .on_input(|v| Message::SetArrayIntField(Some("game_data"), "win_typ", 0, v))
-                .padding(4)
-                .size(12)
-                .width(Length::Fixed(46.0))
-                .style(theme::input_style),
-            text("Color (0–7):").size(11).color(theme::TEXT_MUTED),
-            text_input("0", &win_col.to_string())
-                .on_input(|v| Message::SetIntField(Some("game_data"), "win_col", v))
-                .padding(4)
-                .size(12)
-                .width(Length::Fixed(46.0))
-                .style(theme::input_style),
-            text("Alpha (0–3):").size(11).color(theme::TEXT_MUTED),
-            text_input("0", &win_suke.to_string())
-                .on_input(|v| Message::SetIntField(Some("game_data"), "win_suke", v))
-                .padding(4)
-                .size(12)
-                .width(Length::Fixed(46.0))
-                .style(theme::input_style),
-        ]
-        .spacing(6)
-        .align_y(Alignment::Center),
-    ]
-    .spacing(6);
-
-    for w in WINDOW_SET_DEFS {
-        let mask = w.mask;
-        col = col.push(
             column![
-                checkbox(w.name, (flag & mask) != 0)
-                    .on_toggle(move |on| Message::ToggleEventFlagBit(77, mask, on))
-                    .text_size(12),
-                text(w.desc).size(10).color(theme::TEXT_MUTED),
+                text("Active Window Style (win_typ[0]):")
+                    .size(11)
+                    .color(theme::TEXT_PRIMARY),
+                pick_list(WINDOW_STYLE_OPTIONS, selected_style, |opt| {
+                    Message::SetArrayIntField(
+                        Some("game_data"),
+                        "win_typ",
+                        0,
+                        opt.id.to_string(),
+                    )
+                })
+                .text_size(12)
+                .padding([6, 8])
+                .width(Length::Fill)
+                .style(theme::pick_list_style)
+                .menu_style(theme::pick_list_menu_style),
             ]
-            .spacing(1),
-        );
+            .spacing(4)
+            .width(Length::FillPortion(1)),
+            column![
+                text("Frame Color (win_col):")
+                    .size(11)
+                    .color(theme::TEXT_PRIMARY),
+                pick_list(WINDOW_COLOR_OPTIONS, selected_color, |opt| {
+                    Message::SetIntField(Some("game_data"), "win_col", opt.id.to_string())
+                })
+                .text_size(12)
+                .padding([6, 8])
+                .width(Length::Fill)
+                .style(theme::pick_list_style)
+                .menu_style(theme::pick_list_menu_style),
+            ]
+            .spacing(4)
+            .width(Length::FillPortion(1)),
+            column![
+                text("Opacity / Transparency (win_suke):")
+                    .size(11)
+                    .color(theme::TEXT_PRIMARY),
+                pick_list(WINDOW_OPACITY_OPTIONS, selected_opacity, |opt| {
+                    Message::SetIntField(Some("game_data"), "win_suke", opt.id.to_string())
+                })
+                .text_size(12)
+                .padding([6, 8])
+                .width(Length::Fill)
+                .style(theme::pick_list_style)
+                .menu_style(theme::pick_list_menu_style),
+            ]
+            .spacing(4)
+            .width(Length::FillPortion(1)),
+        ]
+        .spacing(12),
+    )
+    .padding(12)
+    .width(Length::Fill)
+    .style(theme::empty_slot_card_style);
+
+    let delivery_toolbar = row![
+        text("Sets marked as delivered will be available in Tenkou's Window Selection menu in Castle HQ.")
+            .size(11)
+            .color(theme::TEXT_MUTED),
+        Space::with_width(Length::Fill),
+        button(text("Deliver All 7 Sets").size(11))
+            .padding([5, 10])
+            .style(theme::primary_button_style)
+            .on_press(Message::SetArrayIntField(
+                None,
+                "event_flag",
+                77,
+                ((flag | 0x7F) as i64).to_string(),
+            )),
+        button(text("Clear All").size(11))
+            .padding([5, 10])
+            .style(theme::secondary_button_style)
+            .on_press(Message::SetArrayIntField(
+                None,
+                "event_flag",
+                77,
+                ((flag & !0x7F) as i64).to_string(),
+            )),
+    ]
+    .spacing(8)
+    .align_y(Alignment::Center);
+
+    let mut grid = column![].spacing(8);
+    for chunk in WINDOW_SET_DEFS.chunks(3) {
+        let mut r = row![].spacing(10);
+        for w in chunk {
+            let mask = w.mask;
+            let bit = mask.trailing_zeros();
+            r = r.push(
+                container(
+                    column![
+                        checkbox(format!("{} (Bit {})", w.name, bit), (flag & mask) != 0)
+                            .on_toggle(move |on| Message::ToggleEventFlagBit(77, mask, on))
+                            .text_size(12),
+                        text(w.desc).size(10).color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(3),
+                )
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(theme::empty_slot_card_style),
+            );
+        }
+        for _ in chunk.len()..3 {
+            r = r.push(Space::with_width(Length::FillPortion(1)));
+        }
+        grid = grid.push(r);
     }
 
-    container(col)
-        .padding(16)
-        .width(Length::Fill)
-        .style(theme::card_style)
-        .into()
+    container(
+        column![header, settings_box, delivery_toolbar, grid].spacing(12),
+    )
+    .padding(16)
+    .width(Length::Fill)
+    .style(theme::card_style)
+    .into()
 }
 
 fn view_sound_sets<'a>(
@@ -502,7 +588,16 @@ fn view_sound_sets<'a>(
         .iter()
         .filter(|s| (flag & s.mask) != 0)
         .count();
-    let se_set = doc.get_i64(Some("game_data"), "se_set");
+    let se_set = doc.get_i64(Some("game_data"), "se_set").clamp(0, 7);
+    let selected_se = find_labeled_option(SOUND_SET_OPTIONS, se_set);
+
+    let badge_color = if unlocked == 7 {
+        theme::ACCENT_GREEN
+    } else if unlocked > 0 {
+        theme::ACCENT_CYAN
+    } else {
+        theme::TEXT_MUTED
+    };
 
     let mut header = row![].spacing(10).align_y(Alignment::Center);
     if let Some(p) = portrait_thumb(portraits, 108) {
@@ -510,52 +605,102 @@ fn view_sound_sets<'a>(
     }
     header = header
         .push(
-            text(format!("Connell's Sound Sets ({} / 7)", unlocked))
+            text("Connell's Sound Sets & Audio Customization")
                 .size(15)
                 .color(theme::ACCENT_GOLD),
         )
         .push(Space::with_width(Length::Fill))
         .push(
-            button(text("Unlock All 7").size(11))
-                .padding([4, 9])
-                .style(theme::primary_button_style)
-                .on_press(Message::SetArrayIntField(None, "event_flag", 78, "127".to_string())),
+            container(
+                text(format!("{} / 7 Delivered to Connell", unlocked))
+                    .size(11)
+                    .color(badge_color),
+            )
+            .padding([3, 8])
+            .style(theme::badge_style(badge_color)),
         );
 
-    let mut col = column![
-        header,
-        row![
-            text("Active Sound Set (se_set 0–7):").size(11).color(theme::TEXT_MUTED),
-            text_input("0", &se_set.to_string())
-                .on_input(|v| Message::SetIntField(Some("game_data"), "se_set", v))
-                .padding(4)
-                .size(12)
-                .width(Length::Fixed(52.0))
-                .style(theme::input_style),
+    let settings_box = container(
+        column![
+            text("Active Sound Effect Set (game_data.se_set):")
+                .size(11)
+                .color(theme::TEXT_PRIMARY),
+            pick_list(SOUND_SET_OPTIONS, selected_se, |opt| {
+                Message::SetIntField(Some("game_data"), "se_set", opt.id.to_string())
+            })
+            .text_size(12)
+            .padding([6, 8])
+            .width(Length::Fixed(380.0))
+            .style(theme::pick_list_style)
+            .menu_style(theme::pick_list_menu_style),
         ]
-        .spacing(8)
-        .align_y(Alignment::Center),
-    ]
-    .spacing(6);
+        .spacing(4),
+    )
+    .padding(12)
+    .width(Length::Fill)
+    .style(theme::empty_slot_card_style);
 
-    for s in SOUND_SET_DEFS {
-        let mask = s.mask;
-        col = col.push(
-            column![
-                checkbox(s.name, (flag & mask) != 0)
-                    .on_toggle(move |on| Message::ToggleEventFlagBit(78, mask, on))
-                    .text_size(12),
-                text(s.desc).size(10).color(theme::TEXT_MUTED),
-            ]
-            .spacing(1),
-        );
+    let delivery_toolbar = row![
+        text("Sets marked as delivered will be available in Connell's Sound Change studio in Castle HQ.")
+            .size(11)
+            .color(theme::TEXT_MUTED),
+        Space::with_width(Length::Fill),
+        button(text("Deliver All 7 Sets").size(11))
+            .padding([5, 10])
+            .style(theme::primary_button_style)
+            .on_press(Message::SetArrayIntField(
+                None,
+                "event_flag",
+                78,
+                ((flag | 0x7F) as i64).to_string(),
+            )),
+        button(text("Clear All").size(11))
+            .padding([5, 10])
+            .style(theme::secondary_button_style)
+            .on_press(Message::SetArrayIntField(
+                None,
+                "event_flag",
+                78,
+                ((flag & !0x7F) as i64).to_string(),
+            )),
+    ]
+    .spacing(8)
+    .align_y(Alignment::Center);
+
+    let mut grid = column![].spacing(8);
+    for chunk in SOUND_SET_DEFS.chunks(3) {
+        let mut r = row![].spacing(10);
+        for s in chunk {
+            let mask = s.mask;
+            let bit = mask.trailing_zeros();
+            r = r.push(
+                container(
+                    column![
+                        checkbox(format!("{} (Bit {})", s.name, bit), (flag & mask) != 0)
+                            .on_toggle(move |on| Message::ToggleEventFlagBit(78, mask, on))
+                            .text_size(12),
+                        text(s.desc).size(10).color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(3),
+                )
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(theme::empty_slot_card_style),
+            );
+        }
+        for _ in chunk.len()..3 {
+            r = r.push(Space::with_width(Length::FillPortion(1)));
+        }
+        grid = grid.push(r);
     }
 
-    container(col)
-        .padding(16)
-        .width(Length::Fill)
-        .style(theme::card_style)
-        .into()
+    container(
+        column![header, settings_box, delivery_toolbar, grid].spacing(12),
+    )
+    .padding(16)
+    .width(Length::Fill)
+    .style(theme::card_style)
+    .into()
 }
 
 fn view_library_books<'a>(
@@ -620,70 +765,117 @@ fn view_library_books<'a>(
     .into()
 }
 
+fn bath_slot_row<'a>(
+    items: &[(usize, i64, i64)],
+    slot_idx: usize,
+    options: &'static [LabeledOption],
+) -> Element<'a, Message> {
+    let item_no = items
+        .iter()
+        .find(|(s, _, _)| *s == slot_idx)
+        .map(|(_, id, _)| *id)
+        .unwrap_or(0);
+    let selected = find_labeled_option(options, item_no);
+
+    row![
+        text(format!("Slot {}:", slot_idx))
+            .size(12)
+            .color(theme::TEXT_PRIMARY)
+            .width(Length::Fixed(56.0)),
+        pick_list(options, selected, move |opt| {
+            Message::SetBathItem(slot_idx, opt.id)
+        })
+        .text_size(12)
+        .padding([6, 8])
+        .width(Length::Fill)
+        .style(theme::pick_list_style)
+        .menu_style(theme::pick_list_menu_style),
+    ]
+    .spacing(8)
+    .align_y(Alignment::Center)
+    .into()
+}
+
 fn view_bath_items<'a>(
     doc: &'a SaveDocument,
     portraits: &'a PortraitCache,
 ) -> Element<'a, Message> {
     let items = doc.get_inventory_items("game_data", "furo_item");
+
     let mut header = row![].spacing(10).align_y(Alignment::Center);
     if let Some(p) = portrait_thumb(portraits, 90) {
         header = header.push(p);
     }
     header = header.push(
-        text("Tetsu's Castle Bath House Items (game_data.furo_item)")
+        column![
+            text(format!(
+                "Tetsu's Castle Bath House Items ({} slots)",
+                items.len()
+            ))
             .size(15)
             .color(theme::ACCENT_GOLD),
+            text("Configure artwork and decorative items displayed in the Dunan Castle Bath House. Paintings occupy Slots 2 & 5; antique ornaments decorate the Girl's and Boy's sides (automatically assigned Trade item category use_cnt: 64).")
+                .size(11)
+                .color(theme::TEXT_MUTED),
+        ]
+        .spacing(2),
     );
 
-    let mut rows = column![header].spacing(6);
-
-    for (slot, item_no, use_cnt) in items {
-        let (_, name) = resolve_inventory_item(item_no, use_cnt);
-        rows = rows.push(
+    let paintings_box = container(
+        column![
             row![
-                text(format!("Slot {}", slot + 1))
-                    .size(12)
-                    .color(theme::TEXT_MUTED)
-                    .width(Length::Fixed(56.0)),
-                text(if item_no == 0 {
-                    "Empty Slot".to_string()
-                } else {
-                    name
-                })
-                .size(13)
-                .color(if item_no == 0 {
-                    theme::TEXT_MUTED
-                } else {
-                    theme::TEXT_PRIMARY
-                })
-                .width(Length::Fill),
-                button(text(if item_no == 0 { "+ Add Item" } else { "Change..." }).size(11))
-                    .padding([5, 10])
-                    .style(if item_no == 0 {
-                        theme::primary_button_style
-                    } else {
-                        theme::secondary_button_style
-                    })
-                    .on_press(Message::OpenItemModal(
-                        ModalTarget::Inventory {
-                            section: "game_data",
-                            key: "furo_item",
-                            slot,
-                        },
-                        format!("Bath House — Slot #{}", slot + 1),
-                        None,
-                    )),
-                button(text("Clear").size(11))
-                    .padding([5, 10])
-                    .style(theme::secondary_button_style)
-                    .on_press(Message::ClearInventorySlot("game_data", "furo_item", slot)),
+                text("Paintings").size(13).color(theme::ACCENT_CYAN),
+                text("(Slots 2 & 5)").size(11).color(theme::TEXT_MUTED),
             ]
-            .spacing(10)
+            .spacing(6)
             .align_y(Alignment::Center),
-        );
-    }
+            row![
+                container(bath_slot_row(&items, 2, BATH_PAINTING_OPTIONS))
+                    .width(Length::FillPortion(1)),
+                container(bath_slot_row(&items, 5, BATH_PAINTING_OPTIONS))
+                    .width(Length::FillPortion(1)),
+            ]
+            .spacing(12),
+        ]
+        .spacing(8),
+    )
+    .padding(12)
+    .width(Length::Fill)
+    .style(theme::empty_slot_card_style);
 
-    container(rows)
+    let girls_side = container(
+        column![
+            text("Girl's Side (Left Ornaments)")
+                .size(13)
+                .color(theme::ACCENT_CYAN),
+            bath_slot_row(&items, 0, BATH_ORNAMENT_OPTIONS),
+            bath_slot_row(&items, 1, BATH_ORNAMENT_OPTIONS),
+            bath_slot_row(&items, 3, BATH_ORNAMENT_OPTIONS),
+        ]
+        .spacing(8),
+    )
+    .padding(12)
+    .width(Length::FillPortion(1))
+    .style(theme::empty_slot_card_style);
+
+    let boys_side = container(
+        column![
+            text("Boy's Side (Right Ornaments)")
+                .size(13)
+                .color(theme::ACCENT_CYAN),
+            bath_slot_row(&items, 4, BATH_ORNAMENT_OPTIONS),
+            bath_slot_row(&items, 6, BATH_ORNAMENT_OPTIONS),
+            bath_slot_row(&items, 7, BATH_ORNAMENT_OPTIONS),
+        ]
+        .spacing(8),
+    )
+    .padding(12)
+    .width(Length::FillPortion(1))
+    .style(theme::empty_slot_card_style);
+
+    let ornaments_row = row![girls_side, boys_side].spacing(12);
+
+    container(column![header, paintings_box, ornaments_row].spacing(12))
         .padding(16)
         .width(Length::Fill)
         .style(theme::card_style)

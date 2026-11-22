@@ -84,7 +84,7 @@ fn view_about<'a>() -> Element<'a, Message> {
             text("Native Rust desktop save editor for Suikoden II HD Remaster.")
                 .size(14)
                 .color(theme::TEXT_PRIMARY),
-            text("• Lossless JSON round-trip using serde_json (preserve_order, UTF-8 BOM, \\uXXXX, CRLF)\n• Silent .bak backup creation in the exact source directory on open\n• Save As opens directly in the loaded save's folder\n• Shortcuts: Ctrl+O (Open), Ctrl+S (Save), Esc (Close Modal), Ctrl+D (Load debug/save.json)\n• Drag and drop any .json save file onto the window to open it")
+            text("• Lossless JSON round-trip using serde_json (preserve_order, UTF-8 BOM, \\uXXXX, CRLF)\n• Silent .bak backup creation in the exact source directory on open\n• Save As opens directly in the loaded save's folder\n• Shortcuts: Ctrl+O (Open), Ctrl+S (Save), Esc (Close Modal), Ctrl+D (Load debug/save.json)\n• Drag and drop any .json save file onto the window to open it\n• Open-source GUI framework: iced (MIT License) — https://github.com/iced-rs/iced")
                 .size(13)
                 .color(theme::TEXT_MUTED),
         ]

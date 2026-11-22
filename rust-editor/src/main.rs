@@ -41,6 +41,7 @@ pub fn main() -> iced::Result {
 struct App {
     active_tab: EditorTab,
     doc: Option<SaveDocument>,
+    is_debug_save: bool,
     portraits: PortraitCache,
     party_options: Vec<NamedOption>,
     key_item_options: Vec<NamedOption>,
@@ -79,6 +80,7 @@ impl Default for App {
         Self {
             active_tab: EditorTab::General,
             doc: None,
+            is_debug_save: false,
             portraits: PortraitCache::load(),
             party_options: party_character_options(),
             key_item_options: key_item_options(),
@@ -166,6 +168,7 @@ pub enum Message {
     SetAllInvestigations(i64),
     DeliverAllGuardianPlans,
     MaxVegetableFarm,
+    SetBathItem(usize, i64),
     SetYuzuLivestock(usize, i64),
     MaxYuzuPasture,
     DefaultYuzuPasture,
@@ -219,6 +222,7 @@ impl App {
                     let target = doc.path.clone();
                     match doc.save_to(&target) {
                         Ok(()) => {
+                            self.is_debug_save = is_debug_save_path(&target);
                             self.status_message = Some((format!("Saved {}", doc.file_name), false));
                         }
                         Err(e) => {
@@ -397,6 +401,12 @@ impl App {
             Message::ClearInventorySlot(section, key, slot) => {
                 if let Some(doc) = self.doc.as_mut() {
                     doc.clear_inventory_slot(section, key, slot);
+                }
+            }
+            Message::SetBathItem(slot, item_no) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    doc.set_inventory_field("game_data", "furo_item", slot, "item_no", item_no);
+                    doc.set_inventory_field("game_data", "furo_item", slot, "use_cnt", 64);
                 }
             }
             Message::CopyInventoryItem(item_no, use_cnt) => {
@@ -578,12 +588,14 @@ impl App {
         }
         match SaveDocument::open_and_backup(path) {
             Ok(doc) => {
+                let is_debug = is_debug_save_path(&doc.path);
                 let bak_note = if doc.backup_path.is_some() {
                     " (.bak created silently)"
                 } else {
                     ""
                 };
                 self.status_message = Some((format!("Loaded {}{}", doc.file_name, bak_note), false));
+                self.is_debug_save = is_debug;
                 self.doc = Some(doc);
             }
             Err(e) => {
@@ -655,10 +667,19 @@ impl App {
             title_group,
             Space::with_width(Length::Fixed(16.0)),
             status_badge,
-            Space::with_width(Length::Fill),
         ]
         .spacing(8)
         .align_y(Alignment::Center);
+
+        if self.doc.is_some() && self.is_debug_save {
+            bar_row = bar_row.push(
+                container(text("DEBUG SAVE").size(11).color(theme::ACCENT_CYAN))
+                    .padding([5, 9])
+                    .style(theme::badge_style(theme::ACCENT_CYAN)),
+            );
+        }
+
+        bar_row = bar_row.push(Space::with_width(Length::Fill));
 
         if let Some((msg, is_err)) = &self.status_message {
             let color = if *is_err {
@@ -949,6 +970,16 @@ fn apply_windows_taskbar_icon() {
         if !hicon.is_null() {
             EnumThreadWindows(GetCurrentThreadId(), enum_proc, hicon as isize);
         }
+    }
+}
+
+fn is_debug_save_path(path: &std::path::Path) -> bool {
+    let Some(debug_path) = gamedata::debug_save_path() else {
+        return false;
+    };
+    match (std::fs::canonicalize(path), std::fs::canonicalize(&debug_path)) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => path == debug_path,
     }
 }
 

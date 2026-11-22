@@ -121,6 +121,101 @@ pub struct SetDef {
     pub desc: &'static str,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LabeledOption {
+    pub id: i64,
+    pub label: &'static str,
+}
+
+impl std::fmt::Display for LabeledOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label)
+    }
+}
+
+pub fn find_labeled_option(list: &[LabeledOption], id: i64) -> Option<LabeledOption> {
+    list.iter().copied().find(|o| o.id == id)
+}
+
+pub const WINDOW_STYLE_OPTIONS: &[LabeledOption] = &[
+    LabeledOption { id: 0, label: "0: Default Classic Style" },
+    LabeledOption { id: 1, label: "1: Window Set 1" },
+    LabeledOption { id: 2, label: "2: Window Set 2" },
+    LabeledOption { id: 3, label: "3: Window Set 3" },
+    LabeledOption { id: 4, label: "4: Window Set 4" },
+    LabeledOption { id: 5, label: "5: Window Set 5" },
+    LabeledOption { id: 6, label: "6: Window Set 6" },
+    LabeledOption { id: 7, label: "7: Window Set 7" },
+];
+
+pub const WINDOW_COLOR_OPTIONS: &[LabeledOption] = &[
+    LabeledOption { id: 0, label: "0: Default Theme Color" },
+    LabeledOption { id: 1, label: "Color Scheme #1" },
+    LabeledOption { id: 2, label: "Color Scheme #2" },
+    LabeledOption { id: 3, label: "Color Scheme #3" },
+    LabeledOption { id: 4, label: "Color Scheme #4" },
+    LabeledOption { id: 5, label: "Color Scheme #5" },
+    LabeledOption { id: 6, label: "Color Scheme #6" },
+    LabeledOption { id: 7, label: "Color Scheme #7" },
+];
+
+pub const WINDOW_OPACITY_OPTIONS: &[LabeledOption] = &[
+    LabeledOption { id: 0, label: "0: Fully Opaque (Solid 100%)" },
+    LabeledOption { id: 1, label: "1: Light Transparency (~75%)" },
+    LabeledOption { id: 2, label: "2: Medium Transparency (~50%)" },
+    LabeledOption { id: 3, label: "3: High Transparency (~25%)" },
+];
+
+pub const SOUND_SET_OPTIONS: &[LabeledOption] = &[
+    LabeledOption { id: 0, label: "0: Default Sound Set" },
+    LabeledOption { id: 1, label: "1: Sound Set 1 (Whistles & Bells)" },
+    LabeledOption { id: 2, label: "2: Sound Set 2 (Electronic Synth)" },
+    LabeledOption { id: 3, label: "3: Sound Set 3 (Soft Acoustic)" },
+    LabeledOption { id: 4, label: "4: Sound Set 4 (Mechanical Clicks)" },
+    LabeledOption { id: 5, label: "5: Sound Set 5 (Fantasy Chimes)" },
+    LabeledOption { id: 6, label: "6: Sound Set 6 (Retro 8-Bit Arcade)" },
+    LabeledOption { id: 7, label: "7: Sound Set 7 (Classical Orchestral)" },
+];
+
+pub const BATH_PAINTING_OPTIONS: &[LabeledOption] = &[
+    LabeledOption { id: 0, label: "0: None" },
+    LabeledOption { id: 18, label: "18: Graffiti" },
+    LabeledOption { id: 19, label: "19: Flower Painting" },
+    LabeledOption { id: 20, label: "20: Lover's Garden" },
+    LabeledOption { id: 21, label: "21: Landscape Scroll" },
+    LabeledOption { id: 22, label: "22: Beauties of Nature" },
+    LabeledOption { id: 42, label: "42: Karen Painting A" },
+    LabeledOption { id: 43, label: "43: Karen Painting B" },
+    LabeledOption { id: 44, label: "44: Trio Painting" },
+];
+
+pub const BATH_ORNAMENT_OPTIONS: &[LabeledOption] = &[
+    LabeledOption { id: 0, label: "0: None" },
+    LabeledOption { id: 1, label: "1: Defective Urn" },
+    LabeledOption { id: 2, label: "2: Octopus Pot" },
+    LabeledOption { id: 3, label: "3: Flower Vase" },
+    LabeledOption { id: 4, label: "4: Wide Urn" },
+    LabeledOption { id: 5, label: "5: Blue Dragon Urn" },
+    LabeledOption { id: 6, label: "6: Celadon Urn" },
+    LabeledOption { id: 7, label: "7: Black Urn" },
+    LabeledOption { id: 8, label: "8: Fine China" },
+    LabeledOption { id: 9, label: "9: Persian Lamp" },
+    LabeledOption { id: 10, label: "10: Hex Doll" },
+    LabeledOption { id: 11, label: "11: Japanese Dish" },
+    LabeledOption { id: 12, label: "12: Chinese Dish" },
+    LabeledOption { id: 13, label: "13: Peeing Boy" },
+    LabeledOption { id: 14, label: "14: Bonsai Tree" },
+    LabeledOption { id: 15, label: "15: Knight Statue" },
+    LabeledOption { id: 16, label: "16: Goddess Statue" },
+    LabeledOption { id: 17, label: "17: Coral" },
+    LabeledOption { id: 45, label: "45: Karen Statue A" },
+    LabeledOption { id: 46, label: "46: Karen Statue B" },
+    LabeledOption { id: 47, label: "47: Karen Statue C" },
+    LabeledOption { id: 48, label: "48: Nanami's Vase" },
+    LabeledOption { id: 49, label: "49: Large Vase" },
+    LabeledOption { id: 50, label: "50: Genkaku's Vase" },
+];
+
 pub const WINDOW_SET_DEFS: &[SetDef] = &[
     SetDef { mask: 0x01, name: "Window Set 1", desc: "Simple Clean Border (Ryube / Castle Item Shop)" },
     SetDef { mask: 0x02, name: "Window Set 2", desc: "Wood Carved Frame (Greenhill Item Shop)" },
