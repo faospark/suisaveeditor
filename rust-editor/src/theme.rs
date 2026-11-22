@@ -1,6 +1,156 @@
+use std::sync::atomic::{AtomicU8, Ordering};
+
 use iced::overlay::menu;
 use iced::widget::{button, container, pick_list, scrollable, text_input};
 use iced::{Background, Border, Color, Shadow, Theme, Vector};
+
+/// User-selectable primary accent palette
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccentTheme {
+    Yellow,
+    Orange,
+    Red,
+    Green,
+    Blue,
+    Magenta,
+}
+
+impl AccentTheme {
+    pub const ALL: &'static [AccentTheme] = &[
+        AccentTheme::Yellow,
+        AccentTheme::Orange,
+        AccentTheme::Red,
+        AccentTheme::Green,
+        AccentTheme::Blue,
+        AccentTheme::Magenta,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            AccentTheme::Yellow => "Gold",
+            AccentTheme::Orange => "Amber Copper",
+            AccentTheme::Red => "Royal Crimson",
+            AccentTheme::Green => "Jade Emerald",
+            AccentTheme::Blue => "Sapphire",
+            AccentTheme::Magenta => "Orchid",
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            AccentTheme::Yellow => "yellow",
+            AccentTheme::Orange => "orange",
+            AccentTheme::Red => "red",
+            AccentTheme::Green => "green",
+            AccentTheme::Blue => "blue",
+            AccentTheme::Magenta => "magenta",
+        }
+    }
+
+    pub fn from_key(s: &str) -> Self {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "orange" => AccentTheme::Orange,
+            "red" => AccentTheme::Red,
+            "green" => AccentTheme::Green,
+            "blue" => AccentTheme::Blue,
+            "magenta" => AccentTheme::Magenta,
+            _ => AccentTheme::Yellow,
+        }
+    }
+
+    fn to_u8(self) -> u8 {
+        match self {
+            AccentTheme::Yellow => 0,
+            AccentTheme::Orange => 1,
+            AccentTheme::Red => 2,
+            AccentTheme::Green => 3,
+            AccentTheme::Blue => 4,
+            AccentTheme::Magenta => 5,
+        }
+    }
+
+    fn from_u8(v: u8) -> Self {
+        match v {
+            1 => AccentTheme::Orange,
+            2 => AccentTheme::Red,
+            3 => AccentTheme::Green,
+            4 => AccentTheme::Blue,
+            5 => AccentTheme::Magenta,
+            _ => AccentTheme::Yellow,
+        }
+    }
+
+    pub fn accent_color(self) -> Color {
+        match self {
+            AccentTheme::Yellow => Color::from_rgb(0.941, 0.725, 0.043),  // #F0B90B (Gold)
+            AccentTheme::Orange => Color::from_rgb(0.878, 0.478, 0.220),  // #E07A38 (Amber Copper)
+            AccentTheme::Red => Color::from_rgb(0.851, 0.306, 0.353),     // #D94E5A (Royal Crimson)
+            AccentTheme::Green => Color::from_rgb(0.231, 0.698, 0.451),   // #3BB273 (Jade Emerald)
+            AccentTheme::Blue => Color::from_rgb(0.294, 0.549, 0.910),    // #4B8CE8 (Sapphire Blue)
+            AccentTheme::Magenta => Color::from_rgb(0.769, 0.357, 0.722), // #C45BB8 (Orchid Magenta)
+        }
+    }
+
+    pub fn border_color(self) -> Color {
+        match self {
+            AccentTheme::Yellow => Color::from_rgb(0.720, 0.560, 0.160),  // #B88F29
+            AccentTheme::Orange => Color::from_rgb(0.643, 0.325, 0.133),  // #A45322
+            AccentTheme::Red => Color::from_rgb(0.620, 0.200, 0.243),     // #9E333E
+            AccentTheme::Green => Color::from_rgb(0.153, 0.490, 0.314),   // #277D50
+            AccentTheme::Blue => Color::from_rgb(0.192, 0.388, 0.671),    // #3163AB
+            AccentTheme::Magenta => Color::from_rgb(0.557, 0.231, 0.522), // #8E3B85
+        }
+    }
+
+    pub fn hover_color(self) -> Color {
+        match self {
+            AccentTheme::Yellow => Color::from_rgb(0.980, 0.800, 0.180),
+            AccentTheme::Orange => Color::from_rgb(0.918, 0.565, 0.329),
+            AccentTheme::Red => Color::from_rgb(0.894, 0.420, 0.463),
+            AccentTheme::Green => Color::from_rgb(0.329, 0.776, 0.541),
+            AccentTheme::Blue => Color::from_rgb(0.420, 0.635, 0.933),
+            AccentTheme::Magenta => Color::from_rgb(0.831, 0.463, 0.792),
+        }
+    }
+
+    pub fn pressed_color(self) -> Color {
+        match self {
+            AccentTheme::Yellow => Color::from_rgb(0.800, 0.600, 0.030),
+            AccentTheme::Orange => Color::from_rgb(0.761, 0.384, 0.153),
+            AccentTheme::Red => Color::from_rgb(0.722, 0.231, 0.278),
+            AccentTheme::Green => Color::from_rgb(0.180, 0.580, 0.369),
+            AccentTheme::Blue => Color::from_rgb(0.220, 0.447, 0.780),
+            AccentTheme::Magenta => Color::from_rgb(0.651, 0.267, 0.608),
+        }
+    }
+
+    pub fn button_text_color(self) -> Color {
+        match self {
+            AccentTheme::Yellow | AccentTheme::Orange | AccentTheme::Green => {
+                Color::from_rgb(0.06, 0.07, 0.10)
+            }
+            AccentTheme::Red | AccentTheme::Blue | AccentTheme::Magenta => TEXT_PRIMARY,
+        }
+    }
+}
+
+static CURRENT_ACCENT: AtomicU8 = AtomicU8::new(0);
+
+pub fn set_accent(theme: AccentTheme) {
+    CURRENT_ACCENT.store(theme.to_u8(), Ordering::Relaxed);
+}
+
+pub fn current_accent() -> AccentTheme {
+    AccentTheme::from_u8(CURRENT_ACCENT.load(Ordering::Relaxed))
+}
+
+pub fn accent() -> Color {
+    current_accent().accent_color()
+}
+
+pub fn border_accent() -> Color {
+    current_accent().border_color()
+}
 
 /// Suikoden II HD Remaster inspired dark palette
 pub const BG_BASE: Color = Color::from_rgb(0.055, 0.067, 0.090);       // #0E1117
@@ -8,7 +158,6 @@ pub const BG_SIDEBAR: Color = Color::from_rgb(0.075, 0.090, 0.125);    // #13172
 pub const BG_SURFACE: Color = Color::from_rgb(0.094, 0.114, 0.157);    // #181D28
 pub const BG_ELEVATED: Color = Color::from_rgb(0.125, 0.153, 0.208);   // #202735
 pub const BORDER_SUBTLE: Color = Color::from_rgb(0.173, 0.208, 0.282); // #2C3548
-pub const BORDER_GOLD: Color = Color::from_rgb(0.720, 0.560, 0.160);   // #B88F29
 
 pub const TEXT_PRIMARY: Color = Color::from_rgb(0.945, 0.961, 0.976);  // #F1F5F9
 pub const TEXT_MUTED: Color = Color::from_rgb(0.580, 0.639, 0.722);    // #94A3B8
@@ -20,11 +169,11 @@ pub const ACCENT_RED: Color = Color::from_rgb(0.937, 0.267, 0.267);    // #EF444
 
 pub fn app_theme() -> Theme {
     Theme::custom(
-        "Suikoden Dark".to_string(),
+        format!("Suikoden Dark ({})", current_accent().label()),
         iced::theme::Palette {
             background: BG_BASE,
             text: TEXT_PRIMARY,
-            primary: ACCENT_GOLD,
+            primary: accent(),
             success: ACCENT_GREEN,
             danger: ACCENT_RED,
         },
@@ -76,7 +225,7 @@ pub fn portrait_card_style(is_convoy: bool) -> impl Fn(&Theme) -> container::Sty
     move |_theme| container::Style {
         background: Some(Background::Color(BG_ELEVATED)),
         border: Border {
-            color: if is_convoy { BORDER_SUBTLE } else { BORDER_GOLD },
+            color: if is_convoy { BORDER_SUBTLE } else { border_accent() },
             width: 1.0,
             radius: 8.0.into(),
         },
@@ -96,23 +245,76 @@ pub fn badge_style(color: Color) -> impl Fn(&Theme) -> container::Style {
     }
 }
 
-pub fn nav_button_style(active: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
+pub fn swatch_style(color: Color) -> impl Fn(&Theme) -> container::Style {
+    move |_theme| container::Style {
+        background: Some(Background::Color(color)),
+        border: Border {
+            color: Color { a: 0.65, ..TEXT_PRIMARY },
+            width: 1.0,
+            radius: 4.0.into(),
+        },
+        ..Default::default()
+    }
+}
+
+pub fn accent_choice_button_style(
+    selected: bool,
+    color: Color,
+) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |_theme, status| {
-        let bg = if active {
-            Color { a: 0.18, ..ACCENT_GOLD }
+        let bg = if selected {
+            Color { a: 0.16, ..color }
         } else {
             match status {
                 button::Status::Hovered => BG_ELEVATED,
-                button::Status::Pressed => Color { a: 0.10, ..ACCENT_GOLD },
+                button::Status::Pressed => Color { a: 0.10, ..color },
+                _ => Color::from_rgba(0.094, 0.114, 0.157, 0.45),
+            }
+        };
+
+        button::Style {
+            background: Some(Background::Color(bg)),
+            text_color: TEXT_PRIMARY,
+            border: Border {
+                color: if selected { color } else { BORDER_SUBTLE },
+                width: if selected { 1.5 } else { 1.0 },
+                radius: 8.0.into(),
+            },
+            ..Default::default()
+        }
+    }
+}
+
+pub fn footer_bar_style(_theme: &Theme) -> container::Style {
+    container::Style {
+        background: Some(Background::Color(BG_SIDEBAR)),
+        border: Border {
+            color: BORDER_SUBTLE,
+            width: 1.0,
+            radius: 0.0.into(),
+        },
+        ..Default::default()
+    }
+}
+
+pub fn nav_button_style(active: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
+    move |_theme, status| {
+        let cur = accent();
+        let bg = if active {
+            Color { a: 0.18, ..cur }
+        } else {
+            match status {
+                button::Status::Hovered => BG_ELEVATED,
+                button::Status::Pressed => Color { a: 0.10, ..cur },
                 _ => Color::TRANSPARENT,
             }
         };
 
         button::Style {
             background: Some(Background::Color(bg)),
-            text_color: if active { ACCENT_GOLD } else { TEXT_PRIMARY },
+            text_color: if active { cur } else { TEXT_PRIMARY },
             border: Border {
-                color: if active { BORDER_GOLD } else { Color::TRANSPARENT },
+                color: if active { border_accent() } else { Color::TRANSPARENT },
                 width: if active { 1.0 } else { 0.0 },
                 radius: 7.0.into(),
             },
@@ -122,11 +324,12 @@ pub fn nav_button_style(active: bool) -> impl Fn(&Theme, button::Status) -> butt
 }
 
 pub fn primary_button_style(_theme: &Theme, status: button::Status) -> button::Style {
+    let cur = current_accent();
     let bg = match status {
         button::Status::Disabled => Color::from_rgb(0.22, 0.25, 0.30),
-        button::Status::Hovered => Color::from_rgb(0.98, 0.80, 0.18),
-        button::Status::Pressed => Color::from_rgb(0.80, 0.60, 0.03),
-        button::Status::Active => ACCENT_GOLD,
+        button::Status::Hovered => cur.hover_color(),
+        button::Status::Pressed => cur.pressed_color(),
+        button::Status::Active => cur.accent_color(),
     };
 
     button::Style {
@@ -134,7 +337,7 @@ pub fn primary_button_style(_theme: &Theme, status: button::Status) -> button::S
         text_color: if matches!(status, button::Status::Disabled) {
             TEXT_MUTED
         } else {
-            Color::from_rgb(0.06, 0.07, 0.10)
+            cur.button_text_color()
         },
         border: Border {
             color: Color::TRANSPARENT,
@@ -170,8 +373,9 @@ pub fn secondary_button_style(_theme: &Theme, status: button::Status) -> button:
 }
 
 pub fn input_style(_theme: &Theme, status: text_input::Status) -> text_input::Style {
+    let cur = accent();
     let border_color = match status {
-        text_input::Status::Focused => ACCENT_GOLD,
+        text_input::Status::Focused => cur,
         text_input::Status::Hovered => Color::from_rgb(0.30, 0.36, 0.48),
         _ => BORDER_SUBTLE,
     };
@@ -186,13 +390,14 @@ pub fn input_style(_theme: &Theme, status: text_input::Status) -> text_input::St
         icon: TEXT_MUTED,
         placeholder: TEXT_MUTED,
         value: TEXT_PRIMARY,
-        selection: Color { a: 0.35, ..ACCENT_GOLD },
+        selection: Color { a: 0.35, ..cur },
     }
 }
 
 pub fn pick_list_style(_theme: &Theme, status: pick_list::Status) -> pick_list::Style {
+    let cur = accent();
     let border_color = match status {
-        pick_list::Status::Opened => ACCENT_GOLD,
+        pick_list::Status::Opened => cur,
         pick_list::Status::Hovered => Color::from_rgb(0.30, 0.36, 0.48),
         pick_list::Status::Active => BORDER_SUBTLE,
     };
@@ -200,7 +405,7 @@ pub fn pick_list_style(_theme: &Theme, status: pick_list::Status) -> pick_list::
     pick_list::Style {
         text_color: TEXT_PRIMARY,
         placeholder_color: TEXT_MUTED,
-        handle_color: ACCENT_GOLD,
+        handle_color: cur,
         background: Background::Color(BG_BASE),
         border: Border {
             color: border_color,
@@ -211,16 +416,17 @@ pub fn pick_list_style(_theme: &Theme, status: pick_list::Status) -> pick_list::
 }
 
 pub fn pick_list_menu_style(_theme: &Theme) -> menu::Style {
+    let cur = current_accent();
     menu::Style {
         background: Background::Color(BG_SURFACE),
         border: Border {
-            color: BORDER_GOLD,
+            color: cur.border_color(),
             width: 1.0,
             radius: 6.0.into(),
         },
         text_color: TEXT_PRIMARY,
-        selected_text_color: Color::from_rgb(0.06, 0.07, 0.10),
-        selected_background: Background::Color(ACCENT_GOLD),
+        selected_text_color: cur.button_text_color(),
+        selected_background: Background::Color(cur.accent_color()),
     }
 }
 
@@ -235,7 +441,7 @@ pub fn modal_card_style(_theme: &Theme) -> container::Style {
     container::Style {
         background: Some(Background::Color(BG_SURFACE)),
         border: Border {
-            color: BORDER_GOLD,
+            color: border_accent(),
             width: 1.5,
             radius: 12.0.into(),
         },
@@ -261,6 +467,8 @@ pub fn empty_slot_card_style(_theme: &Theme) -> container::Style {
 }
 
 pub fn scrollable_style(_theme: &Theme, status: scrollable::Status) -> scrollable::Style {
+    let cur = accent();
+    let cur_border = border_accent();
     let make_rail = |hovered: bool, dragged: bool| scrollable::Rail {
         background: Some(Background::Color(Color::from_rgba(0.055, 0.067, 0.090, 0.65))),
         border: Border {
@@ -270,9 +478,9 @@ pub fn scrollable_style(_theme: &Theme, status: scrollable::Status) -> scrollabl
         },
         scroller: scrollable::Scroller {
             color: if dragged {
-                ACCENT_GOLD
+                cur
             } else if hovered {
-                BORDER_GOLD
+                cur_border
             } else {
                 BORDER_SUBTLE
             },

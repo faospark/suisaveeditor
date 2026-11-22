@@ -10,22 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Native Windows Desktop Edition (`v1.4.16`)**:
-  - Full save-editing parity across all 9 editor tabs (`General`, `Battle Characters`, `Recruited Characters`, `Party Bag`, `Warehouse`, `Cooking`, `Investigations`, `Castle`, `Experimental`) and 3 utility tabs (`Data Values`, `Changelog`, `About`).
-  - **Party Bag & Warehouse Copy/Paste**: Per-slot `Copy` / `Paste` buttons, clipboard indicator, and one-click `+ Paste to Empty` working across both Party Bag and Warehouse.
-  - **Full 240 Food Dish Support**: Named lookup for all 240 cooked dishes, `Food (96+)` picker category, named Castle Restaurant Menu dropdowns, and `FOOD` reference tab in Data Values.
-  - **Side-Quests & Story Flags**: Added Listening Crystal Beasts (`l_mon_no`), Luca Ambush HP (`luka_hp`), Chaco's Pickpocketed Potch (`suri_potch`) with portrait, and all 36 annotated story flags with per-bit labels and search.
-  - **Desktop Experience**: Instant portrait loading, non-blocking native file dialogs, silent on-disk `.bak` backups, Save As folder memory, themed scrollbars, Windows taskbar icon, keyboard shortcuts (`Ctrl+O`, `Ctrl+S`, `Ctrl+D`, `Esc`), and Drag-and-Drop `.json` loading.
-- **3-Edition Landing Page (`index.html` & `editor.html`)**:
-  - Moved the Web Save Editor to `editor.html` and added a landing page at `index.html` offering Native Desktop (`v1.4.16`), Tauri Desktop (`v1.4.14`), and Web Edition (`v1.4.14`), plus an Author's Note modal.
+  - Full save-editing parity across all 9 editor tabs and 4 utility tabs (`Data Values`, `Settings`, `Changelog`, `About`).
+  - **Settings Tab & Theme Switcher**: Dedicated `Settings` tab under `TOOLS` with 6 persisted accent themes (**Gold**, **Amber Copper**, **Royal Crimson**, **Jade Emerald**, **Sapphire**, **Orchid**).
+  - **Automatic Game, BepInEx & SuikodenFix Detection**: Auto-detects the Steam install of *Suikoden I and II HD Remaster*, checks `BepInEx` and `SuikodenFix.dll` status (with manual folder browse/reset), and shows a blocking overlay if either prerequisite is missing.
+  - **Inventory Copy & Paste**: Copy/Paste individual slots or rapidly fill empty slots across Party Bag and Warehouse.
+  - **240 Food Dishes**: Named food lookup, `Food (96+)` picker category, named Restaurant Menu dropdowns, and `FOOD` Data Values tab.
+  - **Side-Quests & Story Flags**: Listening Crystal Beasts, Luca Ambush HP, Chaco's Pickpocketed Potch, and 36 annotated story flags with bit labels and search.
+  - **Native Desktop QoL**: Fast portrait loading, non-blocking file dialogs, silent `.bak` backups, Save As folder memory, bottom-right version footer, `DEBUG SAVE` top-bar indicator, shortcuts (`Ctrl+O`, `Ctrl+S`, `Ctrl+D`, `Esc`), and Drag-and-Drop `.json` loading.
+- **3-Edition Landing Page**:
+  - Moved the Web Editor to `editor.html` and added a landing page at `index.html` showcasing **Native Desktop (`v1.4.16`)**, **Tauri Desktop (`v1.4.14` — Final Legacy)**, and **Web Edition (`v1.4.14` — Final Legacy)**, along with an Author's Note modal.
 
-### Fixed & Improved
+### Improved & Fixed
 
-- **Cook-Off Progress Indicator**: Accurately reflects defeated opponents regardless of extra flag bits, with a live `X / 12 Won` progress badge and defeated/current/upcoming states.
-- **Tony's Vegetable Farm**: Simplified to one unified toggle per plot across 4 crop columns (`Cabbage`, `Potato`, `Spinach`, `Tomato`) matching in-game mechanics.
-- **Yuzu's Castle Pasture**: Added per-animal default notes, synced flag references, 4-sheep HD Remaster cap, and `Max All (13)` / `Default Recruited (2)` / `Clear All (0)` presets.
-- **Item Modal**: Fixed scroll-to-top reset when opening/closing the modal, sorted `Equip (16)` strictly by ID (`#001`–`#087` including Mole equipment), and fixed the modal Close button.
+- **Castle Facility Views**: Upgraded **Tenkou's Window Sets**, **Connell's Sound Sets**, and **Tetsu's Castle Bath House** (Paintings / Girl's Side / Boy's Side) to full web-parity dropdown and grid layouts.
+- **Cook-Off Progress**: Live `X / 12 Won` badge and accurate defeated/current/upcoming states regardless of extra flag bits.
+- **Tony's Vegetable Farm**: Simplified to 4 crop columns with a single unified planted toggle per plot.
+- **Yuzu's Castle Pasture**: Added per-animal notes, 4-sheep HD Remaster cap, and `Max All (13)` / `Default Recruited (2)` / `Clear All (0)` presets.
+- **Item Modal & File Dialogs**: Fixed scroll-to-top reset when opening/closing the modal, sorted `Equip (16)` by ID (`#001`–`#087`), fixed the Close button, and prevented `Ctrl+D` debug save loading from overwriting the `Open Save...` folder.
 
-### Acknowledgments
+### Credits
 
 - Native desktop GUI built with [iced](https://github.com/iced-rs/iced) (MIT License).
 

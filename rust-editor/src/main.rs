@@ -1,6 +1,7 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 mod data;
+mod env_detect;
 mod gamedata;
 mod save_file;
 mod theme;
@@ -15,8 +16,10 @@ use std::path::PathBuf;
 use data::catalog::{key_item_options, FISH_BOARD};
 use data::rules::ItemCategory;
 use data::{food_item_name, opt, party_character_options, NamedOption};
+use env_detect::{AppSettings, GameEnvStatus};
 use gamedata::PortraitCache;
 use save_file::SaveDocument;
+use theme::AccentTheme;
 use views::data_values::DataValuesCategory;
 use views::experimental::ExperimentalSection;
 use views::item_modal::{ItemModalState, ModalTarget};
@@ -73,10 +76,16 @@ struct App {
     // Data Values UI state
     data_values_category: DataValuesCategory,
     data_values_search: String,
+    // Settings & Environment detection
+    settings: AppSettings,
+    game_env: GameEnvStatus,
 }
 
 impl Default for App {
     fn default() -> Self {
+        let settings = AppSettings::load();
+        theme::set_accent(settings.accent);
+        let game_env = env_detect::detect_game_env(settings.custom_game_dir.as_deref());
         Self {
             active_tab: EditorTab::General,
             doc: None,
@@ -105,6 +114,8 @@ impl Default for App {
             experimental_filter: String::new(),
             data_values_category: DataValuesCategory::Characters,
             data_values_search: String::new(),
+            settings,
+            game_env,
         }
     }
 }
@@ -183,6 +194,12 @@ pub enum Message {
     SetExperimentalFilter(String),
     SelectDataValuesCategory(DataValuesCategory),
     SetDataValuesSearch(String),
+    // Settings & Environment detection
+    SetAccentTheme(AccentTheme),
+    RedetectGameEnv,
+    BrowseGameDir,
+    GameDirPicked(Option<PathBuf>),
+    ResetGameDir,
 }
 
 impl App {
@@ -578,17 +595,47 @@ impl App {
             Message::SetDataValuesSearch(q) => {
                 self.data_values_search = q;
             }
+            Message::SetAccentTheme(accent) => {
+                self.settings.accent = accent;
+                theme::set_accent(accent);
+                self.settings.save();
+            }
+            Message::RedetectGameEnv => {
+                self.game_env =
+                    env_detect::detect_game_env(self.settings.custom_game_dir.as_deref());
+            }
+            Message::BrowseGameDir => {
+                let initial = self.game_env.game_dir.clone();
+                return Task::perform(
+                    env_detect::pick_game_dir_async(initial),
+                    Message::GameDirPicked,
+                );
+            }
+            Message::GameDirPicked(Some(dir)) => {
+                self.settings.custom_game_dir = Some(dir);
+                self.settings.save();
+                self.game_env =
+                    env_detect::detect_game_env(self.settings.custom_game_dir.as_deref());
+            }
+            Message::GameDirPicked(None) => {}
+            Message::ResetGameDir => {
+                self.settings.custom_game_dir = None;
+                self.settings.save();
+                self.game_env = env_detect::detect_game_env(None);
+            }
         }
         Task::none()
     }
 
     fn load_path(&mut self, path: PathBuf) {
-        if let Some(parent) = path.parent() {
-            self.last_dir = Some(parent.to_path_buf());
+        let is_debug = is_debug_save_path(&path);
+        if !is_debug {
+            if let Some(parent) = path.parent() {
+                self.last_dir = Some(parent.to_path_buf());
+            }
         }
         match SaveDocument::open_and_backup(path) {
             Ok(doc) => {
-                let is_debug = is_debug_save_path(&doc.path);
                 let bak_note = if doc.backup_path.is_some() {
                     " (.bak created silently)"
                 } else {
@@ -608,21 +655,45 @@ impl App {
         let top_bar = self.view_top_bar();
         let sidebar = self.view_sidebar();
         let main_panel = self.view_main_panel();
+        let footer = self.view_footer_bar();
 
-        let base = column![top_bar, row![sidebar, main_panel].height(Length::Fill)]
-            .height(Length::Fill);
+        let base = column![
+            top_bar,
+            row![sidebar, main_panel].height(Length::Fill),
+            footer,
+        ]
+        .height(Length::Fill);
 
-        // Always keep `base` as child 0 of a `stack!` so opening/closing the modal
+        // Always keep `base` as child 0 of a `stack!` so opening/closing modals
         // never changes the root widget type and resets scrollable positions.
         let mut root = stack![base];
         if let Some(modal) = &self.item_modal {
             root = root.push(views::item_modal::view(modal));
         }
+        if !self.game_env.is_ready() {
+            root = root.push(views::settings::view_env_blocking_overlay(&self.game_env));
+        }
         root.into()
     }
 
+    fn view_footer_bar(&self) -> Element<'_, Message> {
+        container(
+            row![
+                Space::with_width(Length::Fill),
+                text(concat!("SuiSaveEditor v", env!("CARGO_PKG_VERSION")))
+                    .size(11)
+                    .color(theme::TEXT_MUTED),
+            ]
+            .align_y(Alignment::Center),
+        )
+        .padding([4, 14])
+        .width(Length::Fill)
+        .style(theme::footer_bar_style)
+        .into()
+    }
+
     fn view_top_bar(&self) -> Element<'_, Message> {
-        let title_group = text("SuiSaveEditor").size(18).color(theme::ACCENT_GOLD);
+        let title_group = text("SuiSaveEditor").size(18).color(theme::accent());
 
         let status_badge: Element<'_, Message> = if let Some(doc) = &self.doc {
             let label = if doc.dirty {
@@ -830,6 +901,7 @@ impl App {
             (EditorTab::DataValues, _) => {
                 views::data_values::view(self.data_values_category, &self.data_values_search)
             }
+            (EditorTab::Settings, _) => views::settings::view(&self.settings, &self.game_env),
             (EditorTab::General, None) => self.view_empty_state(),
             (tab, doc_opt) => views::stub::view_stub(tab, doc_opt.as_ref()),
         };
@@ -845,7 +917,7 @@ impl App {
             column![
                 text("Welcome to SuiSaveEditor")
                     .size(24)
-                    .color(theme::ACCENT_GOLD),
+                    .color(theme::accent()),
                 text("Load a Suikoden II HD Remaster JSON save file to begin editing.\nA silent .bak backup will be created automatically in the same folder.")
                     .size(14)
                     .color(theme::TEXT_MUTED),

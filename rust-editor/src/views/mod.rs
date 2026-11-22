@@ -8,6 +8,7 @@ pub mod inventory;
 pub mod investigations;
 pub mod item_modal;
 pub mod recruitment;
+pub mod settings;
 pub mod stub;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,6 +23,7 @@ pub enum EditorTab {
     Castle,
     Experimental,
     DataValues,
+    Settings,
     Changelog,
     About,
 }
@@ -41,6 +43,7 @@ impl EditorTab {
 
     pub const UTILITY_TABS: &'static [EditorTab] = &[
         EditorTab::DataValues,
+        EditorTab::Settings,
         EditorTab::Changelog,
         EditorTab::About,
     ];
@@ -62,6 +65,7 @@ impl EditorTab {
             EditorTab::Castle => "Castle",
             EditorTab::Experimental => "Experimental",
             EditorTab::DataValues => "Data Values",
+            EditorTab::Settings => "Settings",
             EditorTab::Changelog => "Changelog",
             EditorTab::About => "About",
         }
@@ -79,6 +83,7 @@ impl EditorTab {
             EditorTab::Castle => "Guardian Deity statue, bath items, library books, farm/ranch, window/sound sets, fishing, suggestion box.",
             EditorTab::Experimental => "Story & event flags (256 bytes), raw castle flags, 256 treasure chests, and war units.",
             EditorTab::DataValues => "Reference tables for all characters, items, equipment, and runes.",
+            EditorTab::Settings => "Theme accent colors and automatic game, BepInEx, and SuikodenFix detection.",
             EditorTab::Changelog => "Version history from CHANGELOG.md.",
             EditorTab::About => "SuiSaveEditor Rust (iced) native desktop edition.",
         }
