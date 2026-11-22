@@ -20,6 +20,9 @@ New-Item -ItemType Directory -Force -Path $StagingRust | Out-Null
 
 Copy-Item (Join-Path $Root "rust-editor\target\release\suisaveeditor-rust.exe") (Join-Path $StagingRust "SuiSaveEditor.exe")
 Copy-Item -Recurse (Join-Path $Root "image\portraits") (Join-Path $StagingRust "portraits")
+Copy-Item (Join-Path $Root "rust-editor\README.txt") (Join-Path $StagingRust "README.txt")
+Copy-Item (Join-Path $Root "rust-editor\assets\fonts\OFL.txt") (Join-Path $StagingRust "OFL.txt")
+Copy-Item (Join-Path $Root "rust-editor\assets\fonts\LICENSE-APACHE.txt") (Join-Path $StagingRust "LICENSE-APACHE.txt")
 
 $RustZip = Join-Path $ReleaseDir "SuiSaveEditor-Rust-win64.zip"
 if (Test-Path $RustZip) { Remove-Item -Force $RustZip }

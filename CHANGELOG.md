@@ -2,7 +2,40 @@
 
 All notable changes to the Suikoden II HD Remaster Save Editor.
 
-## [1.4.16] - 2026-11-22 (Native Desktop)
+## [1.4.17] - Nov 22, 2026 (Native Desktop)
+
+### Added
+
+- **Topmost `Saves` Home Tab**:
+  - Auto-scans `<GAME_PATH>\SuikodenFix\Decrypted\gsd2\` on startup for decrypted `.json` saves (skipping `.bak` files).
+  - Compact save cards with slot number, Hero & Castle HQ name, right-aligned active party & convoy portraits, Play Time, Potch, Recruited Stars, and save timestamp, with search and Most Recent / Slot # sorting.
+  - Clicking any save opens it (with silent `.bak` backup) and jumps straight to the **General** tab; top-bar file action buttons stay hidden while browsing the Saves tab.
+- **Multi-Language Support (8 Languages) & Bundled Noto Sans CJK Font**:
+  - Added a persisted **Language** selector in Settings supporting **English**, **日本語**, **Deutsch**, **Español**, **Français**, **Italiano**, **简体中文**, and **繁體中文**.
+  - Embedded **Noto Sans**, **Noto Sans CJK JP** (SIL OFL 1.1), and **Material Symbols Rounded** iconography (Apache 2.0) directly into the application for consistent typography across all 8 languages and crisp vector icons across the sidebar and action buttons, with full license files (`README.txt`, `OFL.txt`, `LICENSE-APACHE.txt`) packaged in the release ZIP.
+  - Localizes core UI labels and embeds official *Suikoden II HD Remaster* game data translations for items, gear, runes, food dishes, and Data Values.
+- **Backup Subfolder, Per-Slot Restore Diff Modal & Full ZIP Snapshots**:
+  - Organized silent `.bak` backups into a dedicated `backups\` subfolder inside the save directory and automatically migrates legacy loose `.bak` files.
+  - Clicking **Restore `.bak`** on a save card now opens a **Restore Backup Diff Modal** comparing the current save against `backups\<file>.bak` side-by-side (Hero/Castle, Play Time, Potch, Recruited Stars, and highlighted field-by-field changes including bit-level flag diffs and resolved character/item names) before confirming restore.
+  - Added **Full Backup Snapshots (`.zip`)** creation and one-click restore on the `Saves` tab, plus an automatic initial `.zip` snapshot on first run.
+- **5 Base Background Themes**: Added a persisted **Base Background** switcher in Settings (**Dark Navy**, **High Contrast Black**, **Dark Gray**, **Dark Green**, and **Dark Purple**) alongside the 6 accent themes.
+- **Suikoden I Save Transfer Data Card**: Added a dedicated card in the **General** tab (with McDohl portrait) showing imported Suikoden I clear-save fields (`macd_name`, `m_base_name`, `nakam_1_num`) and Gremio survival status.
+- **Tessai's Blacksmith Hammers Card**: Added a **Castle** tab section tracking Iron, Copper, Silver, and Golden Hammer deliveries (`event_flag[143]` Bits 3–6), live forge level cap badge (Lv 6 → 16), and Deliver All / Clear All actions while preserving unrelated bits.
+- **Location Hints for Books, Recipes & Pasture Animals**: Added grounded acquisition location hints for all 12 of Emilia's Castle Library Old Books, all 40 of Hai Yo's Cooking Recipes, and every individual animal in Yuzu's Castle Pasture.
+- **SuikodenFix `EditSave` Detection & Single File Mode**:
+  - Displays detected `gsd2` saves folder and `EditSave` status from `d3xMachina.suikoden_fix.cfg` in Settings (with a warning banner on the Saves tab if `EditSave = false`).
+  - Demoted `Open Save...` to a fallback action and added an amber `SINGLE FILE MODE` top-bar badge when editing standalone files outside `gsd2`.
+
+### Improved & Fixed
+
+- **Styled Changelog View & Abbreviated Release Dates**: Replaced the raw text dump in the `Changelog` tab with per-version release cards, version/latest/category badges, indented bullet hierarchy, and rich inline bold, italic, and monospace code formatting, and standardized all release dates to abbreviated month names (e.g., `Nov 22, 2026`).
+- **Windows Single-Instance & Window Layout**: Added a Windows single-instance guard to prevent duplicate app launches, centered the window on startup, and enforced a `1160×680` minimum window size.
+- **Read-Only Castle Progression Stats**: Displayed Castle Level, Blacksmith Level, Popularity, and Bath House Level as read-only badges in the **General** tab to prevent unintended save corruption.
+- **Sidebar Tab State**: Editing tabs below `Saves` remain disabled until a save file is loaded; all editing tabs share the unified empty-state card when no save is open.
+- **Inventory Category Badges**: Renamed the `Equip` badge to `Gear` (localized per language) across Party Bag, Warehouse, and Battle Characters.
+- **SuikodenFix DLL Detection**: Normalized underscores/hyphens/spaces when scanning `BepInEx\plugins` so `Suikoden_Fix.dll` and `SuikodenFix.dll` are both detected reliably.
+
+## [1.4.16] - Nov 22, 2026 (Native Desktop)
 
 ### Added
 
@@ -27,7 +60,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 
 - Native desktop GUI built with [iced](https://github.com/iced-rs/iced) (MIT License).
 
-## [1.4.15] - 2026-11-03
+## [1.4.15] - Nov 3, 2026
 
 ### Added & Grounded
 
@@ -38,7 +71,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
   - Grounded Greenhill City entrance (`ve01_00`) and Town Square (`ve01_01`) progression across bytes `172`, `173`, `174`, `238`, and `239` (Fitcher briefing, student disguise aliases, Academy registration, Emilia, Nina's Town Square & 2F Dormitory night encounters, and Greenhill Inn cutscene).
   - Grounded **Emilia** (`Character 96`, bytes `209`–`210`) and **Jeane** Academy Rune classroom (`byte 213` Bit 5) flags in `ve07_00`.
 
-## [1.4.14] - 2026-11-03
+## [1.4.14] - Nov 3, 2026
 
 ### Fixed & Grounded
 
@@ -46,7 +79,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
   - Corrected Group 7 (`t_box_flag` Byte 6) area designation from Lakewest Town to **Kobold Forest** (`vh10`).
   - Labeled path chests `#49`–`#52` as `Collar (Path 1)` through `Collar (Path 4)`, retained `#53: Main-Gauche` and `#54: Guard Ring`, and grounded Chest `#55` (Bit 6) as **Lamb (Yuzu Farm)**.
 
-## [1.4.13] - 2026-11-03
+## [1.4.13] - Nov 3, 2026
 
 ### Added & Grounded
 
@@ -57,7 +90,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **World Map Treasure Chests Labels & Locations (`t_box_flag[0..31]`)**:
   - Grounded all 256 chest flags with exact item rewards, geographical area group headers, internal map IDs, and live search filtering by chest number, item name, location, or byte index.
 
-## [1.4.12] - 2026-11-03
+## [1.4.12] - Nov 3, 2026
 
 ### Fixed & Grounded
 
@@ -65,7 +98,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
   - Corrected delivered animal counts to `game_data.food_num[4..7]` (Chicks: 0–3, Pigs: 0–3, Sheep: 0–4, Cattle: 0–3; 13 total animals).
   - Auto-syncs all 13 threshold bits across `hon_flag[31]` (bits 4–7), `hon_flag[32]` (bits 0–7), and `hon_flag[33]` (bit 0) without corrupting adjacent vegetable plot flags.
 
-## [1.4.11] - 2026-11-03
+## [1.4.11] - Nov 3, 2026
 
 ### Fixed & Changed
 
@@ -74,7 +107,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Yuzu's Livestock Ranch (`hon_flag[32]`)**:
   - Added acquisition location context for each animal and a "Default Recruited" preset reflecting Yuzu's starting stock.
 
-## [1.4.10] - 2026-11-02
+## [1.4.10] - Nov 2, 2026
 
 ### Added
 
@@ -83,7 +116,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Connell's Sound Sets & Audio Customization**:
   - Delivery toggles for Sound Sets 1–7 (`event_flag[78]`, bits 0–6) with "Deliver All" / "Clear All" actions, plus Active Sound Effect Set (`se_set`).
 
-## [1.4.9] - 2026-11-01
+## [1.4.9] - Nov 1, 2026
 
 ### Added
 
@@ -94,13 +127,13 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Story Flags Editor (`event_flag[0..255]`)**: Searchable 256-byte ledger with annotated story checkpoints and recruitment flags, 8-bit checkboxes, and synced decimal/hex inputs.
 - **Smart Recruitment & Story Flags Reset**: One-click reset on multi-step recruits (including Sculptor Jude and Badeaux) clearing linked `event_flag` bits and associated quest items across Key Items, Party Bag, and Warehouse.
 
-## [1.4.8] - 2026-10-31
+## [1.4.8] - Oct 31, 2026
 
 ### Added
 
 - **Standalone Desktop Application**: Introduced an offline Windows desktop executable (`v1.4.8` Tauri edition) with bundled portraits and zero internet dependency.
 
-## [1.4.7] - 2026-10-29
+## [1.4.7] - Oct 29, 2026
 
 ### Added & Changed
 
@@ -113,32 +146,32 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **3-Column Inventory & Warehouse Grids**: Compact slot layout for Party Bag (30 slots), Warehouse (60 slots), and Room Items (8 slots) with searchable Item Picker modal.
 - **Battle Characters 3-Column Layout**: Organized into General & Stats, Magic & Runes, and Weapon & Equipment with inline accessory unequip buttons.
 
-## [1.4.6] - 2026-10-26
+## [1.4.6] - Oct 26, 2026
 
 ### Changed
 
 - **Cooking Tab**: Made Known Recipes, Kitchen Ingredient Stock, Seasonings, and Cook-Off Battles permanently open cards.
 
-## [1.4.5] - 2026-10-26
+## [1.4.5] - Oct 26, 2026
 
 ### Fixed
 
 - Fixed custom Listening Crystal Beast option handling in the General tab.
 
-## [1.4.4] - 2026-10-26
+## [1.4.4] - Oct 26, 2026
 
 ### Changed
 
 - **Castle Flags (`hon_flag[0–49]`)**: Relocated the raw 50-byte castle flag editor to the **Experimental** tab so the **Castle** tab stays focused on farm plots, livestock, library books, and fishing records.
 
-## [1.4.3] - 2026-10-26
+## [1.4.3] - Oct 26, 2026
 
 ### Added & Fixed
 
 - **Recruitment Mods Honored in Battle Characters**: Synced "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Abizboah & Rulodia) across both Recruited Characters and Battle Characters tabs, plus in-place recruitment status editing.
 - **Listening Crystal Beasts**: Corrected monster IDs (`49`: Abizboah, `50`: Feather, `72`: Siegfried, `74`: Rulodia, `79`: Chuchara).
 
-## [1.4.0] - 2026-10-26
+## [1.4.0] - Oct 26, 2026
 
 ### Added
 
@@ -151,19 +184,19 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Packed-Nibble Magic Points (MP)**: Properly decodes/encodes Current MP (high nibble) and Max MP (low nibble) per spell level.
 - **Character Database**: Added missing entry `103: Taki` and fixed duplicate slot `127`.
 
-## [1.3.2] - 2025-12-12
+## [1.3.2] - Dec 12, 2025
 
 ### Fixed
 
 - Fixed Party Slot Identifier and improved keyboard input when editing values manually.
 
-## [1.3.1] - 2025-12-08
+## [1.3.1] - Dec 8, 2025
 
 ### Fixed
 
 - **Save File Format Compatibility**: Added UTF-8 BOM, uppercase `\uXXXX` Unicode escapes, and Windows CRLF line endings to match the exact format expected by *Suikoden II HD Remaster*.
 
-## [1.3.0] - 2025-12-08
+## [1.3.0] - Dec 8, 2025
 
 ### Added & Fixed
 
@@ -171,21 +204,21 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Recruitment Mod Toggles**: Added Suikoden 1 Hero (`macd_name`) detection for McDohl/Gremio, "Better Leona Option", and "Kraken Patch" support.
 - Fixed item name display across Key Items, Equipment, and Accessories, and fixed Hoi in the character list.
 
-## [1.2.0] - 2025-12-06
+## [1.2.0] - Dec 6, 2025
 
 ### Added & Fixed
 
 - Added **Experimental Tab** (`tantei_lv`, `hon_flag`, `t_box_flag`), Suikoden 1 Recruited Stars (`nakam_1_num`), Cook-Off Battle Progress, Active Party Members (`exit_member`), Key Items (`event_item`), Magic Points (MP) editor, and `Ctrl+D` Debug Save shortcut.
 - Added Boris to the character list and reorganized Battle Characters sections.
 
-## [1.1.0] - 2025-12-02
+## [1.1.0] - Dec 2, 2025
 
 ### Added & Fixed
 
 - Added Item Type classification guide (`use_cnt` categories) and Data Values / About tabs accessible before loading a save.
 - Fixed rune and equipment name resolution in Party Bag and Warehouse.
 
-## [1.0.0] - 2025-11-28
+## [1.0.0] - Nov 28, 2025
 
 ### Added
 

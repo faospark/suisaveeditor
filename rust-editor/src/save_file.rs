@@ -1,6 +1,60 @@
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
+/// Returns the dedicated `backups` subfolder inside a save directory.
+pub fn backup_dir_for(save_dir: &Path) -> PathBuf {
+    save_dir.join("backups")
+}
+
+/// Returns the `.bak` backup path for a given save file inside its parent's `backups` subfolder.
+pub fn backup_path_for_save(save_path: &Path) -> PathBuf {
+    let file_name = save_path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy();
+    let parent = save_path.parent().unwrap_or_else(|| Path::new("."));
+    backup_dir_for(parent).join(format!("{}.bak", file_name))
+}
+
+/// Ensures `backups/` exists in `save_dir` and moves any legacy loose `*.bak` files
+/// from `save_dir` root into `save_dir/backups/`.
+pub fn migrate_loose_bak_files(save_dir: &Path) -> usize {
+    if !save_dir.is_dir() {
+        return 0;
+    }
+    let backups_dir = backup_dir_for(save_dir);
+    let _ = std::fs::create_dir_all(&backups_dir);
+
+    let Ok(entries) = std::fs::read_dir(save_dir) else {
+        return 0;
+    };
+    let mut moved = 0usize;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let is_bak = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.eq_ignore_ascii_case("bak"))
+            .unwrap_or(false);
+        if !is_bak {
+            continue;
+        }
+        let Some(fname) = path.file_name() else {
+            continue;
+        };
+        let dest = backups_dir.join(fname);
+        let ok = std::fs::rename(&path, &dest).is_ok()
+            || (std::fs::copy(&path, &dest).is_ok() && std::fs::remove_file(&path).is_ok());
+        if ok {
+            moved += 1;
+        }
+    }
+    moved
+}
+
 #[derive(Debug, Clone)]
 pub struct SaveDocument {
     pub path: PathBuf,
@@ -11,7 +65,7 @@ pub struct SaveDocument {
 }
 
 impl SaveDocument {
-    /// Open a JSON save file and silently create a `.bak` copy in the exact same directory.
+    /// Open a JSON save file and silently create a `.bak` copy inside `<parent>/backups/`.
     pub fn open_and_backup(path: PathBuf) -> Result<Self, String> {
         let raw_content = std::fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read '{}': {}", path.display(), e))?;
@@ -28,11 +82,22 @@ impl SaveDocument {
             .to_string_lossy()
             .to_string();
 
-        // Silent .bak backup in the exact same directory (no dialogs/popups)
-        let bak_path = PathBuf::from(format!("{}.bak", path.to_string_lossy()));
-        let backup_path = match std::fs::copy(&path, &bak_path) {
-            Ok(_) => Some(bak_path),
-            Err(_) => None,
+        // Ensure backups/ subfolder exists, migrate any legacy .bak files, and write silent .bak inside backups/
+        // Only create .bak on open if it does not already exist so re-opening an edited save never clobbers the pre-edit backup.
+        if let Some(parent) = path.parent() {
+            let _ = migrate_loose_bak_files(parent);
+        }
+        let bak_path = backup_path_for_save(&path);
+        if let Some(bak_parent) = bak_path.parent() {
+            let _ = std::fs::create_dir_all(bak_parent);
+        }
+        let backup_path = if bak_path.is_file() {
+            Some(bak_path)
+        } else {
+            match std::fs::copy(&path, &bak_path) {
+                Ok(_) => Some(bak_path),
+                Err(_) => None,
+            }
         };
 
         Ok(Self {
@@ -67,6 +132,17 @@ impl SaveDocument {
         let mut bytes = Vec::with_capacity(3 + crlf.len());
         bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
         bytes.extend_from_slice(crlf.as_bytes());
+
+        // Silently snapshot the pre-save on-disk file into backups\<file>.bak before overwriting
+        if target.is_file() {
+            let bak_path = backup_path_for_save(target);
+            if let Some(bak_parent) = bak_path.parent() {
+                let _ = std::fs::create_dir_all(bak_parent);
+            }
+            if std::fs::copy(target, &bak_path).is_ok() {
+                self.backup_path = Some(bak_path);
+            }
+        }
 
         std::fs::write(target, bytes)
             .map_err(|e| format!("Failed to write '{}': {}", target.display(), e))?;

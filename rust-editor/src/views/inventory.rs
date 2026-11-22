@@ -1,8 +1,9 @@
 use iced::widget::{button, column, container, image, pick_list, row, scrollable, text, text_input, Space};
 use iced::{Alignment, Element, Length};
 
-use crate::data::{find_option, resolve_inventory_item, NamedOption};
+use crate::data::{find_option, inventory_category_badge, resolve_inventory_item, NamedOption};
 use crate::gamedata::PortraitCache;
+use crate::i18n;
 use crate::save_file::SaveDocument;
 use crate::theme;
 use crate::views::item_modal::ModalTarget;
@@ -27,7 +28,7 @@ pub fn view<'a>(
     let first_empty = items.iter().find(|(_, item_no, _)| *item_no == 0).map(|(s, _, _)| *s);
     let q = search.trim().to_lowercase();
 
-    let mut add_first_btn = button(text("+ Add Item to Empty Slot").size(12))
+    let mut add_first_btn = button(text(i18n::tr("add_item_empty")).size(12))
         .padding([7, 14])
         .style(theme::primary_button_style);
     if let Some(empty_slot) = first_empty {
@@ -37,20 +38,20 @@ pub fn view<'a>(
                 key,
                 slot: empty_slot,
             },
-            format!("{} — Add Item", title),
+            format!("{} — {}", title, i18n::tr("add_item")),
             None,
         ));
     }
 
     let mut toolbar_row = row![
         container(
-            text(format!("Occupied: {} / {} slots", occupied, total))
+            text(format!("{}: {} / {} {}", i18n::tr("occupied"), occupied, total, i18n::tr("slots")))
                 .size(13)
                 .color(theme::ACCENT_GOLD),
         )
         .padding([6, 12])
         .style(theme::badge_style(theme::ACCENT_GOLD)),
-        text_input("Filter slots by item name or slot #...", search)
+        text_input(i18n::tr("filter_slots_placeholder"), search)
             .on_input(Message::SetInventorySearch)
             .padding(7)
             .size(12)
@@ -65,14 +66,14 @@ pub fn view<'a>(
         let (_, cname) = resolve_inventory_item(cid, ccnt);
         toolbar_row = toolbar_row.push(
             container(
-                text(format!("Clipboard: {} (use: {})", cname, ccnt))
+                text(format!("{} (use: {})", cname, ccnt))
                     .size(12)
                     .color(theme::ACCENT_CYAN),
             )
             .padding([6, 10])
             .style(theme::badge_style(theme::ACCENT_CYAN)),
         );
-        let mut paste_empty_btn = button(text("+ Paste to Empty").size(12))
+        let mut paste_empty_btn = button(text(i18n::tr("paste_to_empty")).size(12))
             .padding([7, 12])
             .style(theme::secondary_button_style);
         if let Some(empty_slot) = first_empty {
@@ -91,11 +92,11 @@ pub fn view<'a>(
 
     let mut rows = column![
         row![
-            text("Slot")
+            text(i18n::tr("slot"))
                 .size(12)
                 .color(theme::TEXT_MUTED)
                 .width(Length::Fixed(54.0)),
-            text("Item")
+            text(i18n::tr("item"))
                 .size(12)
                 .color(theme::TEXT_MUTED)
                 .width(Length::Fill),
@@ -103,11 +104,11 @@ pub fn view<'a>(
                 .size(12)
                 .color(theme::TEXT_MUTED)
                 .width(Length::Fixed(52.0)),
-            text("Qty / Type")
+            text(i18n::tr("qty_type"))
                 .size(12)
                 .color(theme::TEXT_MUTED)
                 .width(Length::Fixed(74.0)),
-            text("Actions")
+            text(i18n::tr("actions"))
                 .size(12)
                 .color(theme::TEXT_MUTED)
                 .width(Length::Fixed(288.0)),
@@ -131,7 +132,7 @@ pub fn view<'a>(
 
         let cat_color = match cat {
             "Item" => theme::ACCENT_GREEN,
-            "Equip" => theme::ACCENT_CYAN,
+            "Gear" => theme::ACCENT_CYAN,
             "Rune" => theme::ACCENT_GOLD,
             "Farm" => theme::ACCENT_GREEN,
             "Trade" => theme::ACCENT_GOLD,
@@ -140,9 +141,9 @@ pub fn view<'a>(
             _ => theme::TEXT_MUTED,
         };
 
-        let modal_title = format!("{} — Slot #{}", title, slot + 1);
+        let modal_title = format!("{} — #{}", title, slot + 1);
         let select_btn = button(
-            text(if is_empty { "+ Add Item" } else { "Change..." }).size(12),
+            text(if is_empty { i18n::tr("add_item") } else { i18n::tr("change") }).size(12),
         )
         .padding([5, 10])
         .width(Length::Fixed(96.0))
@@ -157,7 +158,7 @@ pub fn view<'a>(
             None,
         ));
 
-        let mut copy_btn = button(text("Copy").size(11))
+        let mut copy_btn = button(text(i18n::tr("copy")).size(11))
             .padding([5, 8])
             .width(Length::Fixed(54.0))
             .style(theme::secondary_button_style);
@@ -165,7 +166,7 @@ pub fn view<'a>(
             copy_btn = copy_btn.on_press(Message::CopyInventoryItem(item_no, use_cnt));
         }
 
-        let mut paste_btn = button(text("Paste").size(11))
+        let mut paste_btn = button(text(i18n::tr("paste")).size(11))
             .padding([5, 8])
             .width(Length::Fixed(58.0))
             .style(theme::secondary_button_style);
@@ -173,7 +174,7 @@ pub fn view<'a>(
             paste_btn = paste_btn.on_press(Message::PasteInventorySlot(section, key, slot));
         }
 
-        let mut clear_btn = button(text("Clear").size(11))
+        let mut clear_btn = button(text(i18n::tr("clear")).size(11))
             .padding([5, 8])
             .width(Length::Fixed(56.0))
             .style(theme::secondary_button_style);
@@ -182,10 +183,10 @@ pub fn view<'a>(
         }
 
         let item_display = row![
-            container(text(cat).size(10).color(cat_color))
+            container(text(inventory_category_badge(cat)).size(10).color(cat_color))
                 .padding([2, 7])
                 .style(theme::badge_style(cat_color)),
-            text(if is_empty { "Empty Slot".to_string() } else { name })
+            text(if is_empty { i18n::tr("empty_slot").to_string() } else { name })
                 .size(13)
                 .color(if is_empty {
                     theme::TEXT_MUTED

@@ -62,6 +62,49 @@ pub const RECIPE_DISH_NAMES: [&str; 40] = [
     "Kaiseki Dinner",
 ];
 
+pub const RECIPE_LOCATIONS: [&str; 40] = [
+    "Hai Yo starting recipe",
+    "Cook-Off #1 (Ky Yun)",
+    "Muse — Dr. Huan (after recruiting Tuta)",
+    "Hai Yo starting recipe",
+    "Coronet — Inn 2F (Man)",
+    "Hai Yo starting recipe",
+    "Hai Yo starting recipe",
+    "Cook-Off #2 (Goetsu)",
+    "South Window — House (vd01)",
+    "Hai Yo starting recipe",
+    "Kuskus — Item Shop (Rare Find)",
+    "Kobold Forest — EagleMan drop",
+    "Kobold Village — Elder's House",
+    "Radat — Tavern Chef (vd19)",
+    "Hai Yo starting recipe",
+    "Lakewest — Taki's House shelf (vh02)",
+    "Cook-Off #3 (Shinki)",
+    "Radat — Item Shop (Rare Find)",
+    "Cook-Off #4 (Ryuki)",
+    "Greenhill — Inn (ve10)",
+    "Two River Sewers — Land Shark drop",
+    "Cook-Off #6 (Ryuko)",
+    "Two River (Human) — Item Shop (Rare Find)",
+    "Cook-Off #5 (Bashok)",
+    "Greenhill — Item Shop (Rare Find)",
+    "Forest Village — Item Shop (Rare Find)",
+    "Cook-Off #8 (Gyokuran)",
+    "Gregminster — Item Shop (Rare Find)",
+    "Matilda Forest Path — Zombie Slug drop",
+    "Cook-Off #7 (Antonio)",
+    "Kobold Village — Item Shop (Rare Find)",
+    "Highway Village — Kent's Mother",
+    "Cook-Off #10 (Lester)",
+    "Greenhill Forest — Yellow DoReMi Elf drop",
+    "Muse — Item Shop (Rare Find, late game)",
+    "Rockaxe — Highland Soldier drop",
+    "Rockaxe Castle — Gorudo's Room",
+    "Cook-Off #9 / #11 (Retso)",
+    "Gregminster — Gremio (S1 108-Star import)",
+    "Cook-Off #12 (Jinkai)",
+];
+
 // ============================================================================
 // Key Items (party_data.event_item[0..5])
 // ============================================================================
@@ -109,6 +152,44 @@ pub const GUARDIAN_BLUEPRINTS: &[BlueprintDef] = &[
     BlueprintDef { byte_idx: 1, bit_idx: 5, name: "Turtle Plans #2", segment: "Body", loc: "Radat Rope Minigame Prize" },
     BlueprintDef { byte_idx: 1, bit_idx: 6, name: "Turtle Plans #3", segment: "Legs", loc: "Mt. Tigerwolf Path Chest" },
     BlueprintDef { byte_idx: 1, bit_idx: 7, name: "Turtle Plans #4", segment: "Tail", loc: "Kuskus Town (Appraiser Woman)" },
+];
+
+// ============================================================================
+// Tessai's Blacksmith Hammers (event_flag[143] / 0x8F Bits 3–6)
+// ============================================================================
+
+pub struct HammerDef {
+    pub mask: u8,
+    pub name: &'static str,
+    pub max_lv: u8,
+    pub loc: &'static str,
+}
+
+pub const HAMMER_DEFS: &[HammerDef] = &[
+    HammerDef {
+        mask: 0x08,
+        name: "Iron Hammer",
+        max_lv: 9,
+        loc: "Forest Village — Item Shop / Man (ve02)",
+    },
+    HammerDef {
+        mask: 0x10,
+        name: "Copper Hammer",
+        max_lv: 12,
+        loc: "Gregminster — Trade / Mose's Craft",
+    },
+    HammerDef {
+        mask: 0x20,
+        name: "Silver Hammer",
+        max_lv: 15,
+        loc: "Greenhill — New Leaf Academy (ve07)",
+    },
+    HammerDef {
+        mask: 0x40,
+        name: "Golden Hammer",
+        max_lv: 16,
+        loc: "Sajah Village — Highland Frontier (vj17)",
+    },
 ];
 
 // ============================================================================
@@ -234,6 +315,31 @@ pub const SOUND_SET_DEFS: &[SetDef] = &[
     SetDef { mask: 0x10, name: "Sound Set 5", desc: "Fantasy Chimes & Magic (Matilda Forest Path drop)" },
     SetDef { mask: 0x20, name: "Sound Set 6", desc: "Retro 8-Bit Arcade (Rokkaku Hamlet Item Shop)" },
     SetDef { mask: 0x40, name: "Sound Set 7", desc: "Classical Orchestral Accents (Gregminster Chest)" },
+];
+
+// ============================================================================
+// Emilia's Castle Library Old Books (game_data.lib_flag bits 0..11)
+// ============================================================================
+
+pub struct LibraryBookDef {
+    pub bit: u8,
+    pub vol: u8,
+    pub desc: &'static str,
+}
+
+pub const LIBRARY_BOOK_DEFS: &[LibraryBookDef] = &[
+    LibraryBookDef { bit: 0,  vol: 1,  desc: "Kyaro Town — Hero's Home (Desk next to bed)" },
+    LibraryBookDef { bit: 1,  vol: 2,  desc: "Ancient Sindar Ruins — Cavern Chest (vc12)" },
+    LibraryBookDef { bit: 2,  vol: 3,  desc: "South Window — Item Shop (Rare Finds)" },
+    LibraryBookDef { bit: 3,  vol: 4,  desc: "Muse City — City Hall Bookshelf (? Book)" },
+    LibraryBookDef { bit: 4,  vol: 5,  desc: "Greenhill — New Leaf Academy (ve07)" },
+    LibraryBookDef { bit: 5,  vol: 6,  desc: "Forest Village — Settlement Chest (ve02)" },
+    LibraryBookDef { bit: 6,  vol: 7,  desc: "Gregminster — Palace Bookshelf (Shrine Room)" },
+    LibraryBookDef { bit: 7,  vol: 8,  desc: "Tinto Mines — Underground Chest (vg07)" },
+    LibraryBookDef { bit: 8,  vol: 9,  desc: "Tiger Cave / Tigermouth Path — Chest (vg15)" },
+    LibraryBookDef { bit: 9,  vol: 10, desc: "Greenhill — New Leaf Academy (ve07, post-liberation)" },
+    LibraryBookDef { bit: 10, vol: 11, desc: "Rockaxe — Shop Basement Shelf (post-liberation)" },
+    LibraryBookDef { bit: 11, vol: 12, desc: "Muse City — Inn Patron (post-liberation)" },
 ];
 
 // ============================================================================

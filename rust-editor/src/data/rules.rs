@@ -1,8 +1,8 @@
 use std::fmt;
 
 use crate::data::{
-    base_item_name, farming_item_name, food_item_name, opt, regular_item_name, trade_item_name,
-    ACCESSORIES, ARMORS, HELMETS, NamedOption, RUNES, SHIELDS,
+    base_item_name, equipment_name, farming_item_name, food_item_name, opt, regular_item_name,
+    rune_name, trade_item_name, ACCESSORIES, ARMORS, HELMETS, NamedOption, RUNES, SHIELDS,
 };
 
 pub const BEASTS: &[i64] = &[26, 42, 48, 49, 50, 72, 74, 75, 76, 77, 78, 79, 84];
@@ -201,8 +201,9 @@ pub fn filter_runes_for_character(
 ) -> Vec<NamedOption> {
     let mut allowed = Vec::new();
     for &r in RUNES {
+        let loc_r = opt(r.id, rune_name(r.id));
         if r.id == 0 {
-            allowed.push(r);
+            allowed.push(loc_r);
             continue;
         }
         let attrs = rune_attrs(r.id);
@@ -210,7 +211,7 @@ pub fn filter_runes_for_character(
             continue;
         }
         if bypass_restrictions {
-            allowed.push(r);
+            allowed.push(loc_r);
             continue;
         }
 
@@ -232,7 +233,7 @@ pub fn filter_runes_for_character(
             continue;
         }
 
-        allowed.push(r);
+        allowed.push(loc_r);
     }
     allowed
 }
@@ -240,7 +241,7 @@ pub fn filter_runes_for_character(
 /// Filter helmets by character `C` / `E` attributes (unless bypassed).
 pub fn filter_helmets_for_character(char_id: i64, bypass: bool) -> Vec<NamedOption> {
     if bypass {
-        return HELMETS.to_vec();
+        return HELMETS.iter().map(|h| opt(h.id, equipment_name(h.id))).collect();
     }
     let c_attrs = character_attrs(char_id);
     HELMETS
@@ -249,13 +250,14 @@ pub fn filter_helmets_for_character(char_id: i64, bypass: bool) -> Vec<NamedOpti
         .filter(|h| {
             h.id == 0 || helmet_attrs(h.id).iter().any(|a| c_attrs.contains(a))
         })
+        .map(|h| opt(h.id, equipment_name(h.id)))
         .collect()
 }
 
 /// Filter armors by character `L` / `H` / `V` / `R` attributes (unless bypassed).
 pub fn filter_armors_for_character(char_id: i64, bypass: bool) -> Vec<NamedOption> {
     if bypass {
-        return ARMORS.to_vec();
+        return ARMORS.iter().map(|a| opt(a.id, equipment_name(a.id))).collect();
     }
     let c_attrs = character_attrs(char_id);
     ARMORS
@@ -264,6 +266,7 @@ pub fn filter_armors_for_character(char_id: i64, bypass: bool) -> Vec<NamedOptio
         .filter(|a| {
             a.id == 0 || armor_attrs(a.id).iter().any(|attr| c_attrs.contains(attr))
         })
+        .map(|a| opt(a.id, equipment_name(a.id)))
         .collect()
 }
 
@@ -321,14 +324,19 @@ impl ItemCategory {
         match self {
             ItemCategory::Item => (0..=85).map(|id| opt(id, regular_item_name(id))).collect(),
             ItemCategory::Equip => {
-                let mut v = vec![opt(0, "None")];
+                let mut v = vec![opt(0, crate::i18n::tr("none"))];
                 for list in [HELMETS, ARMORS, SHIELDS, ACCESSORIES] {
-                    v.extend(list.iter().copied().filter(|o| o.id != 0));
+                    v.extend(
+                        list.iter()
+                            .copied()
+                            .filter(|o| o.id != 0)
+                            .map(|o| opt(o.id, equipment_name(o.id))),
+                    );
                 }
                 v.sort_by_key(|o| o.id);
                 v
             }
-            ItemCategory::Rune => RUNES.to_vec(),
+            ItemCategory::Rune => RUNES.iter().map(|r| opt(r.id, rune_name(r.id))).collect(),
             ItemCategory::Farm => (0..=8).map(|id| opt(id, farming_item_name(id))).collect(),
             ItemCategory::Trade => (0..=50).map(|id| opt(id, trade_item_name(id))).collect(),
             ItemCategory::Base => (0..=66).map(|id| opt(id, base_item_name(id))).collect(),
@@ -339,14 +347,15 @@ impl ItemCategory {
 
 impl fmt::Display for ItemCategory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ItemCategory::Item => write!(f, "Item (1–9)"),
-            ItemCategory::Equip => write!(f, "Equip (16)"),
-            ItemCategory::Rune => write!(f, "Rune (32)"),
-            ItemCategory::Farm => write!(f, "Farm (48)"),
-            ItemCategory::Trade => write!(f, "Trade (64)"),
-            ItemCategory::Base => write!(f, "Base (80)"),
-            ItemCategory::Food => write!(f, "Food (96+)"),
-        }
+        let key = match self {
+            ItemCategory::Item => "cat_item",
+            ItemCategory::Equip => "cat_gear",
+            ItemCategory::Rune => "cat_rune",
+            ItemCategory::Farm => "cat_farm",
+            ItemCategory::Trade => "cat_trade",
+            ItemCategory::Base => "cat_base",
+            ItemCategory::Food => "cat_food",
+        };
+        f.write_str(crate::i18n::tr(key))
     }
 }

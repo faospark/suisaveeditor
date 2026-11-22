@@ -8,11 +8,14 @@ pub mod inventory;
 pub mod investigations;
 pub mod item_modal;
 pub mod recruitment;
+pub mod restore_modal;
+pub mod saves;
 pub mod settings;
 pub mod stub;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EditorTab {
+    Saves,
     General,
     BattleCharacters,
     RecruitedCharacters,
@@ -30,6 +33,7 @@ pub enum EditorTab {
 
 impl EditorTab {
     pub const EDITOR_TABS: &'static [EditorTab] = &[
+        EditorTab::Saves,
         EditorTab::General,
         EditorTab::BattleCharacters,
         EditorTab::RecruitedCharacters,
@@ -54,25 +58,48 @@ impl EditorTab {
     }
 
     pub fn label(self) -> &'static str {
+        let key = match self {
+            EditorTab::Saves => "tab_saves",
+            EditorTab::General => "tab_general",
+            EditorTab::BattleCharacters => "tab_battle_chars",
+            EditorTab::RecruitedCharacters => "tab_recruited",
+            EditorTab::PartyBag => "tab_party_bag",
+            EditorTab::Warehouse => "tab_warehouse",
+            EditorTab::Cooking => "tab_cooking",
+            EditorTab::Investigations => "tab_investigations",
+            EditorTab::Castle => "tab_castle",
+            EditorTab::Experimental => "tab_experimental",
+            EditorTab::DataValues => "tab_data_values",
+            EditorTab::Settings => "tab_settings",
+            EditorTab::Changelog => "tab_changelog",
+            EditorTab::About => "tab_about",
+        };
+        crate::i18n::tr(key)
+    }
+
+    pub fn icon(self) -> char {
+        use crate::theme::icons;
         match self {
-            EditorTab::General => "General",
-            EditorTab::BattleCharacters => "Battle Characters",
-            EditorTab::RecruitedCharacters => "Recruited Characters",
-            EditorTab::PartyBag => "Party Bag",
-            EditorTab::Warehouse => "Warehouse",
-            EditorTab::Cooking => "Cooking",
-            EditorTab::Investigations => "Investigations",
-            EditorTab::Castle => "Castle",
-            EditorTab::Experimental => "Experimental",
-            EditorTab::DataValues => "Data Values",
-            EditorTab::Settings => "Settings",
-            EditorTab::Changelog => "Changelog",
-            EditorTab::About => "About",
+            EditorTab::Saves => icons::FOLDER_OPEN,
+            EditorTab::General => icons::PERSON,
+            EditorTab::BattleCharacters => icons::SWORDS,
+            EditorTab::RecruitedCharacters => icons::GROUPS,
+            EditorTab::PartyBag => icons::BACKPACK,
+            EditorTab::Warehouse => icons::INVENTORY_2,
+            EditorTab::Cooking => icons::RESTAURANT,
+            EditorTab::Investigations => icons::SEARCH,
+            EditorTab::Castle => icons::CASTLE,
+            EditorTab::Experimental => icons::SCIENCE,
+            EditorTab::DataValues => icons::TABLE_CHART,
+            EditorTab::Settings => icons::SETTINGS,
+            EditorTab::Changelog => icons::HISTORY,
+            EditorTab::About => icons::INFO,
         }
     }
 
     pub fn description(self) -> &'static str {
         match self {
+            EditorTab::Saves => "Browse and open decrypted Suikoden II saves directly from SuikodenFix\\Decrypted\\gsd2.",
             EditorTab::General => "Active party, hero & castle names, potch, play time, and map coordinates.",
             EditorTab::BattleCharacters => "Character stats, levels, HP/MP, weapon levels, runes, and equipped gear.",
             EditorTab::RecruitedCharacters => "108 Stars of Destiny recruitment flags and character portrait grid.",

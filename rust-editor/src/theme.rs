@@ -1,8 +1,37 @@
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use iced::overlay::menu;
-use iced::widget::{button, container, pick_list, scrollable, text_input};
-use iced::{Background, Border, Color, Shadow, Theme, Vector};
+use iced::widget::{button, container, pick_list, scrollable, text, text_input};
+use iced::{Background, Border, Color, Font, Shadow, Theme, Vector};
+
+/// Bundled Google Fonts icon font (`Material Symbols Rounded`, Apache 2.0).
+pub const ICON_FONT: Font = Font::with_name("Material Symbols Rounded");
+
+pub mod icons {
+    pub const FOLDER_OPEN: char = '\u{e2c8}';
+    pub const SAVE: char = '\u{e161}';
+    pub const SAVE_AS: char = '\u{eb60}';
+    pub const RESTORE: char = '\u{e8b3}';
+    pub const HISTORY: char = '\u{e8b3}';
+    pub const ARCHIVE: char = '\u{e149}';
+    pub const REFRESH: char = '\u{e5d5}';
+    pub const PERSON: char = '\u{f0d3}';
+    pub const SWORDS: char = '\u{f889}';
+    pub const GROUPS: char = '\u{f233}';
+    pub const BACKPACK: char = '\u{f19c}';
+    pub const INVENTORY_2: char = '\u{e1a1}';
+    pub const RESTAURANT: char = '\u{e56c}';
+    pub const SEARCH: char = '\u{ef7a}';
+    pub const CASTLE: char = '\u{eab1}';
+    pub const SCIENCE: char = '\u{ea4b}';
+    pub const TABLE_CHART: char = '\u{e265}';
+    pub const SETTINGS: char = '\u{e8b8}';
+    pub const INFO: char = '\u{e88e}';
+}
+
+pub fn icon<'a>(codepoint: char, size: f32) -> text::Text<'a> {
+    text(codepoint.to_string()).font(ICON_FONT).size(size)
+}
 
 /// User-selectable primary accent palette
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -134,7 +163,203 @@ impl AccentTheme {
     }
 }
 
+/// User-selectable base background palette
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BaseTheme {
+    DarkNavy,
+    PitchBlack,
+    DarkGray,
+    DarkGreen,
+    DarkPurple,
+}
+
+impl BaseTheme {
+    pub const ALL: &'static [BaseTheme] = &[
+        BaseTheme::DarkNavy,
+        BaseTheme::PitchBlack,
+        BaseTheme::DarkGray,
+        BaseTheme::DarkGreen,
+        BaseTheme::DarkPurple,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            BaseTheme::DarkNavy => "Dark Navy",
+            BaseTheme::PitchBlack => "High Contrast Black",
+            BaseTheme::DarkGray => "Dark Gray",
+            BaseTheme::DarkGreen => "Dark Green",
+            BaseTheme::DarkPurple => "Dark Purple",
+        }
+    }
+
+    pub fn subtitle(self) -> &'static str {
+        match self {
+            BaseTheme::DarkNavy => "Default slate-navy surface",
+            BaseTheme::PitchBlack => "Pure black high-contrast surface",
+            BaseTheme::DarkGray => "Neutral charcoal-gray surface",
+            BaseTheme::DarkGreen => "Deep forest-emerald surface",
+            BaseTheme::DarkPurple => "Deep obsidian-violet surface",
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            BaseTheme::DarkNavy => "navy",
+            BaseTheme::PitchBlack => "black",
+            BaseTheme::DarkGray => "gray",
+            BaseTheme::DarkGreen => "green",
+            BaseTheme::DarkPurple => "purple",
+        }
+    }
+
+    pub fn from_key(s: &str) -> Self {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "black" | "pitch_black" | "high_contrast_black" => BaseTheme::PitchBlack,
+            "gray" | "grey" | "dark_gray" | "dark_grey" => BaseTheme::DarkGray,
+            "green" | "dark_green" => BaseTheme::DarkGreen,
+            "purple" | "dark_purple" => BaseTheme::DarkPurple,
+            _ => BaseTheme::DarkNavy,
+        }
+    }
+
+    fn to_u8(self) -> u8 {
+        match self {
+            BaseTheme::DarkNavy => 0,
+            BaseTheme::PitchBlack => 1,
+            BaseTheme::DarkGray => 2,
+            BaseTheme::DarkGreen => 3,
+            BaseTheme::DarkPurple => 4,
+        }
+    }
+
+    fn from_u8(v: u8) -> Self {
+        match v {
+            1 => BaseTheme::PitchBlack,
+            2 => BaseTheme::DarkGray,
+            3 => BaseTheme::DarkGreen,
+            4 => BaseTheme::DarkPurple,
+            _ => BaseTheme::DarkNavy,
+        }
+    }
+
+    pub fn swatch_color(self) -> Color {
+        match self {
+            BaseTheme::PitchBlack => Color::from_rgb(0.0, 0.0, 0.0),
+            _ => self.bg_elevated(),
+        }
+    }
+
+    pub fn bg_base(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgb(0.055, 0.067, 0.090),   // #0E1117
+            BaseTheme::PitchBlack => Color::from_rgb(0.000, 0.000, 0.000), // #000000
+            BaseTheme::DarkGray => Color::from_rgb(0.071, 0.075, 0.086),   // #121316
+            BaseTheme::DarkGreen => Color::from_rgb(0.035, 0.071, 0.055),  // #09120E
+            BaseTheme::DarkPurple => Color::from_rgb(0.063, 0.043, 0.090), // #100B17
+        }
+    }
+
+    pub fn bg_sidebar(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgb(0.075, 0.090, 0.125),   // #131720
+            BaseTheme::PitchBlack => Color::from_rgb(0.027, 0.027, 0.035), // #070709
+            BaseTheme::DarkGray => Color::from_rgb(0.094, 0.102, 0.118),   // #181A1E
+            BaseTheme::DarkGreen => Color::from_rgb(0.051, 0.098, 0.078),  // #0D1914
+            BaseTheme::DarkPurple => Color::from_rgb(0.086, 0.063, 0.125), // #161020
+        }
+    }
+
+    pub fn bg_surface(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgb(0.094, 0.114, 0.157),   // #181D28
+            BaseTheme::PitchBlack => Color::from_rgb(0.051, 0.051, 0.063), // #0D0D10
+            BaseTheme::DarkGray => Color::from_rgb(0.118, 0.125, 0.145),   // #1E2025
+            BaseTheme::DarkGreen => Color::from_rgb(0.067, 0.133, 0.106),  // #11221B
+            BaseTheme::DarkPurple => Color::from_rgb(0.114, 0.082, 0.169), // #1D152B
+        }
+    }
+
+    pub fn bg_elevated(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgb(0.125, 0.153, 0.208),   // #202735
+            BaseTheme::PitchBlack => Color::from_rgb(0.086, 0.086, 0.106), // #16161B
+            BaseTheme::DarkGray => Color::from_rgb(0.149, 0.161, 0.188),   // #262930
+            BaseTheme::DarkGreen => Color::from_rgb(0.090, 0.180, 0.145),  // #172E25
+            BaseTheme::DarkPurple => Color::from_rgb(0.153, 0.114, 0.227), // #271D3A
+        }
+    }
+
+    pub fn border_subtle(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgb(0.173, 0.208, 0.282),   // #2C3548
+            BaseTheme::PitchBlack => Color::from_rgb(0.180, 0.180, 0.212), // #2E2E36
+            BaseTheme::DarkGray => Color::from_rgb(0.212, 0.227, 0.263),   // #363A43
+            BaseTheme::DarkGreen => Color::from_rgb(0.137, 0.259, 0.212),  // #234236
+            BaseTheme::DarkPurple => Color::from_rgb(0.227, 0.173, 0.329), // #3A2C54
+        }
+    }
+
+    pub fn empty_slot_bg(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgba(0.094, 0.114, 0.157, 0.45),
+            BaseTheme::PitchBlack => Color::from_rgba(0.075, 0.075, 0.090, 0.65),
+            BaseTheme::DarkGray => Color::from_rgba(0.118, 0.125, 0.145, 0.50),
+            BaseTheme::DarkGreen => Color::from_rgba(0.067, 0.133, 0.106, 0.50),
+            BaseTheme::DarkPurple => Color::from_rgba(0.114, 0.082, 0.169, 0.50),
+        }
+    }
+
+    pub fn secondary_hover(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgb(0.18, 0.22, 0.30),
+            BaseTheme::PitchBlack => Color::from_rgb(0.15, 0.15, 0.19),
+            BaseTheme::DarkGray => Color::from_rgb(0.21, 0.22, 0.26),
+            BaseTheme::DarkGreen => Color::from_rgb(0.13, 0.24, 0.19),
+            BaseTheme::DarkPurple => Color::from_rgb(0.21, 0.16, 0.31),
+        }
+    }
+
+    pub fn secondary_pressed(self) -> Color {
+        match self {
+            BaseTheme::DarkNavy => Color::from_rgb(0.14, 0.17, 0.24),
+            BaseTheme::PitchBlack => Color::from_rgb(0.11, 0.11, 0.14),
+            BaseTheme::DarkGray => Color::from_rgb(0.16, 0.17, 0.20),
+            BaseTheme::DarkGreen => Color::from_rgb(0.10, 0.19, 0.15),
+            BaseTheme::DarkPurple => Color::from_rgb(0.17, 0.13, 0.25),
+        }
+    }
+}
+
+static CURRENT_BASE: AtomicU8 = AtomicU8::new(0);
 static CURRENT_ACCENT: AtomicU8 = AtomicU8::new(0);
+
+pub fn set_base_theme(base: BaseTheme) {
+    CURRENT_BASE.store(base.to_u8(), Ordering::Relaxed);
+}
+
+pub fn current_base_theme() -> BaseTheme {
+    BaseTheme::from_u8(CURRENT_BASE.load(Ordering::Relaxed))
+}
+
+pub fn bg_base() -> Color {
+    current_base_theme().bg_base()
+}
+
+pub fn bg_sidebar() -> Color {
+    current_base_theme().bg_sidebar()
+}
+
+pub fn bg_surface() -> Color {
+    current_base_theme().bg_surface()
+}
+
+pub fn bg_elevated() -> Color {
+    current_base_theme().bg_elevated()
+}
+
+pub fn border_subtle() -> Color {
+    current_base_theme().border_subtle()
+}
 
 pub fn set_accent(theme: AccentTheme) {
     CURRENT_ACCENT.store(theme.to_u8(), Ordering::Relaxed);
@@ -152,11 +377,7 @@ pub fn border_accent() -> Color {
     current_accent().border_color()
 }
 
-/// Suikoden II HD Remaster inspired dark palette
-pub const BG_BASE: Color = Color::from_rgb(0.055, 0.067, 0.090);       // #0E1117
-pub const BG_SIDEBAR: Color = Color::from_rgb(0.075, 0.090, 0.125);    // #131720
-pub const BG_SURFACE: Color = Color::from_rgb(0.094, 0.114, 0.157);    // #181D28
-pub const BG_ELEVATED: Color = Color::from_rgb(0.125, 0.153, 0.208);   // #202735
+/// Default dark palette constants (kept for direct color references)
 pub const BORDER_SUBTLE: Color = Color::from_rgb(0.173, 0.208, 0.282); // #2C3548
 
 pub const TEXT_PRIMARY: Color = Color::from_rgb(0.945, 0.961, 0.976);  // #F1F5F9
@@ -169,9 +390,13 @@ pub const ACCENT_RED: Color = Color::from_rgb(0.937, 0.267, 0.267);    // #EF444
 
 pub fn app_theme() -> Theme {
     Theme::custom(
-        format!("Suikoden Dark ({})", current_accent().label()),
+        format!(
+            "Suikoden {} ({})",
+            current_base_theme().label(),
+            current_accent().label()
+        ),
         iced::theme::Palette {
-            background: BG_BASE,
+            background: bg_base(),
             text: TEXT_PRIMARY,
             primary: accent(),
             success: ACCENT_GREEN,
@@ -182,9 +407,9 @@ pub fn app_theme() -> Theme {
 
 pub fn top_bar_style(_theme: &Theme) -> container::Style {
     container::Style {
-        background: Some(Background::Color(BG_SIDEBAR)),
+        background: Some(Background::Color(bg_sidebar())),
         border: Border {
-            color: BORDER_SUBTLE,
+            color: border_subtle(),
             width: 1.0,
             radius: 0.0.into(),
         },
@@ -194,9 +419,9 @@ pub fn top_bar_style(_theme: &Theme) -> container::Style {
 
 pub fn sidebar_style(_theme: &Theme) -> container::Style {
     container::Style {
-        background: Some(Background::Color(BG_SIDEBAR)),
+        background: Some(Background::Color(bg_sidebar())),
         border: Border {
-            color: BORDER_SUBTLE,
+            color: border_subtle(),
             width: 1.0,
             radius: 0.0.into(),
         },
@@ -206,9 +431,9 @@ pub fn sidebar_style(_theme: &Theme) -> container::Style {
 
 pub fn card_style(_theme: &Theme) -> container::Style {
     container::Style {
-        background: Some(Background::Color(BG_SURFACE)),
+        background: Some(Background::Color(bg_surface())),
         border: Border {
-            color: BORDER_SUBTLE,
+            color: border_subtle(),
             width: 1.0,
             radius: 10.0.into(),
         },
@@ -223,9 +448,9 @@ pub fn card_style(_theme: &Theme) -> container::Style {
 
 pub fn portrait_card_style(is_convoy: bool) -> impl Fn(&Theme) -> container::Style {
     move |_theme| container::Style {
-        background: Some(Background::Color(BG_ELEVATED)),
+        background: Some(Background::Color(bg_elevated())),
         border: Border {
-            color: if is_convoy { BORDER_SUBTLE } else { border_accent() },
+            color: if is_convoy { border_subtle() } else { border_accent() },
             width: 1.0,
             radius: 8.0.into(),
         },
@@ -262,13 +487,14 @@ pub fn accent_choice_button_style(
     color: Color,
 ) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |_theme, status| {
+        let base = current_base_theme();
         let bg = if selected {
             Color { a: 0.16, ..color }
         } else {
             match status {
-                button::Status::Hovered => BG_ELEVATED,
+                button::Status::Hovered => base.bg_elevated(),
                 button::Status::Pressed => Color { a: 0.10, ..color },
-                _ => Color::from_rgba(0.094, 0.114, 0.157, 0.45),
+                _ => base.empty_slot_bg(),
             }
         };
 
@@ -276,7 +502,7 @@ pub fn accent_choice_button_style(
             background: Some(Background::Color(bg)),
             text_color: TEXT_PRIMARY,
             border: Border {
-                color: if selected { color } else { BORDER_SUBTLE },
+                color: if selected { color } else { base.border_subtle() },
                 width: if selected { 1.5 } else { 1.0 },
                 radius: 8.0.into(),
             },
@@ -287,9 +513,9 @@ pub fn accent_choice_button_style(
 
 pub fn footer_bar_style(_theme: &Theme) -> container::Style {
     container::Style {
-        background: Some(Background::Color(BG_SIDEBAR)),
+        background: Some(Background::Color(bg_sidebar())),
         border: Border {
-            color: BORDER_SUBTLE,
+            color: border_subtle(),
             width: 1.0,
             radius: 0.0.into(),
         },
@@ -300,22 +526,33 @@ pub fn footer_bar_style(_theme: &Theme) -> container::Style {
 pub fn nav_button_style(active: bool) -> impl Fn(&Theme, button::Status) -> button::Style {
     move |_theme, status| {
         let cur = accent();
-        let bg = if active {
+        let disabled = matches!(status, button::Status::Disabled);
+        let bg = if disabled {
+            Color::TRANSPARENT
+        } else if active {
             Color { a: 0.18, ..cur }
         } else {
             match status {
-                button::Status::Hovered => BG_ELEVATED,
+                button::Status::Hovered => bg_elevated(),
                 button::Status::Pressed => Color { a: 0.10, ..cur },
                 _ => Color::TRANSPARENT,
             }
         };
 
+        let text_color = if disabled {
+            Color { a: 0.42, ..TEXT_MUTED }
+        } else if active {
+            cur
+        } else {
+            TEXT_PRIMARY
+        };
+
         button::Style {
             background: Some(Background::Color(bg)),
-            text_color: if active { cur } else { TEXT_PRIMARY },
+            text_color,
             border: Border {
-                color: if active { border_accent() } else { Color::TRANSPARENT },
-                width: if active { 1.0 } else { 0.0 },
+                color: if active && !disabled { border_accent() } else { Color::TRANSPARENT },
+                width: if active && !disabled { 1.0 } else { 0.0 },
                 radius: 7.0.into(),
             },
             ..Default::default()
@@ -349,11 +586,12 @@ pub fn primary_button_style(_theme: &Theme, status: button::Status) -> button::S
 }
 
 pub fn secondary_button_style(_theme: &Theme, status: button::Status) -> button::Style {
+    let base = current_base_theme();
     let bg = match status {
-        button::Status::Disabled => Color::from_rgb(0.11, 0.13, 0.18),
-        button::Status::Hovered => Color::from_rgb(0.18, 0.22, 0.30),
-        button::Status::Pressed => Color::from_rgb(0.14, 0.17, 0.24),
-        button::Status::Active => BG_ELEVATED,
+        button::Status::Disabled => base.bg_sidebar(),
+        button::Status::Hovered => base.secondary_hover(),
+        button::Status::Pressed => base.secondary_pressed(),
+        button::Status::Active => base.bg_elevated(),
     };
 
     button::Style {
@@ -364,7 +602,7 @@ pub fn secondary_button_style(_theme: &Theme, status: button::Status) -> button:
             TEXT_PRIMARY
         },
         border: Border {
-            color: BORDER_SUBTLE,
+            color: base.border_subtle(),
             width: 1.0,
             radius: 7.0.into(),
         },
@@ -377,11 +615,11 @@ pub fn input_style(_theme: &Theme, status: text_input::Status) -> text_input::St
     let border_color = match status {
         text_input::Status::Focused => cur,
         text_input::Status::Hovered => Color::from_rgb(0.30, 0.36, 0.48),
-        _ => BORDER_SUBTLE,
+        _ => border_subtle(),
     };
 
     text_input::Style {
-        background: Background::Color(BG_BASE),
+        background: Background::Color(bg_base()),
         border: Border {
             color: border_color,
             width: 1.0,
@@ -399,14 +637,14 @@ pub fn pick_list_style(_theme: &Theme, status: pick_list::Status) -> pick_list::
     let border_color = match status {
         pick_list::Status::Opened => cur,
         pick_list::Status::Hovered => Color::from_rgb(0.30, 0.36, 0.48),
-        pick_list::Status::Active => BORDER_SUBTLE,
+        pick_list::Status::Active => border_subtle(),
     };
 
     pick_list::Style {
         text_color: TEXT_PRIMARY,
         placeholder_color: TEXT_MUTED,
         handle_color: cur,
-        background: Background::Color(BG_BASE),
+        background: Background::Color(bg_base()),
         border: Border {
             color: border_color,
             width: 1.0,
@@ -418,7 +656,7 @@ pub fn pick_list_style(_theme: &Theme, status: pick_list::Status) -> pick_list::
 pub fn pick_list_menu_style(_theme: &Theme) -> menu::Style {
     let cur = current_accent();
     menu::Style {
-        background: Background::Color(BG_SURFACE),
+        background: Background::Color(bg_surface()),
         border: Border {
             color: cur.border_color(),
             width: 1.0,
@@ -432,14 +670,14 @@ pub fn pick_list_menu_style(_theme: &Theme) -> menu::Style {
 
 pub fn modal_backdrop_style(_theme: &Theme) -> container::Style {
     container::Style {
-        background: Some(Background::Color(Color::from_rgba(0.02, 0.03, 0.05, 0.78))),
+        background: Some(Background::Color(Color::from_rgba(0.0, 0.0, 0.0, 0.80))),
         ..Default::default()
     }
 }
 
 pub fn modal_card_style(_theme: &Theme) -> container::Style {
     container::Style {
-        background: Some(Background::Color(BG_SURFACE)),
+        background: Some(Background::Color(bg_surface())),
         border: Border {
             color: border_accent(),
             width: 1.5,
@@ -455,10 +693,11 @@ pub fn modal_card_style(_theme: &Theme) -> container::Style {
 }
 
 pub fn empty_slot_card_style(_theme: &Theme) -> container::Style {
+    let base = current_base_theme();
     container::Style {
-        background: Some(Background::Color(Color::from_rgba(0.094, 0.114, 0.157, 0.45))),
+        background: Some(Background::Color(base.empty_slot_bg())),
         border: Border {
-            color: BORDER_SUBTLE,
+            color: base.border_subtle(),
             width: 1.0,
             radius: 8.0.into(),
         },
@@ -469,8 +708,10 @@ pub fn empty_slot_card_style(_theme: &Theme) -> container::Style {
 pub fn scrollable_style(_theme: &Theme, status: scrollable::Status) -> scrollable::Style {
     let cur = accent();
     let cur_border = border_accent();
+    let base = current_base_theme();
+    let rail_bg = Color { a: 0.65, ..base.bg_base() };
     let make_rail = |hovered: bool, dragged: bool| scrollable::Rail {
-        background: Some(Background::Color(Color::from_rgba(0.055, 0.067, 0.090, 0.65))),
+        background: Some(Background::Color(rail_bg)),
         border: Border {
             color: Color::TRANSPARENT,
             width: 0.0,
@@ -482,7 +723,7 @@ pub fn scrollable_style(_theme: &Theme, status: scrollable::Status) -> scrollabl
             } else if hovered {
                 cur_border
             } else {
-                BORDER_SUBTLE
+                base.border_subtle()
             },
             border: Border {
                 color: Color::TRANSPARENT,
@@ -514,6 +755,6 @@ pub fn scrollable_style(_theme: &Theme, status: scrollable::Status) -> scrollabl
         container: container::Style::default(),
         vertical_rail: v_rail,
         horizontal_rail: h_rail,
-        gap: Some(Background::Color(BG_BASE)),
+        gap: Some(Background::Color(base.bg_base())),
     }
 }

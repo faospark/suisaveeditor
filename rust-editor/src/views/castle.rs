@@ -5,8 +5,9 @@ use iced::{Alignment, Element, Length};
 
 use crate::data::catalog::{
     find_labeled_option, BATH_ORNAMENT_OPTIONS, BATH_PAINTING_OPTIONS, FISH_BOARD,
-    GUARDIAN_BEASTS, GUARDIAN_BLUEPRINTS, LabeledOption, SOUND_SET_DEFS, SOUND_SET_OPTIONS,
-    WINDOW_COLOR_OPTIONS, WINDOW_OPACITY_OPTIONS, WINDOW_SET_DEFS, WINDOW_STYLE_OPTIONS,
+    GUARDIAN_BEASTS, GUARDIAN_BLUEPRINTS, HAMMER_DEFS, LIBRARY_BOOK_DEFS, LabeledOption,
+    SOUND_SET_DEFS, SOUND_SET_OPTIONS, WINDOW_COLOR_OPTIONS, WINDOW_OPACITY_OPTIONS,
+    WINDOW_SET_DEFS, WINDOW_STYLE_OPTIONS,
 };
 use crate::data::find_option;
 use crate::gamedata::{character_name, PortraitCache};
@@ -19,6 +20,7 @@ pub fn view<'a>(
     portraits: &'a PortraitCache,
     suggestion_search: &'a str,
 ) -> Element<'a, Message> {
+    let tessai_card = view_tessai_hammers(doc, portraits);
     let guardian_card = view_guardian_deity(doc, portraits);
     let farm_card = view_farm_ranch(doc, portraits);
     let yuzu_card = view_yuzu_pasture(doc, portraits);
@@ -34,11 +36,12 @@ pub fn view<'a>(
             text("Castle Facilities & Upgrades")
                 .size(22)
                 .color(theme::TEXT_PRIMARY),
-            text("Guardian Deity, Tony's Farm, Yuzu's Pasture, Tenkou's Window Sets, Connell's Sound Sets, Library Books, Bath Items, Fishing Board, and Suggestion Box.")
+            text("Tessai's Blacksmith Hammers, Guardian Deity, Tony's Farm, Yuzu's Pasture, Tenkou's Window Sets, Connell's Sound Sets, Library Books, Bath Items, Fishing Board, and Suggestion Box.")
                 .size(13)
                 .color(theme::TEXT_MUTED),
         ]
         .spacing(4),
+        tessai_card,
         guardian_card,
         farm_card,
         yuzu_card,
@@ -64,47 +67,190 @@ fn portrait_thumb<'a>(portraits: &'a PortraitCache, char_id: i64) -> Option<Elem
         .map(|h| image(h).width(40).height(40).into())
 }
 
+fn view_tessai_hammers<'a>(
+    doc: &'a SaveDocument,
+    portraits: &'a PortraitCache,
+) -> Element<'a, Message> {
+    let flag = doc.get_event_flag(143);
+    let kaji_lv = doc.get_i64(Some("game_data"), "kaji_lv");
+    let delivered = HAMMER_DEFS
+        .iter()
+        .filter(|h| (flag & h.mask) != 0)
+        .count();
+
+    let active_cap: u8 = if (flag & 0x40) != 0 {
+        16
+    } else if (flag & 0x20) != 0 {
+        15
+    } else if (flag & 0x10) != 0 {
+        12
+    } else if (flag & 0x08) != 0 {
+        9
+    } else {
+        6
+    };
+
+    let badge_color = if delivered == 4 {
+        theme::ACCENT_GREEN
+    } else if delivered > 0 {
+        theme::ACCENT_CYAN
+    } else {
+        theme::TEXT_MUTED
+    };
+
+    let mut header = row![].spacing(10).align_y(Alignment::Center);
+    if let Some(p) = portrait_thumb(portraits, 110) {
+        header = header.push(p);
+    }
+    header = header
+        .push(
+            column![
+                text("Tessai's Blacksmith Hammers (event_flag[143] Bits 3–6)")
+                    .size(15)
+                    .color(theme::ACCENT_GOLD),
+                text(format!(
+                    "Highest delivered hammer sets Tessai's forge cap (Base Lv 6) • Global kaji_lv: Lv {} • Raw byte: 0x{:02X}",
+                    kaji_lv, flag
+                ))
+                .size(11)
+                .color(theme::TEXT_MUTED),
+            ]
+            .spacing(1),
+        )
+        .push(Space::with_width(Length::Fill))
+        .push(
+            container(
+                text(format!("{} / 4 Delivered • Cap Lv {}", delivered, active_cap))
+                    .size(11)
+                    .color(badge_color),
+            )
+            .padding([3, 8])
+            .style(theme::badge_style(badge_color)),
+        );
+
+    let toolbar = row![
+        text("Toggle hammers delivered to Tessai in Castle HQ (unrelated bits in event_flag[143] are preserved).")
+            .size(11)
+            .color(theme::TEXT_MUTED),
+        Space::with_width(Length::Fill),
+        button(text("Deliver All 4 Hammers").size(11))
+            .padding([5, 10])
+            .style(theme::primary_button_style)
+            .on_press(Message::SetArrayIntField(
+                None,
+                "event_flag",
+                143,
+                ((flag | 0x78) as i64).to_string(),
+            )),
+        button(text("Clear All").size(11))
+            .padding([5, 10])
+            .style(theme::secondary_button_style)
+            .on_press(Message::SetArrayIntField(
+                None,
+                "event_flag",
+                143,
+                ((flag & !0x78) as i64).to_string(),
+            )),
+    ]
+    .spacing(8)
+    .align_y(Alignment::Center);
+
+    let mut hammer_row = row![].spacing(10);
+    for h in HAMMER_DEFS {
+        let mask = h.mask;
+        let bit = mask.trailing_zeros();
+        let checked = (flag & mask) != 0;
+        let cap_color = if checked {
+            theme::ACCENT_GREEN
+        } else {
+            theme::TEXT_MUTED
+        };
+
+        hammer_row = hammer_row.push(
+            container(
+                column![
+                    row![
+                        checkbox(format!("{} (Bit {})", h.name, bit), checked)
+                            .on_toggle(move |on| Message::ToggleEventFlagBit(143, mask, on))
+                            .text_size(12),
+                        Space::with_width(Length::Fill),
+                        container(
+                            text(format!("Lv {}", h.max_lv))
+                                .size(10)
+                                .color(cap_color),
+                        )
+                        .padding([2, 6])
+                        .style(theme::badge_style(cap_color)),
+                    ]
+                    .align_y(Alignment::Center),
+                    text(h.loc).size(10).color(theme::TEXT_MUTED),
+                ]
+                .spacing(4),
+            )
+            .padding(10)
+            .width(Length::FillPortion(1))
+            .style(theme::empty_slot_card_style),
+        );
+    }
+
+    container(column![header, toolbar, hammer_row].spacing(12))
+        .padding(16)
+        .width(Length::Fill)
+        .style(theme::card_style)
+        .into()
+}
+
 fn view_yuzu_pasture<'a>(
     doc: &'a SaveDocument,
     portraits: &'a PortraitCache,
 ) -> Element<'a, Message> {
-    let species = [
+    let species: [(usize, &str, &str, &[&str]); 4] = [
         (
-            4usize,
+            4,
             "Chickens",
-            "Chick (Item #5)",
-            "Starts with 1 upon recruitment",
             "hon_flag[31] Bits 4, 5, 6",
-            3i64,
+            &[
+                "Chick #1 — Yuzu Default",
+                "Chick #2 — Lakewest (Docks)",
+                "Chick #3 — Tigermouth (Well)",
+            ],
         ),
         (
-            5usize,
+            5,
             "Pigs",
-            "Piglet (Item #6)",
-            "0 by default (bring Piglets)",
-            "hon_flag[31] Bit 7, [32] Bits 0, 1",
-            3i64,
+            "hon_flag[31] B7, [32] B0–1",
+            &[
+                "Piglet #1 — Radat (Shu's House)",
+                "Piglet #2 — Rokkaku (Trading Post)",
+                "Piglet #3 — Greenhill (Academy)",
+            ],
         ),
         (
-            6usize,
+            6,
             "Sheep",
-            "Lamb (Item #7)",
-            "Starts with 1 (Taro) — 4 max in Remaster",
             "hon_flag[32] Bits 2, 3, 4, 5",
-            4i64,
+            &[
+                "Sheep #1 — Taro (Yuzu Default)",
+                "Sheep #2 — Kobold Forest",
+                "Sheep #3 — Forest Village",
+                "Sheep #4 — Sajah (Rare Find)",
+            ],
         ),
         (
-            7usize,
+            7,
             "Cattle / Calves",
-            "Calf (Item #8)",
-            "0 by default (bring Calves)",
-            "hon_flag[32] Bits 6, 7, [33] Bit 0",
-            3i64,
+            "hon_flag[32] B6–7, [33] B0",
+            &[
+                "Calf #1 — Highway Village",
+                "Calf #2 — Drakemouth Village",
+                "Calf #3 — Highway (Post-Rockaxe)",
+            ],
         ),
     ];
 
     let mut cards = row![].spacing(10);
-    for (food_idx, name, item_lbl, default_note, flag_note, max_val) in species {
+    for (food_idx, name, flag_note, animals) in species {
+        let max_val = animals.len() as i64;
         let count = doc
             .get_array_i64(Some("game_data"), "food_num", food_idx)
             .clamp(0, max_val);
@@ -116,40 +262,38 @@ fn view_yuzu_pasture<'a>(
             theme::TEXT_MUTED
         };
 
+        let mut col = column![
+            row![
+                text(name).size(13).color(theme::ACCENT_CYAN),
+                Space::with_width(Length::Fill),
+                container(text(format!("{}/{}", count, max_val)).size(11).color(badge_color))
+                    .padding([2, 7])
+                    .style(theme::badge_style(badge_color)),
+            ]
+            .align_y(Alignment::Center),
+        ]
+        .spacing(6);
+
+        for (i, &animal_label) in animals.iter().enumerate() {
+            let slot_num = (i + 1) as i64;
+            let checked = count >= slot_num;
+            col = col.push(
+                checkbox(animal_label, checked)
+                    .on_toggle(move |on| {
+                        let next = if on { slot_num } else { slot_num - 1 };
+                        Message::SetYuzuLivestock(food_idx, next)
+                    })
+                    .text_size(11),
+            );
+        }
+
+        col = col.push(text(flag_note).size(10).color(theme::TEXT_MUTED));
+
         cards = cards.push(
-            container(
-                column![
-                    row![
-                        text(name).size(13).color(theme::TEXT_PRIMARY),
-                        Space::with_width(Length::Fill),
-                        container(text(format!("{}/{}", count, max_val)).size(11).color(badge_color))
-                            .padding([2, 7])
-                            .style(theme::badge_style(badge_color)),
-                    ]
-                    .align_y(Alignment::Center),
-                    text(item_lbl).size(10).color(theme::TEXT_MUTED),
-                    row![
-                        button(text("-").size(12))
-                            .padding([4, 12])
-                            .style(theme::secondary_button_style)
-                            .on_press(Message::SetYuzuLivestock(food_idx, (count - 1).max(0))),
-                        Space::with_width(Length::Fill),
-                        text(count.to_string()).size(14).color(theme::ACCENT_GOLD),
-                        Space::with_width(Length::Fill),
-                        button(text("+").size(12))
-                            .padding([4, 12])
-                            .style(theme::secondary_button_style)
-                            .on_press(Message::SetYuzuLivestock(food_idx, (count + 1).min(max_val))),
-                    ]
-                    .align_y(Alignment::Center),
-                    text(default_note).size(10).color(theme::TEXT_MUTED),
-                    text(flag_note).size(10).color(theme::ACCENT_CYAN),
-                ]
-                .spacing(5),
-            )
-            .padding(10)
-            .width(Length::FillPortion(1))
-            .style(theme::empty_slot_card_style),
+            container(col)
+                .padding(12)
+                .width(Length::FillPortion(1))
+                .style(theme::empty_slot_card_style),
         );
     }
 
@@ -163,7 +307,7 @@ fn view_yuzu_pasture<'a>(
                 text("Livestock Delivered to Castle Pasture (Yuzu)")
                     .size(15)
                     .color(theme::ACCENT_GOLD),
-                text("Controls delivered animals (food_num[4..7]) and auto-syncs pasture spawn flags across hon_flag[31..33].")
+                text("Check animals delivered to Yuzu (food_num[4..7]); pasture spawn flags across hon_flag[31..33] sync automatically.")
                     .size(11)
                     .color(theme::TEXT_MUTED),
             ]
@@ -708,21 +852,28 @@ fn view_library_books<'a>(
     portraits: &'a PortraitCache,
 ) -> Element<'a, Message> {
     let mask_val = doc.get_i64(Some("game_data"), "lib_flag") as u32;
-    let count = (0..12).filter(|b| (mask_val & (1 << b)) != 0).count();
+    let count = LIBRARY_BOOK_DEFS
+        .iter()
+        .filter(|b| (mask_val & (1 << b.bit)) != 0)
+        .count();
 
     let mut grid = column![].spacing(8);
-    for row_idx in 0..2 {
+    for chunk in LIBRARY_BOOK_DEFS.chunks(3) {
         let mut r = row![].spacing(10);
-        for col_idx in 0..6 {
-            let bit = row_idx * 6 + col_idx;
+        for book in chunk {
+            let bit = book.bit as u32;
             let checked = (mask_val & (1 << bit)) != 0;
             r = r.push(
                 container(
-                    checkbox(format!("Vol. {}", bit + 1), checked)
-                        .on_toggle(move |val| Message::ToggleLibFlagBit(bit, val))
-                        .text_size(12),
+                    column![
+                        checkbox(format!("Vol. {} (Bit {})", book.vol, bit), checked)
+                            .on_toggle(move |val| Message::ToggleLibFlagBit(bit, val))
+                            .text_size(12),
+                        text(book.desc).size(10).color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(3),
                 )
-                .padding([5, 8])
+                .padding(10)
                 .width(Length::FillPortion(1))
                 .style(theme::empty_slot_card_style),
             );
@@ -748,7 +899,17 @@ fn view_library_books<'a>(
                 .on_press(Message::SetIntField(
                     Some("game_data"),
                     "lib_flag",
-                    "4095".to_string(),
+                    ((mask_val | 0x0FFF) as i64).to_string(),
+                )),
+        )
+        .push(
+            button(text("Clear All").size(11))
+                .padding([5, 10])
+                .style(theme::secondary_button_style)
+                .on_press(Message::SetIntField(
+                    Some("game_data"),
+                    "lib_flag",
+                    ((mask_val & !0x0FFF) as i64).to_string(),
                 )),
         );
 
@@ -757,7 +918,7 @@ fn view_library_books<'a>(
             header,
             grid,
         ]
-        .spacing(10),
+        .spacing(12),
     )
     .padding(16)
     .width(Length::Fill)

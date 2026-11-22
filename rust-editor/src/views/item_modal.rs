@@ -33,7 +33,7 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
     let q = modal.search.trim().to_lowercase();
 
     let mut cat_tabs = row![
-        button(text("All").size(12))
+        button(text(crate::i18n::tr("all")).size(12))
             .padding([6, 10])
             .style(theme::nav_button_style(modal.category.is_none()))
             .on_press(Message::SetModalCategory(None)),
@@ -122,7 +122,7 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
     if matches.is_empty() {
         list = list.push(
             container(
-                text("No items match your search.")
+                text(crate::i18n::tr("no_items_match"))
                     .size(13)
                     .color(theme::TEXT_MUTED),
             )
@@ -137,7 +137,7 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
                 column![
                     text(&modal.title).size(18).color(theme::ACCENT_GOLD),
                     text(format!(
-                        "Select an item for Slot #{} • {} items available",
+                        "#{} • {}",
                         slot_num,
                         matches.len()
                     ))
@@ -146,7 +146,7 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
                 ]
                 .spacing(2),
                 Space::with_width(Length::Fill),
-                button(text("Close").size(12))
+                button(text(crate::i18n::tr("close")).size(12))
                     .padding([6, 12])
                     .style(theme::secondary_button_style)
                     .on_press(Message::CloseItemModal),
@@ -154,7 +154,7 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
             .align_y(Alignment::Center),
             horizontal_rule(1),
             text_input(
-                "Search item by name or ID (e.g. Medicine, Winged Boots, Power Gloves)...",
+                crate::i18n::tr("search_items_placeholder"),
                 &modal.search
             )
             .on_input(Message::SetModalSearch)
@@ -167,12 +167,12 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
                 .style(theme::scrollable_style),
             horizontal_rule(1),
             row![
-                button(text("Clear Slot (Set Empty)").size(12))
+                button(text(crate::i18n::tr("clear_slot_empty")).size(12))
                     .padding([7, 14])
                     .style(theme::secondary_button_style)
                     .on_press(Message::ApplyModalItem(target, 0, 0)),
                 Space::with_width(Length::Fill),
-                button(text("Cancel").size(12))
+                button(text(crate::i18n::tr("cancel")).size(12))
                     .padding([7, 14])
                     .style(theme::secondary_button_style)
                     .on_press(Message::CloseItemModal),

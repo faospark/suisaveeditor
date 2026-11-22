@@ -5,6 +5,7 @@ use iced::{Alignment, Element, Length};
 
 use crate::data::{find_option, opt, NamedOption, CLIVE_MILESTONES};
 use crate::gamedata::{character_name, PortraitCache};
+use crate::i18n;
 use crate::save_file::SaveDocument;
 use crate::theme;
 use crate::Message;
@@ -17,6 +18,7 @@ pub fn view<'a>(
     let party_section = view_active_party(doc, portraits, party_options);
     let identity_card = view_identity_card(doc);
     let resources_card = view_resources_card(doc);
+    let s1_import_card = view_suikoden1_import_card(doc, portraits);
     let time_location_card = view_time_and_location_card(doc);
     let clive_card = view_clive_quest_card(doc, portraits);
     let aliases_card = view_greenhill_aliases_card(doc);
@@ -36,11 +38,12 @@ pub fn view<'a>(
 
     let content = column![
         section_header(
-            "General Save Overview",
+            i18n::tr("general_title"),
             "Live-bound to game_data, party_data, event_flag[94], and root save fields."
         ),
         party_section,
         two_col,
+        s1_import_card,
         time_location_card,
         side_quests_card,
         bottom_col,
@@ -144,7 +147,7 @@ fn view_active_party<'a>(
     container(
         column![
             row![
-                text("Active Party & Convoy").size(15).color(theme::ACCENT_GOLD),
+                text(i18n::tr("active_party")).size(15).color(theme::ACCENT_GOLD),
                 Space::with_width(Length::Fill),
                 text("party_data.party_cha_no[0..7]").size(11).color(theme::TEXT_MUTED),
             ]
@@ -162,36 +165,26 @@ fn view_active_party<'a>(
 
 fn view_identity_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
     let fields = column![
-        text("Identity & Names").size(15).color(theme::ACCENT_GOLD),
+        text(i18n::tr("identity_names")).size(15).color(theme::ACCENT_GOLD),
         text_field_row(
-            "Hero Name (S2)",
+            i18n::tr("hero_name_s2"),
             doc.get_str(Some("game_data"), "bozu_name"),
             |v| Message::SetStringField(Some("game_data"), "bozu_name", v),
         ),
         text_field_row(
-            "Hero Name (Real)",
+            i18n::tr("hero_name_real"),
             doc.get_str(Some("game_data"), "bozu_name2"),
             |v| Message::SetStringField(Some("game_data"), "bozu_name2", v),
         ),
         text_field_row(
-            "Castle Name",
+            i18n::tr("castle_name"),
             doc.get_str(Some("game_data"), "base_name"),
             |v| Message::SetStringField(Some("game_data"), "base_name", v),
         ),
         text_field_row(
-            "Army Name",
+            i18n::tr("army_name"),
             doc.get_str(Some("game_data"), "team_name"),
             |v| Message::SetStringField(Some("game_data"), "team_name", v),
-        ),
-        text_field_row(
-            "Hero Name (S1)",
-            doc.get_str(Some("game_data"), "macd_name"),
-            |v| Message::SetStringField(Some("game_data"), "macd_name", v),
-        ),
-        text_field_row(
-            "S1 HQ Name",
-            doc.get_str(Some("game_data"), "m_base_name"),
-            |v| Message::SetStringField(Some("game_data"), "m_base_name", v),
         ),
     ]
     .spacing(10);
@@ -203,60 +196,159 @@ fn view_identity_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
         .into()
 }
 
+fn readonly_stat_row<'a>(label: &'a str, value: String) -> Element<'a, Message> {
+    row![
+        text(label)
+            .size(13)
+            .color(theme::TEXT_MUTED)
+            .width(Length::Fixed(145.0)),
+        container(text(value).size(12).color(theme::ACCENT_CYAN))
+            .padding([5, 10])
+            .style(theme::badge_style(theme::ACCENT_CYAN)),
+    ]
+    .spacing(10)
+    .align_y(Alignment::Center)
+    .into()
+}
+
 fn view_resources_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
-    let s1_stars = doc.get_i64(Some("game_data"), "nakam_1_num");
+    let popularity = doc.get_i64(Some("party_data"), "ninki");
+    let castle_lv = doc.get_i64(Some("game_data"), "base_lv");
+    let kaji_lv = doc.get_i64(Some("game_data"), "kaji_lv");
+    let bath_lv = doc.get_array_i64(Some("game_data"), "furo_info", 0);
 
     let fields = column![
-        text("Resources & Castle Levels").size(15).color(theme::ACCENT_GOLD),
+        text(i18n::tr("resources_castle")).size(15).color(theme::ACCENT_GOLD),
         int_field_row(
-            "Potch (Gold)",
+            i18n::tr("potch_gold"),
             doc.get_i64(Some("party_data"), "gold"),
             |v| Message::SetIntField(Some("party_data"), "gold", v),
         ),
         int_field_row(
-            "Popularity",
-            doc.get_i64(Some("party_data"), "ninki"),
-            |v| Message::SetIntField(Some("party_data"), "ninki", v),
-        ),
-        int_field_row(
-            "Castle Level (0–4)",
-            doc.get_i64(Some("game_data"), "base_lv"),
-            |v| Message::SetIntField(Some("game_data"), "base_lv", v),
-        ),
-        int_field_row(
-            "Blacksmith Level",
-            doc.get_i64(Some("game_data"), "kaji_lv"),
-            |v| Message::SetIntField(Some("game_data"), "kaji_lv", v),
-        ),
-        int_field_row(
-            "Bath House Level",
-            doc.get_array_i64(Some("game_data"), "furo_info", 0),
-            |v| Message::SetArrayIntField(Some("game_data"), "furo_info", 0, v),
-        ),
-        int_field_row(
-            "Escaped Battles",
+            i18n::tr("escaped_battles"),
             doc.get_i64(Some("game_data"), "nige_cnt"),
             |v| Message::SetIntField(Some("game_data"), "nige_cnt", v),
         ),
-        row![
-            text("S1 Recruited Stars")
-                .size(13)
-                .color(theme::TEXT_MUTED)
-                .width(Length::Fixed(145.0)),
-            container(
-                text(format!("{} / 108 (read-only)", s1_stars))
-                    .size(13)
-                    .color(theme::ACCENT_CYAN)
-            )
-            .padding([6, 10])
-            .style(theme::badge_style(theme::ACCENT_CYAN)),
-        ]
-        .spacing(10)
-        .align_y(Alignment::Center),
+        readonly_stat_row(i18n::tr("castle_level"), format!("Lv {} (read-only)", castle_lv)),
+        readonly_stat_row(i18n::tr("blacksmith_level"), format!("Lv {} (read-only)", kaji_lv)),
+        readonly_stat_row(i18n::tr("popularity"), format!("{} (read-only)", popularity)),
+        readonly_stat_row(i18n::tr("bath_house_level"), format!("Lv {} (read-only)", bath_lv)),
     ]
     .spacing(10);
 
     container(fields)
+        .padding(16)
+        .width(Length::Fill)
+        .style(theme::card_style)
+        .into()
+}
+
+fn view_suikoden1_import_card<'a>(
+    doc: &'a SaveDocument,
+    portraits: &'a PortraitCache,
+) -> Element<'a, Message> {
+    let s1_hero = doc.get_str(Some("game_data"), "macd_name");
+    let s1_hq = doc.get_str(Some("game_data"), "m_base_name");
+    let s1_stars = doc.get_i64(Some("game_data"), "nakam_1_num");
+    let has_s1_data = !s1_hero.trim().is_empty() || s1_stars > 0;
+    let gremio_saved = s1_stars >= 108;
+
+    let mut header = row![].spacing(10).align_y(Alignment::Center);
+    if let Some(handle) = portraits.get(82) {
+        header = header.push(image(handle).width(40).height(40));
+    }
+    header = header.push(
+        column![
+            text("Suikoden I Save Transfer Data")
+                .size(15)
+                .color(theme::ACCENT_GOLD),
+            text("Imported Suikoden I clear-save fields (macd_name, m_base_name, nakam_1_num).")
+                .size(11)
+                .color(theme::TEXT_MUTED),
+        ]
+        .spacing(1),
+    );
+    header = header.push(Space::with_width(Length::Fill));
+
+    let import_badge_color = if has_s1_data {
+        theme::ACCENT_GREEN
+    } else {
+        theme::TEXT_MUTED
+    };
+    header = header.push(
+        container(
+            text(if has_s1_data {
+                "S1 Clear Data Loaded"
+            } else {
+                "No S1 Data Loaded"
+            })
+            .size(11)
+            .color(import_badge_color),
+        )
+        .padding([4, 9])
+        .style(theme::badge_style(import_badge_color)),
+    );
+
+    let gremio_color = if !has_s1_data {
+        theme::TEXT_MUTED
+    } else if gremio_saved {
+        theme::ACCENT_GREEN
+    } else {
+        theme::ACCENT_GOLD
+    };
+    let gremio_text = if !has_s1_data {
+        "N/A (No S1 import)"
+    } else if gremio_saved {
+        "Gremio Saved (108 Stars)"
+    } else {
+        "Gremio Not Revived (< 108 Stars)"
+    };
+
+    let body_row = row![
+        column![
+            text_field_row("Hero Name (S1)", s1_hero, |v| {
+                Message::SetStringField(Some("game_data"), "macd_name", v)
+            }),
+            text_field_row("S1 HQ Name", s1_hq, |v| {
+                Message::SetStringField(Some("game_data"), "m_base_name", v)
+            }),
+        ]
+        .spacing(10)
+        .width(Length::FillPortion(1)),
+        column![
+            row![
+                text("S1 Recruited Stars")
+                    .size(13)
+                    .color(theme::TEXT_MUTED)
+                    .width(Length::Fixed(145.0)),
+                container(
+                    text(format!("{} / 108 (read-only)", s1_stars))
+                        .size(12)
+                        .color(theme::ACCENT_CYAN)
+                )
+                .padding([5, 10])
+                .style(theme::badge_style(theme::ACCENT_CYAN)),
+            ]
+            .spacing(10)
+            .align_y(Alignment::Center),
+            row![
+                text("Gremio Status")
+                    .size(13)
+                    .color(theme::TEXT_MUTED)
+                    .width(Length::Fixed(145.0)),
+                container(text(gremio_text).size(12).color(gremio_color))
+                    .padding([5, 10])
+                    .style(theme::badge_style(gremio_color)),
+            ]
+            .spacing(10)
+            .align_y(Alignment::Center),
+        ]
+        .spacing(10)
+        .width(Length::FillPortion(1)),
+    ]
+    .spacing(16);
+
+    container(column![header, body_row].spacing(12))
         .padding(16)
         .width(Length::Fill)
         .style(theme::card_style)

@@ -3,7 +3,7 @@ use iced::widget::{
 };
 use iced::{Alignment, Element, Length};
 
-use crate::data::catalog::{INGREDIENTS, RECIPE_DISH_NAMES};
+use crate::data::catalog::{INGREDIENTS, RECIPE_DISH_NAMES, RECIPE_LOCATIONS};
 use crate::data::{find_option, NamedOption};
 use crate::gamedata::PortraitCache;
 use crate::save_file::SaveDocument;
@@ -286,10 +286,10 @@ fn view_recipes<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
     }
 
     let mut grid = column![].spacing(8);
-    for row_idx in 0..10 {
+    let indices: Vec<usize> = (0..40).collect();
+    for chunk in indices.chunks(3) {
         let mut r = row![].spacing(10);
-        for col_idx in 0..4 {
-            let recipe_idx = row_idx * 4 + col_idx;
+        for &recipe_idx in chunk {
             let byte_idx = recipe_idx / 8;
             let mask = 1u8 << (recipe_idx % 8);
             let byte_val = doc.get_array_i64(Some("game_data"), "food_resipi", byte_idx) as u8;
@@ -298,22 +298,31 @@ fn view_recipes<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
 
             r = r.push(
                 container(
-                    checkbox(label, checked)
-                        .on_toggle(move |val| {
-                            Message::ToggleArrayFlagBit(
-                                Some("game_data"),
-                                "food_resipi",
-                                byte_idx,
-                                mask,
-                                val,
-                            )
-                        })
-                        .text_size(12),
+                    column![
+                        checkbox(label, checked)
+                            .on_toggle(move |val| {
+                                Message::ToggleArrayFlagBit(
+                                    Some("game_data"),
+                                    "food_resipi",
+                                    byte_idx,
+                                    mask,
+                                    val,
+                                )
+                            })
+                            .text_size(12),
+                        text(RECIPE_LOCATIONS[recipe_idx])
+                            .size(10)
+                            .color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(3),
                 )
-                .padding([5, 8])
+                .padding(10)
                 .width(Length::FillPortion(1))
                 .style(theme::empty_slot_card_style),
             );
+        }
+        for _ in chunk.len()..3 {
+            r = r.push(Space::with_width(Length::FillPortion(1)));
         }
         grid = grid.push(r);
     }

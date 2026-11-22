@@ -220,8 +220,12 @@ fn view_character_detail<'a>(
     let weapon_rune_widget: Element<'a, Message> = if beast && !bypass_equip {
         disabled_slot_badge("0 - None (Beast — Cannot equip)")
     } else {
-        let selected = find_option(WEAPON_RUNES, weapon_rune_id);
-        pick_list(WEAPON_RUNES, Some(selected), move |opt| {
+        let weapon_runes: Vec<NamedOption> = WEAPON_RUNES
+            .iter()
+            .map(|r| crate::data::opt(r.id, crate::data::rune_name(r.id)))
+            .collect();
+        let selected = find_option(&weapon_runes, weapon_rune_id);
+        pick_list(weapon_runes, Some(selected), move |opt| {
             Message::SetBattleCharInt(id, "buki_mon", opt.id.to_string())
         })
         .text_size(12)
@@ -426,8 +430,12 @@ fn view_character_detail<'a>(
     } else if !shield_ok {
         disabled_slot_badge("Cannot equip shields")
     } else {
-        let selected = find_option(SHIELDS, doc.get_battle_char_array_i64(id, "bogu_eqp", 2));
-        pick_list(SHIELDS, Some(selected), move |opt| {
+        let shields: Vec<NamedOption> = SHIELDS
+            .iter()
+            .map(|s| crate::data::opt(s.id, crate::data::equipment_name(s.id)))
+            .collect();
+        let selected = find_option(&shields, doc.get_battle_char_array_i64(id, "bogu_eqp", 2));
+        pick_list(shields, Some(selected), move |opt| {
             Message::SetBattleCharArrayInt(id, "bogu_eqp", 2, opt.id.to_string())
         })
         .text_size(12)
@@ -461,7 +469,7 @@ fn view_character_detail<'a>(
             let is_empty = item_no == 0;
             let (cat, item_name) = resolve_inventory_item(item_no, use_cnt);
             let cat_color = match cat {
-                "Equip" => theme::ACCENT_CYAN,
+                "Gear" => theme::ACCENT_CYAN,
                 "Item" => theme::ACCENT_GREEN,
                 "Rune" => theme::ACCENT_GOLD,
                 _ => theme::TEXT_MUTED,
@@ -477,7 +485,7 @@ fn view_character_detail<'a>(
                             .size(12)
                             .color(theme::TEXT_MUTED)
                             .width(Length::Fixed(48.0)),
-                        container(text(cat).size(10).color(cat_color))
+                        container(text(crate::data::inventory_category_badge(cat)).size(10).color(cat_color))
                             .padding([2, 7])
                             .style(theme::badge_style(cat_color)),
                         text(if is_empty {
@@ -632,13 +640,18 @@ fn view_advanced_archetype<'a>(doc: &'a SaveDocument, id: usize) -> Element<'a, 
                 text("Elemental Rune Affinities (mon_zoku_aisyo)")
                     .size(13)
                     .color(theme::ACCENT_CYAN),
-                Space::with_width(Length::Fill),
-                button(text("All Rank A").size(11))
-                    .padding([4, 9])
-                    .style(theme::primary_button_style)
-                    .on_press(Message::SetKoteiAllAffinitiesRankA(id)),
+                button(
+                    text("All Rank A")
+                        .size(11)
+                        .wrapping(text::Wrapping::None),
+                )
+                .padding([4, 9])
+                .style(theme::primary_button_style)
+                .on_press(Message::SetKoteiAllAffinitiesRankA(id)),
             ]
-            .align_y(Alignment::Center),
+            .spacing(8)
+            .align_y(Alignment::Center)
+            .wrap(),
             affinity_grid,
         ]
         .spacing(10),
@@ -664,13 +677,18 @@ fn view_advanced_archetype<'a>(doc: &'a SaveDocument, id: usize) -> Element<'a, 
             text("Slot Locks (soubi_henkou)")
                 .size(13)
                 .color(theme::ACCENT_CYAN),
-            Space::with_width(Length::Fill),
-            button(text("Unlock All (0)").size(11))
-                .padding([4, 9])
-                .style(theme::secondary_button_style)
-                .on_press(Message::SetKoteiInt(id, "soubi_henkou", 0)),
+            button(
+                text("Unlock All (0)")
+                    .size(11)
+                    .wrapping(text::Wrapping::None),
+            )
+            .padding([4, 9])
+            .style(theme::secondary_button_style)
+            .on_press(Message::SetKoteiInt(id, "soubi_henkou", 0)),
         ]
-        .align_y(Alignment::Center),
+        .spacing(8)
+        .align_y(Alignment::Center)
+        .wrap(),
     ]
     .spacing(6);
 
@@ -703,13 +721,18 @@ fn view_advanced_archetype<'a>(doc: &'a SaveDocument, id: usize) -> Element<'a, 
             text("Gear Classes (soubi_kanou)")
                 .size(13)
                 .color(theme::ACCENT_CYAN),
-            Space::with_width(Length::Fill),
-            button(text("Allow All (63)").size(11))
-                .padding([4, 9])
-                .style(theme::primary_button_style)
-                .on_press(Message::SetKoteiInt(id, "soubi_kanou", 63)),
+            button(
+                text("Allow All (63)")
+                    .size(11)
+                    .wrapping(text::Wrapping::None),
+            )
+            .padding([4, 9])
+            .style(theme::primary_button_style)
+            .on_press(Message::SetKoteiInt(id, "soubi_kanou", 63)),
         ]
-        .align_y(Alignment::Center),
+        .spacing(8)
+        .align_y(Alignment::Center)
+        .wrap(),
     ]
     .spacing(6);
 

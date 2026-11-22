@@ -3,8 +3,8 @@ use iced::{Alignment, Element, Length};
 
 use crate::data::rules::{armor_attrs, character_attrs, helmet_attrs, rune_attrs};
 use crate::data::{
-    base_item_name, character_name, farming_item_name, food_item_name, regular_item_name,
-    trade_item_name, ACCESSORIES, ARMORS, HELMETS, RUNES, SHIELDS,
+    base_item_name, character_name, equipment_name, farming_item_name, food_item_name,
+    regular_item_name, rune_name, trade_item_name, ACCESSORIES, ARMORS, HELMETS, RUNES, SHIELDS,
 };
 use crate::theme;
 use crate::Message;
@@ -131,7 +131,7 @@ pub fn view<'a>(category: DataValuesCategory, search: &'a str) -> Element<'a, Me
                 } else {
                     format!("[{}]", attrs.join(", "))
                 };
-                (o.id, o.name.to_string(), attr_str)
+                (o.id, rune_name(o.id).to_string(), attr_str)
             })
             .collect(),
         DataValuesCategory::Helmets => HELMETS
@@ -143,7 +143,7 @@ pub fn view<'a>(category: DataValuesCategory, search: &'a str) -> Element<'a, Me
                 } else {
                     format!("[{}]", attrs.join(", "))
                 };
-                (o.id, o.name.to_string(), attr_str)
+                (o.id, equipment_name(o.id).to_string(), attr_str)
             })
             .collect(),
         DataValuesCategory::Armors => ARMORS
@@ -155,16 +155,16 @@ pub fn view<'a>(category: DataValuesCategory, search: &'a str) -> Element<'a, Me
                 } else {
                     format!("[{}]", attrs.join(", "))
                 };
-                (o.id, o.name.to_string(), attr_str)
+                (o.id, equipment_name(o.id).to_string(), attr_str)
             })
             .collect(),
         DataValuesCategory::Shields => SHIELDS
             .iter()
-            .map(|o| (o.id, o.name.to_string(), String::new()))
+            .map(|o| (o.id, equipment_name(o.id).to_string(), String::new()))
             .collect(),
         DataValuesCategory::Accessories => ACCESSORIES
             .iter()
-            .map(|o| (o.id, o.name.to_string(), String::new()))
+            .map(|o| (o.id, equipment_name(o.id).to_string(), String::new()))
             .collect(),
     };
 

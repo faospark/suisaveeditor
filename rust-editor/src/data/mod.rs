@@ -13,7 +13,7 @@ pub struct NamedOption {
 impl fmt::Display for NamedOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.id == 0 {
-            write!(f, "0 - None")
+            write!(f, "0 - {}", crate::i18n::tr("none"))
         } else {
             write!(f, "{} - {}", self.id, self.name)
         }
@@ -28,7 +28,7 @@ pub fn find_option(list: &[NamedOption], id: i64) -> NamedOption {
     list.iter()
         .copied()
         .find(|o| o.id == id)
-        .unwrap_or(NamedOption { id, name: "Unknown" })
+        .unwrap_or(NamedOption { id, name: crate::i18n::tr("unknown") })
 }
 
 // ============================================================================
@@ -36,6 +36,12 @@ pub fn find_option(list: &[NamedOption], id: i64) -> NamedOption {
 // ============================================================================
 
 pub fn character_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("empty");
+    }
+    if let Some(loc) = crate::i18n::localized_char(id) {
+        return loc;
+    }
     match id {
         0 => "(Empty)",
         1 => "Riou",
@@ -213,7 +219,7 @@ pub fn character_name(id: i64) -> &'static str {
 
 pub fn party_character_options() -> Vec<NamedOption> {
     let mut out = Vec::with_capacity(126);
-    out.push(opt(0, "(Empty)"));
+    out.push(opt(0, crate::i18n::tr("empty")));
     for id in 1..=125 {
         out.push(opt(id, character_name(id)));
     }
@@ -448,6 +454,12 @@ pub const ACCESSORIES: &[NamedOption] = &[
 // ============================================================================
 
 pub fn regular_item_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("none");
+    }
+    if let Some(loc) = crate::i18n::localized_item(id) {
+        return loc;
+    }
     match id {
         0 => "None",
         1 => "Medicine",
@@ -539,6 +551,12 @@ pub fn regular_item_name(id: i64) -> &'static str {
 }
 
 pub fn farming_item_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("none");
+    }
+    if let Some(loc) = crate::i18n::localized_farm(id) {
+        return loc;
+    }
     match id {
         0 => "None",
         1 => "Cabbage Seed",
@@ -554,6 +572,12 @@ pub fn farming_item_name(id: i64) -> &'static str {
 }
 
 pub fn trade_item_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("none");
+    }
+    if let Some(loc) = crate::i18n::localized_trade(id) {
+        return loc;
+    }
     match id {
         0 => "None",
         1 => "Defective Urn",
@@ -611,6 +635,12 @@ pub fn trade_item_name(id: i64) -> &'static str {
 }
 
 pub fn base_item_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("none");
+    }
+    if let Some(loc) = crate::i18n::localized_base(id) {
+        return loc;
+    }
     match id {
         0 => "None",
         1 => "Old book vol 1",
@@ -684,6 +714,12 @@ pub fn base_item_name(id: i64) -> &'static str {
 }
 
 pub fn equipment_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("none");
+    }
+    if let Some(loc) = crate::i18n::localized_gear(id) {
+        return loc;
+    }
     for list in [HELMETS, ARMORS, SHIELDS, ACCESSORIES] {
         if let Some(found) = list.iter().find(|o| o.id == id) {
             return found.name;
@@ -693,6 +729,12 @@ pub fn equipment_name(id: i64) -> &'static str {
 }
 
 pub fn rune_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("none");
+    }
+    if let Some(loc) = crate::i18n::localized_rune(id) {
+        return loc;
+    }
     RUNES
         .iter()
         .find(|o| o.id == id)
@@ -701,6 +743,12 @@ pub fn rune_name(id: i64) -> &'static str {
 }
 
 pub fn food_item_name(id: i64) -> &'static str {
+    if id == 0 {
+        return crate::i18n::tr("none");
+    }
+    if let Some(loc) = crate::i18n::localized_food(id) {
+        return loc;
+    }
     match id {
         0 => "None",
         1 => "Tamago-Yaki",
@@ -954,7 +1002,7 @@ pub fn resolve_inventory_item(item_no: i64, use_cnt: i64) -> (&'static str, Stri
     }
     match use_cnt {
         0..=9 => ("Item", regular_item_name(item_no).to_string()),
-        16 => ("Equip", equipment_name(item_no).to_string()),
+        16 => ("Gear", equipment_name(item_no).to_string()),
         32 => ("Rune", rune_name(item_no).to_string()),
         48 => ("Farm", farming_item_name(item_no).to_string()),
         64 => ("Trade", trade_item_name(item_no).to_string()),
@@ -968,5 +1016,20 @@ pub fn resolve_inventory_item(item_no: i64, use_cnt: i64) -> (&'static str, Stri
             }
         }
         _ => ("Other", regular_item_name(item_no).to_string()),
+    }
+}
+
+/// Localized display label for a canonical inventory category badge.
+pub fn inventory_category_badge(cat: &str) -> &'static str {
+    match cat {
+        "Empty" => crate::i18n::tr("badge_empty"),
+        "Item" => crate::i18n::tr("badge_item"),
+        "Gear" => crate::i18n::tr("badge_gear"),
+        "Rune" => crate::i18n::tr("badge_rune"),
+        "Farm" => crate::i18n::tr("badge_farm"),
+        "Trade" => crate::i18n::tr("badge_trade"),
+        "Base" => crate::i18n::tr("badge_base"),
+        "Food" => crate::i18n::tr("badge_food"),
+        _ => crate::i18n::tr("badge_other"),
     }
 }

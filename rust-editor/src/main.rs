@@ -3,6 +3,7 @@
 mod data;
 mod env_detect;
 mod gamedata;
+mod i18n;
 mod save_file;
 mod theme;
 mod views;
@@ -16,25 +17,42 @@ use std::path::PathBuf;
 use data::catalog::{key_item_options, FISH_BOARD};
 use data::rules::ItemCategory;
 use data::{food_item_name, opt, party_character_options, NamedOption};
-use env_detect::{AppSettings, GameEnvStatus};
+use env_detect::{AppSettings, GameEnvStatus, SaveSlotSummary, SavesSortMode, SnapshotInfo};
 use gamedata::PortraitCache;
+use i18n::AppLanguage;
 use save_file::SaveDocument;
-use theme::AccentTheme;
+use theme::{AccentTheme, BaseTheme};
 use views::data_values::DataValuesCategory;
 use views::experimental::ExperimentalSection;
 use views::item_modal::{ItemModalState, ModalTarget};
 use views::recruitment::RecruitFilter;
+use views::restore_modal::RestoreModalState;
 use views::EditorTab;
 
 const APP_ICON_PNG: &[u8] = include_bytes!("../../src-tauri/icons/icon.png");
+const NOTO_SANS_TTF: &[u8] = include_bytes!("../assets/fonts/NotoSans-Variable.ttf");
+const NOTO_SANS_CJK_OTF: &[u8] = include_bytes!("../assets/fonts/NotoSansCJKjp-Regular.otf");
+const MATERIAL_SYMBOLS_TTF: &[u8] = include_bytes!("../assets/fonts/MaterialSymbolsRounded.ttf");
 
 pub fn main() -> iced::Result {
+    #[cfg(windows)]
+    let _single_instance = match acquire_single_instance() {
+        Some(guard) => guard,
+        None => return Ok(()),
+    };
+
     let icon = window::icon::from_file_data(APP_ICON_PNG, None).ok();
     iced::application("SuiSaveEditor", App::update, App::view)
+        .font(NOTO_SANS_CJK_OTF)
+        .font(NOTO_SANS_TTF)
+        .font(MATERIAL_SYMBOLS_TTF)
+        .default_font(iced::Font::with_name("Noto Sans CJK JP"))
         .theme(App::theme)
         .subscription(App::subscription)
         .window(window::Settings {
             size: Size::new(1280.0, 820.0),
+            min_size: Some(Size::new(1160.0, 680.0)),
+            position: window::Position::Centered,
             icon,
             ..Default::default()
         })
@@ -45,6 +63,7 @@ struct App {
     active_tab: EditorTab,
     doc: Option<SaveDocument>,
     is_debug_save: bool,
+    is_single_file_mode: bool,
     portraits: PortraitCache,
     party_options: Vec<NamedOption>,
     key_item_options: Vec<NamedOption>,
@@ -66,6 +85,7 @@ struct App {
     inventory_search: String,
     copied_item: Option<(i64, i64)>,
     item_modal: Option<ItemModalState>,
+    restore_modal: Option<RestoreModalState>,
     // Investigations UI state
     investigation_search: String,
     // Castle Suggestion Box UI state
@@ -79,17 +99,52 @@ struct App {
     // Settings & Environment detection
     settings: AppSettings,
     game_env: GameEnvStatus,
+    // Managed Saves browser state
+    managed_saves: Vec<SaveSlotSummary>,
+    snapshots: Vec<SnapshotInfo>,
+    auto_snapshot_banner: Option<String>,
+    saves_search: String,
+    saves_sort: SavesSortMode,
 }
 
 impl Default for App {
     fn default() -> Self {
-        let settings = AppSettings::load();
+        let mut settings = AppSettings::load();
+        i18n::set_language(settings.language);
+        theme::set_base_theme(settings.base_theme);
         theme::set_accent(settings.accent);
         let game_env = env_detect::detect_game_env(settings.custom_game_dir.as_deref());
+        let managed_saves = game_env
+            .decrypted_saves_dir
+            .as_deref()
+            .map(env_detect::scan_decrypted_saves)
+            .unwrap_or_default();
+
+        // First-run automatic full snapshot backup (silent, with inline interface notice)
+        let mut auto_snapshot_banner = None;
+        if !settings.first_run_snapshot_created && !managed_saves.is_empty() {
+            if let Some(dir) = game_env.decrypted_saves_dir.as_deref() {
+                if let Ok(snap) = env_detect::create_saves_snapshot(dir) {
+                    settings.first_run_snapshot_created = true;
+                    auto_snapshot_banner = Some(snap.file_name);
+                }
+            }
+        }
+        let snapshots = game_env
+            .decrypted_saves_dir
+            .as_deref()
+            .map(env_detect::scan_snapshots)
+            .unwrap_or_default();
+
+        if !settings.first_run_completed || auto_snapshot_banner.is_some() {
+            settings.first_run_completed = true;
+            settings.save();
+        }
         Self {
-            active_tab: EditorTab::General,
+            active_tab: EditorTab::Saves,
             doc: None,
             is_debug_save: false,
+            is_single_file_mode: false,
             portraits: PortraitCache::load(),
             party_options: party_character_options(),
             key_item_options: key_item_options(),
@@ -108,6 +163,7 @@ impl Default for App {
             inventory_search: String::new(),
             copied_item: None,
             item_modal: None,
+            restore_modal: None,
             investigation_search: String::new(),
             suggestion_search: String::new(),
             experimental_section: ExperimentalSection::TreasureChests,
@@ -116,6 +172,11 @@ impl Default for App {
             data_values_search: String::new(),
             settings,
             game_env,
+            managed_saves,
+            snapshots,
+            auto_snapshot_banner,
+            saves_search: String::new(),
+            saves_sort: SavesSortMode::MostRecent,
         }
     }
 }
@@ -195,11 +256,25 @@ pub enum Message {
     SelectDataValuesCategory(DataValuesCategory),
     SetDataValuesSearch(String),
     // Settings & Environment detection
+    SetLanguage(AppLanguage),
+    SetBaseTheme(BaseTheme),
     SetAccentTheme(AccentTheme),
     RedetectGameEnv,
     BrowseGameDir,
     GameDirPicked(Option<PathBuf>),
     ResetGameDir,
+    // Managed Saves browser & Backups
+    RefreshSaves,
+    SelectManagedSave(PathBuf),
+    SetSavesSearch(String),
+    SetSavesSort(SavesSortMode),
+    OpenRestoreModal(PathBuf),
+    CloseRestoreModal,
+    SetRestoreModalSearch(String),
+    ConfirmRestoreSaveBackup(PathBuf),
+    CreateFullSnapshot,
+    RestoreFullSnapshot(PathBuf),
+    DismissAutoSnapshotBanner,
 }
 
 impl App {
@@ -224,28 +299,37 @@ impl App {
                 );
             }
             Message::FileOpened(Some(path)) => {
-                self.load_path(path);
+                if self.load_path(path) && self.active_tab == EditorTab::Saves {
+                    self.active_tab = EditorTab::General;
+                }
             }
             Message::FileOpened(None) => {}
             Message::LoadDebugSave => {
                 if let Some(path) = gamedata::debug_save_path() {
-                    self.load_path(path);
+                    if self.load_path(path) && self.active_tab == EditorTab::Saves {
+                        self.active_tab = EditorTab::General;
+                    }
                 } else {
                     self.status_message = Some(("Could not locate debug/save.json".to_string(), true));
                 }
             }
             Message::SaveFile => {
+                let mut saved_ok = false;
                 if let Some(doc) = self.doc.as_mut() {
                     let target = doc.path.clone();
                     match doc.save_to(&target) {
                         Ok(()) => {
                             self.is_debug_save = is_debug_save_path(&target);
                             self.status_message = Some((format!("Saved {}", doc.file_name), false));
+                            saved_ok = true;
                         }
                         Err(e) => {
                             self.status_message = Some((e, true));
                         }
                     }
+                }
+                if saved_ok {
+                    self.refresh_managed_saves();
                 }
             }
             Message::SaveFileAs => {
@@ -257,19 +341,33 @@ impl App {
                 }
             }
             Message::SaveAsPicked(Some(target)) => {
+                let mut saved_ok = false;
                 if let Some(doc) = self.doc.as_mut() {
                     if let Some(parent) = target.parent() {
                         self.last_dir = Some(parent.to_path_buf());
                     }
                     match doc.save_to(&target) {
                         Ok(()) => {
+                            let is_debug = is_debug_save_path(&target);
+                            let in_managed = self
+                                .game_env
+                                .decrypted_saves_dir
+                                .as_deref()
+                                .map(|d| env_detect::is_file_in_dir(&target, d))
+                                .unwrap_or(false);
+                            self.is_debug_save = is_debug;
+                            self.is_single_file_mode = !is_debug && !in_managed;
                             self.status_message =
                                 Some((format!("Saved as {}", doc.file_name), false));
+                            saved_ok = true;
                         }
                         Err(e) => {
                             self.status_message = Some((e, true));
                         }
                     }
+                }
+                if saved_ok {
+                    self.refresh_managed_saves();
                 }
             }
             Message::SaveAsPicked(None) => {}
@@ -445,6 +543,7 @@ impl App {
             }
             Message::CloseItemModal => {
                 self.item_modal = None;
+                self.restore_modal = None;
             }
             Message::SetModalSearch(q) => {
                 if let Some(modal) = self.item_modal.as_mut() {
@@ -595,6 +694,19 @@ impl App {
             Message::SetDataValuesSearch(q) => {
                 self.data_values_search = q;
             }
+            Message::SetLanguage(lang) => {
+                self.settings.language = lang;
+                i18n::set_language(lang);
+                self.party_options = party_character_options();
+                self.key_item_options = key_item_options();
+                self.food_options = (0..=240).map(|id| opt(id, food_item_name(id))).collect();
+                self.settings.save();
+            }
+            Message::SetBaseTheme(base) => {
+                self.settings.base_theme = base;
+                theme::set_base_theme(base);
+                self.settings.save();
+            }
             Message::SetAccentTheme(accent) => {
                 self.settings.accent = accent;
                 theme::set_accent(accent);
@@ -603,6 +715,7 @@ impl App {
             Message::RedetectGameEnv => {
                 self.game_env =
                     env_detect::detect_game_env(self.settings.custom_game_dir.as_deref());
+                self.refresh_managed_saves();
             }
             Message::BrowseGameDir => {
                 let initial = self.game_env.game_dir.clone();
@@ -616,19 +729,155 @@ impl App {
                 self.settings.save();
                 self.game_env =
                     env_detect::detect_game_env(self.settings.custom_game_dir.as_deref());
+                self.refresh_managed_saves();
             }
             Message::GameDirPicked(None) => {}
             Message::ResetGameDir => {
                 self.settings.custom_game_dir = None;
                 self.settings.save();
                 self.game_env = env_detect::detect_game_env(None);
+                self.refresh_managed_saves();
+            }
+            Message::RefreshSaves => {
+                self.refresh_managed_saves();
+            }
+            Message::SelectManagedSave(path) => {
+                if self.load_path(path) {
+                    self.active_tab = EditorTab::General;
+                }
+            }
+            Message::SetSavesSearch(q) => {
+                self.saves_search = q;
+            }
+            Message::SetSavesSort(mode) => {
+                self.saves_sort = mode;
+            }
+            Message::OpenRestoreModal(path) => match RestoreModalState::load(path) {
+                Ok(state) => {
+                    self.restore_modal = Some(state);
+                }
+                Err(e) => {
+                    self.status_message = Some((e, true));
+                }
+            },
+            Message::CloseRestoreModal => {
+                self.restore_modal = None;
+            }
+            Message::SetRestoreModalSearch(q) => {
+                if let Some(modal) = self.restore_modal.as_mut() {
+                    modal.search = q;
+                }
+            }
+            Message::ConfirmRestoreSaveBackup(path) => {
+                self.restore_modal = None;
+                let fname = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("save")
+                    .to_string();
+                match env_detect::restore_single_bak(&path) {
+                    Ok(()) => {
+                        let is_open = self
+                            .doc
+                            .as_ref()
+                            .map(|d| d.path == path)
+                            .unwrap_or(false);
+                        if is_open {
+                            let _ = self.load_path(path);
+                        }
+                        self.refresh_managed_saves();
+                        self.status_message =
+                            Some((format!("Restored {} from backups\\{}.bak", fname, fname), false));
+                    }
+                    Err(e) => {
+                        self.status_message = Some((e, true));
+                    }
+                }
+            }
+            Message::CreateFullSnapshot => {
+                if let Some(dir) = self.game_env.decrypted_saves_dir.as_deref() {
+                    match env_detect::create_saves_snapshot(dir) {
+                        Ok(snap) => {
+                            self.refresh_managed_saves();
+                            self.status_message = Some((
+                                format!(
+                                    "Snapshot created: {} ({} saves)",
+                                    snap.file_name, snap.file_count
+                                ),
+                                false,
+                            ));
+                        }
+                        Err(e) => {
+                            self.status_message = Some((e, true));
+                        }
+                    }
+                }
+            }
+            Message::RestoreFullSnapshot(zip_path) => {
+                let zname = zip_path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("snapshot.zip")
+                    .to_string();
+                if let Some(dir) = self.game_env.decrypted_saves_dir.clone() {
+                    match env_detect::restore_saves_snapshot(&zip_path, &dir) {
+                        Ok(count) => {
+                            if let Some(open_path) = self.doc.as_ref().map(|d| d.path.clone()) {
+                                if env_detect::is_file_in_dir(&open_path, &dir) {
+                                    let _ = self.load_path(open_path);
+                                }
+                            }
+                            self.refresh_managed_saves();
+                            self.status_message = Some((
+                                format!("Restored {} saves from {}", count, zname),
+                                false,
+                            ));
+                        }
+                        Err(e) => {
+                            self.status_message = Some((e, true));
+                        }
+                    }
+                }
+            }
+            Message::DismissAutoSnapshotBanner => {
+                self.auto_snapshot_banner = None;
             }
         }
         Task::none()
     }
 
-    fn load_path(&mut self, path: PathBuf) {
+    fn refresh_managed_saves(&mut self) {
+        self.managed_saves = self
+            .game_env
+            .decrypted_saves_dir
+            .as_deref()
+            .map(env_detect::scan_decrypted_saves)
+            .unwrap_or_default();
+        if !self.settings.first_run_snapshot_created && !self.managed_saves.is_empty() {
+            if let Some(dir) = self.game_env.decrypted_saves_dir.as_deref() {
+                if let Ok(snap) = env_detect::create_saves_snapshot(dir) {
+                    self.settings.first_run_snapshot_created = true;
+                    self.settings.save();
+                    self.auto_snapshot_banner = Some(snap.file_name);
+                }
+            }
+        }
+        self.snapshots = self
+            .game_env
+            .decrypted_saves_dir
+            .as_deref()
+            .map(env_detect::scan_snapshots)
+            .unwrap_or_default();
+    }
+
+    fn load_path(&mut self, path: PathBuf) -> bool {
         let is_debug = is_debug_save_path(&path);
+        let in_managed = self
+            .game_env
+            .decrypted_saves_dir
+            .as_deref()
+            .map(|d| env_detect::is_file_in_dir(&path, d))
+            .unwrap_or(false);
         if !is_debug {
             if let Some(parent) = path.parent() {
                 self.last_dir = Some(parent.to_path_buf());
@@ -643,10 +892,13 @@ impl App {
                 };
                 self.status_message = Some((format!("Loaded {}{}", doc.file_name, bak_note), false));
                 self.is_debug_save = is_debug;
+                self.is_single_file_mode = !is_debug && !in_managed;
                 self.doc = Some(doc);
+                true
             }
             Err(e) => {
                 self.status_message = Some((e, true));
+                false
             }
         }
     }
@@ -669,6 +921,9 @@ impl App {
         let mut root = stack![base];
         if let Some(modal) = &self.item_modal {
             root = root.push(views::item_modal::view(modal));
+        }
+        if let Some(modal) = &self.restore_modal {
+            root = root.push(views::restore_modal::view(modal));
         }
         if !self.game_env.is_ready() {
             root = root.push(views::settings::view_env_blocking_overlay(&self.game_env));
@@ -697,7 +952,7 @@ impl App {
 
         let status_badge: Element<'_, Message> = if let Some(doc) = &self.doc {
             let label = if doc.dirty {
-                format!("{} • Unsaved changes", doc.file_name)
+                format!("{} • {}", doc.file_name, i18n::tr("unsaved_changes"))
             } else {
                 doc.file_name.clone()
             };
@@ -711,23 +966,48 @@ impl App {
                 .style(theme::badge_style(color))
                 .into()
         } else {
-            container(text("No file loaded").size(12).color(theme::TEXT_MUTED))
+            container(text(i18n::tr("no_file_loaded")).size(12).color(theme::TEXT_MUTED))
                 .padding([5, 10])
                 .style(theme::badge_style(theme::TEXT_MUTED))
                 .into()
         };
 
-        let open_btn = button(text("Open Save...").size(13))
-            .on_press(Message::OpenFile)
-            .padding([7, 14])
-            .style(theme::primary_button_style);
+        let open_btn = button(
+            row![
+                theme::icon(theme::icons::FOLDER_OPEN, 15.0),
+                text(i18n::tr("open_save")).size(13),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center),
+        )
+        .on_press(Message::OpenFile)
+        .padding([7, 14])
+        .style(theme::secondary_button_style);
 
-        let mut save_btn = button(text("Save").size(13))
-            .padding([7, 14])
-            .style(theme::secondary_button_style);
-        let mut save_as_btn = button(text("Save As...").size(13))
-            .padding([7, 14])
-            .style(theme::secondary_button_style);
+        let mut save_btn = button(
+            row![
+                theme::icon(theme::icons::SAVE, 15.0),
+                text(i18n::tr("save")).size(13),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center),
+        )
+        .padding([7, 14])
+        .style(if self.doc.is_some() {
+            theme::primary_button_style
+        } else {
+            theme::secondary_button_style
+        });
+        let mut save_as_btn = button(
+            row![
+                theme::icon(theme::icons::SAVE_AS, 15.0),
+                text(i18n::tr("save_as")).size(13),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center),
+        )
+        .padding([7, 14])
+        .style(theme::secondary_button_style);
 
         if self.doc.is_some() {
             save_btn = save_btn.on_press(Message::SaveFile);
@@ -744,9 +1024,15 @@ impl App {
 
         if self.doc.is_some() && self.is_debug_save {
             bar_row = bar_row.push(
-                container(text("DEBUG SAVE").size(11).color(theme::ACCENT_CYAN))
+                container(text(i18n::tr("debug_save")).size(11).color(theme::ACCENT_CYAN))
                     .padding([5, 9])
                     .style(theme::badge_style(theme::ACCENT_CYAN)),
+            );
+        } else if self.doc.is_some() && self.is_single_file_mode {
+            bar_row = bar_row.push(
+                container(text(i18n::tr("single_file_mode")).size(11).color(theme::ACCENT_GOLD))
+                    .padding([5, 9])
+                    .style(theme::badge_style(theme::ACCENT_GOLD)),
             );
         }
 
@@ -762,10 +1048,12 @@ impl App {
             bar_row = bar_row.push(Space::with_width(Length::Fixed(8.0)));
         }
 
-        bar_row = bar_row
-            .push(open_btn)
-            .push(save_btn)
-            .push(save_as_btn);
+        if self.active_tab != EditorTab::Saves {
+            bar_row = bar_row
+                .push(open_btn)
+                .push(save_btn)
+                .push(save_as_btn);
+        }
 
         container(bar_row)
             .padding([10, 18])
@@ -777,35 +1065,44 @@ impl App {
     fn view_sidebar(&self) -> Element<'_, Message> {
         let active = self.active_tab;
 
-        let mut nav = column![text("EDITORS").size(11).color(theme::TEXT_MUTED)].spacing(4);
+        let mut nav = column![text(i18n::tr("editors")).size(11).color(theme::TEXT_MUTED)].spacing(4);
 
         for &tab in EditorTab::EDITOR_TABS {
             let is_active = tab == active;
             let suffix = match (tab, &self.doc) {
+                (EditorTab::Saves, _) => format!(" ({})", self.managed_saves.len()),
                 (EditorTab::RecruitedCharacters, Some(d)) => format!(" ({})", d.recruited_count()),
                 (EditorTab::PartyBag, Some(d)) => format!(" ({})", d.party_item_count()),
                 (EditorTab::Warehouse, Some(d)) => format!(" ({})", d.warehouse_item_count()),
                 _ => String::new(),
             };
-            let dot_color = if tab.is_implemented() {
+            let enabled = tab == EditorTab::Saves || self.doc.is_some();
+            let dot_color = if !enabled {
+                theme::BORDER_SUBTLE
+            } else if tab.is_implemented() {
                 theme::ACCENT_GREEN
             } else {
                 theme::BORDER_SUBTLE
             };
-            let dot_char = if tab.is_implemented() { "●" } else { "○" };
+            let dot_char = if enabled && tab.is_implemented() { "●" } else { "○" };
 
-            let btn = button(
+            let mut btn = button(
                 row![
+                    theme::icon(tab.icon(), 16.0),
                     text(format!("{}{}", tab.label(), suffix)).size(13),
                     Space::with_width(Length::Fill),
                     text(dot_char).size(10).color(dot_color),
                 ]
+                .spacing(8)
                 .align_y(Alignment::Center),
             )
             .width(Length::Fill)
             .padding([9, 12])
-            .style(theme::nav_button_style(is_active))
-            .on_press(Message::SelectTab(tab));
+            .style(theme::nav_button_style(is_active));
+
+            if enabled {
+                btn = btn.on_press(Message::SelectTab(tab));
+            }
 
             nav = nav.push(btn);
         }
@@ -814,15 +1111,22 @@ impl App {
             .push(Space::with_height(Length::Fixed(10.0)))
             .push(horizontal_rule(1))
             .push(Space::with_height(Length::Fixed(10.0)))
-            .push(text("TOOLS").size(11).color(theme::TEXT_MUTED));
+            .push(text(i18n::tr("tools")).size(11).color(theme::TEXT_MUTED));
 
         for &tab in EditorTab::UTILITY_TABS {
             let is_active = tab == active;
-            let btn = button(text(tab.label()).size(13))
-                .width(Length::Fill)
-                .padding([9, 12])
-                .style(theme::nav_button_style(is_active))
-                .on_press(Message::SelectTab(tab));
+            let btn = button(
+                row![
+                    theme::icon(tab.icon(), 16.0),
+                    text(tab.label()).size(13),
+                ]
+                .spacing(8)
+                .align_y(Alignment::Center),
+            )
+            .width(Length::Fill)
+            .padding([9, 12])
+            .style(theme::nav_button_style(is_active))
+            .on_press(Message::SelectTab(tab));
             nav = nav.push(btn);
         }
 
@@ -835,6 +1139,16 @@ impl App {
 
     fn view_main_panel(&self) -> Element<'_, Message> {
         let body: Element<'_, Message> = match (self.active_tab, &self.doc) {
+            (EditorTab::Saves, doc_opt) => views::saves::view(
+                &self.game_env,
+                &self.managed_saves,
+                &self.snapshots,
+                self.auto_snapshot_banner.as_deref(),
+                &self.portraits,
+                doc_opt.as_ref().map(|d| d.path.as_path()),
+                &self.saves_search,
+                self.saves_sort,
+            ),
             (EditorTab::General, Some(doc)) => {
                 views::general::view(doc, &self.portraits, &self.party_options)
             }
@@ -861,7 +1175,7 @@ impl App {
                 None,
                 "party_data",
                 "party_item",
-                "Party Bag Inventory",
+                i18n::tr("party_bag_title"),
                 "Key items & active party inventory slots (party_data.event_item & party_data.party_item).",
                 &self.inventory_search,
                 self.copied_item,
@@ -874,7 +1188,7 @@ impl App {
                 Some(98), // Barbara
                 "game_data",
                 "base_item",
-                "Barbara's Castle Warehouse Storage",
+                i18n::tr("warehouse_title"),
                 "Warehouse item storage (game_data.base_item) & Room Items (game_data.room_item).",
                 &self.inventory_search,
                 self.copied_item,
@@ -902,8 +1216,10 @@ impl App {
                 views::data_values::view(self.data_values_category, &self.data_values_search)
             }
             (EditorTab::Settings, _) => views::settings::view(&self.settings, &self.game_env),
-            (EditorTab::General, None) => self.view_empty_state(),
-            (tab, doc_opt) => views::stub::view_stub(tab, doc_opt.as_ref()),
+            (tab @ (EditorTab::Changelog | EditorTab::About), doc_opt) => {
+                views::stub::view_stub(tab, doc_opt.as_ref())
+            }
+            (_, None) => self.view_empty_state(),
         };
 
         container(body)
@@ -915,13 +1231,13 @@ impl App {
     fn view_empty_state(&self) -> Element<'_, Message> {
         let card = container(
             column![
-                text("Welcome to SuiSaveEditor")
+                text(i18n::tr("welcome_title"))
                     .size(24)
                     .color(theme::accent()),
-                text("Load a Suikoden II HD Remaster JSON save file to begin editing.\nA silent .bak backup will be created automatically in the same folder.")
+                text(i18n::tr("welcome_desc"))
                     .size(14)
                     .color(theme::TEXT_MUTED),
-                button(text("Open Save File...").size(14))
+                button(text(i18n::tr("open_save_file")).size(14))
                     .on_press(Message::OpenFile)
                     .padding([10, 18])
                     .style(theme::primary_button_style),
@@ -1061,5 +1377,76 @@ fn parse_int_or_empty(raw: &str) -> Option<i64> {
         Some(0)
     } else {
         trimmed.parse::<i64>().ok()
+    }
+}
+
+#[cfg(windows)]
+struct SingleInstanceGuard(*mut std::ffi::c_void);
+
+#[cfg(windows)]
+impl Drop for SingleInstanceGuard {
+    fn drop(&mut self) {
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn CloseHandle(hObject: *mut std::ffi::c_void) -> i32;
+        }
+        if !self.0.is_null() {
+            unsafe {
+                CloseHandle(self.0);
+            }
+        }
+    }
+}
+
+/// Ensures only one instance of SuiSaveEditor can run at a time on Windows.
+/// If another instance is already open, restores and focuses its window and returns `None`.
+#[cfg(windows)]
+fn acquire_single_instance() -> Option<SingleInstanceGuard> {
+    use std::ffi::c_void;
+
+    const ERROR_ALREADY_EXISTS: u32 = 183;
+    const SW_RESTORE: i32 = 9;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn CreateMutexW(
+            lpMutexAttributes: *mut c_void,
+            bInitialOwner: i32,
+            lpName: *const u16,
+        ) -> *mut c_void;
+        fn GetLastError() -> u32;
+        fn CloseHandle(hObject: *mut c_void) -> i32;
+    }
+
+    #[link(name = "user32")]
+    extern "system" {
+        fn FindWindowW(lpClassName: *const u16, lpWindowName: *const u16) -> *mut c_void;
+        fn IsIconic(hWnd: *mut c_void) -> i32;
+        fn ShowWindow(hWnd: *mut c_void, nCmdShow: i32) -> i32;
+        fn SetForegroundWindow(hWnd: *mut c_void) -> i32;
+    }
+
+    let mutex_name: Vec<u16> = "Local\\SuiSaveEditor_SingleInstance_Mutex\0"
+        .encode_utf16()
+        .collect();
+    let title_w: Vec<u16> = "SuiSaveEditor\0".encode_utf16().collect();
+
+    unsafe {
+        let handle = CreateMutexW(std::ptr::null_mut(), 0, mutex_name.as_ptr());
+        if handle.is_null() {
+            return Some(SingleInstanceGuard(std::ptr::null_mut()));
+        }
+        if GetLastError() == ERROR_ALREADY_EXISTS {
+            CloseHandle(handle);
+            let hwnd = FindWindowW(std::ptr::null(), title_w.as_ptr());
+            if !hwnd.is_null() {
+                if IsIconic(hwnd) != 0 {
+                    ShowWindow(hwnd, SW_RESTORE);
+                }
+                SetForegroundWindow(hwnd);
+            }
+            return None;
+        }
+        Some(SingleInstanceGuard(handle))
     }
 }

@@ -2,27 +2,32 @@ use iced::widget::{button, column, container, horizontal_rule, row, scrollable, 
 use iced::{Alignment, Element, Length};
 
 use crate::env_detect::{AppSettings, GameEnvStatus};
-use crate::theme::{self, AccentTheme};
+use crate::i18n::{self, AppLanguage};
+use crate::theme::{self, AccentTheme, BaseTheme};
 use crate::Message;
 
 pub fn view<'a>(
     settings: &'a AppSettings,
     env: &'a GameEnvStatus,
 ) -> Element<'a, Message> {
+    let lang_card = view_language_card(settings.language);
+    let base_card = view_base_theme_card(settings.base_theme);
     let theme_card = view_theme_card(settings.accent);
     let env_card = view_game_env_card(env);
     let info_card = view_app_info_card();
 
     let content = column![
         column![
-            text("Settings")
+            text(i18n::tr("tab_settings"))
                 .size(22)
                 .color(theme::TEXT_PRIMARY),
-            text("Customize accent theme colors and inspect game, BepInEx, and SuikodenFix detection.")
+            text(i18n::tr("settings_desc"))
                 .size(13)
                 .color(theme::TEXT_MUTED),
         ]
         .spacing(4),
+        lang_card,
+        base_card,
         theme_card,
         env_card,
         info_card,
@@ -36,6 +41,110 @@ pub fn view<'a>(
         .into()
 }
 
+fn view_language_card<'a>(current: AppLanguage) -> Element<'a, Message> {
+    let mut grid = column![].spacing(10);
+    let active_accent = theme::accent();
+
+    for chunk in AppLanguage::ALL.chunks(4) {
+        let mut r = row![].spacing(10);
+        for &lang in chunk {
+            let is_selected = lang == current;
+            let btn = button(
+                column![
+                    text(lang.native_name())
+                        .size(13)
+                        .color(if is_selected { active_accent } else { theme::TEXT_PRIMARY }),
+                    text(lang.english_name())
+                        .size(10)
+                        .color(theme::TEXT_MUTED),
+                ]
+                .spacing(2),
+            )
+            .padding([10, 14])
+            .width(Length::FillPortion(1))
+            .style(theme::accent_choice_button_style(is_selected, active_accent))
+            .on_press(Message::SetLanguage(lang));
+
+            r = r.push(btn);
+        }
+        grid = grid.push(r);
+    }
+
+    container(
+        column![
+            text(i18n::tr("language_title"))
+                .size(15)
+                .color(theme::accent()),
+            text(i18n::tr("language_desc"))
+                .size(12)
+                .color(theme::TEXT_MUTED),
+            grid,
+        ]
+        .spacing(10),
+    )
+    .padding(16)
+    .width(Length::Fill)
+    .style(theme::card_style)
+    .into()
+}
+
+fn view_base_theme_card<'a>(current: BaseTheme) -> Element<'a, Message> {
+    let mut grid = column![].spacing(10);
+    let active_accent = theme::accent();
+
+    for chunk in BaseTheme::ALL.chunks(3) {
+        let mut r = row![].spacing(10);
+        for &variant in chunk {
+            let is_selected = variant == current;
+            let btn = button(
+                row![
+                    container(Space::with_width(Length::Fixed(18.0)))
+                        .height(Length::Fixed(18.0))
+                        .style(theme::swatch_style(variant.swatch_color())),
+                    column![
+                        text(variant.label())
+                            .size(13)
+                            .color(if is_selected { active_accent } else { theme::TEXT_PRIMARY }),
+                        text(variant.subtitle())
+                            .size(10)
+                            .color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(1),
+                ]
+                .spacing(10)
+                .align_y(Alignment::Center),
+            )
+            .padding([10, 14])
+            .width(Length::FillPortion(1))
+            .style(theme::accent_choice_button_style(is_selected, active_accent))
+            .on_press(Message::SetBaseTheme(variant));
+
+            r = r.push(btn);
+        }
+        for _ in chunk.len()..3 {
+            r = r.push(Space::with_width(Length::FillPortion(1)));
+        }
+        grid = grid.push(r);
+    }
+
+    container(
+        column![
+            text(i18n::tr("base_bg_title"))
+                .size(15)
+                .color(theme::accent()),
+            text(i18n::tr("base_bg_desc"))
+                .size(12)
+                .color(theme::TEXT_MUTED),
+            grid,
+        ]
+        .spacing(10),
+    )
+    .padding(16)
+    .width(Length::Fill)
+    .style(theme::card_style)
+    .into()
+}
+
 fn view_theme_card<'a>(current: AccentTheme) -> Element<'a, Message> {
     let mut grid = column![].spacing(10);
 
@@ -44,7 +153,7 @@ fn view_theme_card<'a>(current: AccentTheme) -> Element<'a, Message> {
         for &variant in chunk {
             let is_selected = variant == current;
             let swatch_color = variant.accent_color();
-            let status_lbl = if is_selected { "Active" } else { "Select" };
+            let status_lbl = if is_selected { i18n::tr("active") } else { i18n::tr("select") };
 
             let card_btn = button(
                 row![
@@ -76,10 +185,10 @@ fn view_theme_card<'a>(current: AccentTheme) -> Element<'a, Message> {
 
     container(
         column![
-            text("Theme Accent Color")
+            text(i18n::tr("accent_title"))
                 .size(15)
                 .color(theme::accent()),
-            text("Choose the primary highlight color used for buttons, active tabs, borders, and focus indicators.")
+            text(i18n::tr("accent_desc"))
                 .size(12)
                 .color(theme::TEXT_MUTED),
             grid,
@@ -141,12 +250,48 @@ fn view_game_env_card<'a>(env: &'a GameEnvStatus) -> Element<'a, Message> {
         ),
     };
 
+    let (saves_dir_label, saves_dir_color, saves_dir_detail) = match &env.decrypted_saves_dir {
+        Some(p) if env.decrypted_saves_exists => (
+            "Found",
+            theme::ACCENT_GREEN,
+            p.to_string_lossy().to_string(),
+        ),
+        Some(p) => (
+            "Not Created Yet",
+            theme::ACCENT_GOLD,
+            format!("{} (save in-game with EditSave = true)", p.to_string_lossy()),
+        ),
+        None => (
+            "Unavailable",
+            theme::ACCENT_RED,
+            "Game folder must be detected first.".to_string(),
+        ),
+    };
+
+    let (editsave_label, editsave_color, editsave_detail) = match env.edit_save_enabled {
+        Some(true) => (
+            "Enabled",
+            theme::ACCENT_GREEN,
+            "EditSave = true in d3xMachina.suikoden_fix.cfg".to_string(),
+        ),
+        Some(false) => (
+            "Disabled",
+            theme::ACCENT_GOLD,
+            "EditSave = false in d3xMachina.suikoden_fix.cfg (enable to export/import JSON saves)".to_string(),
+        ),
+        None => (
+            "Not Found",
+            theme::TEXT_MUTED,
+            "BepInEx\\config\\d3xMachina.suikoden_fix.cfg not found yet (launch game once).".to_string(),
+        ),
+    };
+
     let mut actions = row![
-        button(text("Re-detect").size(12))
+        button(text(i18n::tr("redetect")).size(12))
             .padding([6, 12])
             .style(theme::secondary_button_style)
             .on_press(Message::RedetectGameEnv),
-        button(text("Browse Game Folder...").size(12))
+        button(text(i18n::tr("browse_game_folder")).size(12))
             .padding([6, 12])
             .style(theme::primary_button_style)
             .on_press(Message::BrowseGameDir),
@@ -156,7 +301,7 @@ fn view_game_env_card<'a>(env: &'a GameEnvStatus) -> Element<'a, Message> {
 
     if env.is_custom_dir {
         actions = actions.push(
-            button(text("Reset to Auto-Detect").size(12))
+            button(text(i18n::tr("reset_auto_detect")).size(12))
                 .padding([6, 12])
                 .style(theme::secondary_button_style)
                 .on_press(Message::ResetGameDir),
@@ -166,7 +311,7 @@ fn view_game_env_card<'a>(env: &'a GameEnvStatus) -> Element<'a, Message> {
     container(
         column![
             row![
-                text("Game & Mod Environment")
+                text(i18n::tr("game_env_title"))
                     .size(15)
                     .color(theme::accent()),
                 Space::with_width(Length::Fill),
@@ -176,7 +321,7 @@ fn view_game_env_card<'a>(env: &'a GameEnvStatus) -> Element<'a, Message> {
             container(
                 column![
                     row![
-                        text("Game Location")
+                        text(i18n::tr("game_location"))
                             .size(12)
                             .color(theme::TEXT_MUTED),
                         Space::with_width(Length::Fill),
@@ -243,6 +388,51 @@ fn view_game_env_card<'a>(env: &'a GameEnvStatus) -> Element<'a, Message> {
                 .style(theme::empty_slot_card_style),
             ]
             .spacing(12),
+            row![
+                container(
+                    column![
+                        row![
+                            text("Decrypted Saves Folder (gsd2)")
+                                .size(13)
+                                .color(theme::TEXT_PRIMARY),
+                            Space::with_width(Length::Fill),
+                            container(text(saves_dir_label).size(11).color(saves_dir_color))
+                                .padding([2, 8])
+                                .style(theme::badge_style(saves_dir_color)),
+                        ]
+                        .align_y(Alignment::Center),
+                        text(saves_dir_detail)
+                            .size(11)
+                            .color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(6),
+                )
+                .padding(12)
+                .width(Length::FillPortion(1))
+                .style(theme::empty_slot_card_style),
+                container(
+                    column![
+                        row![
+                            text("SuikodenFix EditSave Config")
+                                .size(13)
+                                .color(theme::TEXT_PRIMARY),
+                            Space::with_width(Length::Fill),
+                            container(text(editsave_label).size(11).color(editsave_color))
+                                .padding([2, 8])
+                                .style(theme::badge_style(editsave_color)),
+                        ]
+                        .align_y(Alignment::Center),
+                        text(editsave_detail)
+                            .size(11)
+                            .color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(6),
+                )
+                .padding(12)
+                .width(Length::FillPortion(1))
+                .style(theme::empty_slot_card_style),
+            ]
+            .spacing(12),
         ]
         .spacing(12),
     )
@@ -257,17 +447,17 @@ fn view_app_info_card<'a>() -> Element<'a, Message> {
 
     container(
         column![
-            text("Application Info")
+            text(i18n::tr("app_info_title"))
                 .size(15)
                 .color(theme::accent()),
             row![
-                text("Version:").size(12).color(theme::TEXT_MUTED).width(Length::Fixed(110.0)),
+                text(i18n::tr("version_label")).size(12).color(theme::TEXT_MUTED).width(Length::Fixed(110.0)),
                 text(concat!("v", env!("CARGO_PKG_VERSION")))
                     .size(12)
                     .color(theme::TEXT_PRIMARY),
             ],
             row![
-                text("Settings File:").size(12).color(theme::TEXT_MUTED).width(Length::Fixed(110.0)),
+                text(i18n::tr("settings_file_label")).size(12).color(theme::TEXT_MUTED).width(Length::Fixed(110.0)),
                 text(config_path)
                     .size(12)
                     .color(theme::TEXT_MUTED),
