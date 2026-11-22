@@ -2,7 +2,7 @@
 
 A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuring full recruitment, inventory, world treasure chests, and live-grounded story flag manipulation.
 
-**🦀 Bright Shield Save Editor — Native Rust Desktop (`v1.4.17` — Recommended):** Standalone Windows `.zip` (`BrightShield-win64.zip` / `BrightShield.exe`) — pure native GUI (`iced`), zero WebView overhead  
+**🦀 Bright Shield Save Editor — Native Rust Desktop (`v2.0.0` — Recommended):** Standalone Windows `.zip` (`BrightShield-win64.zip` / `BrightShield.exe`) — pure native GUI (`iced`), zero WebView overhead  
 **💻 Tauri Desktop (`v1.4.14` — Future Legacy):** Standalone Windows `.zip` (`SuiSaveEditor-Tauri-win64.zip`) — classic Web UI wrapped in Tauri v2  
 **🌐 Web Edition (`v1.4.14` — Future Legacy):** [https://faospark.github.io/suisaveeditor/](https://faospark.github.io/suisaveeditor/) (direct editor at `editor.html`)  
 **📦 Repository & Releases:** [https://github.com/faospark/suisaveeditor](https://github.com/faospark/suisaveeditor)  
@@ -54,7 +54,7 @@ A comprehensive web and desktop save editor for Suikoden II HD Remaster, featuri
 - **Castle Facilities**: Tenkou's Window Sets, Connell's Sound Sets, Suggestion Box (Meyasubako), Bath Items, Room Decor, Greenhill Castle Aliases, Food Menus, and Guardian Deity customizer.
 
 ### ⚡ Editions & Offline Utility
-- **Bright Shield Save Editor — Native Rust Desktop (`v1.4.17` — Primary / Active)**: Pure native Rust (`iced`) Windows executable (`BrightShield-win64.zip` / `BrightShield.exe`) with auto-scanned **Saves** home tab, immutable `backups\*.bak` + **Restore Diff Modal** + full `.zip` snapshots, **8 Languages** with bundled Noto Sans CJK & Material Symbols icons, **6 Base Themes** (including Dark Red) & 6 Accent Themes, **Tessai's Hammers**, Party Bag / Warehouse Copy & Paste, shortcuts (`Ctrl+O`, `Ctrl+S`, `Ctrl+D`, `Esc`), and Drag-and-Drop `.json` loading. All new features and future updates target this edition.
+- **Bright Shield Save Editor — Native Rust Desktop (`v2.0.0` — Primary / Active)**: Pure native Rust (`iced`) Windows executable (`BrightShield-win64.zip` / `BrightShield.exe`) with auto-scanned **Saves** home tab, immutable `backups\*.bak` + **Restore Diff Modal** + full `.zip` snapshots, **8 Languages** with bundled Noto Sans CJK & Material Symbols icons, **6 Base Themes** (including Dark Red) & 6 Accent Themes, **Tessai's Hammers**, Party Bag / Warehouse Copy & Paste, shortcuts (`Ctrl+O`, `Ctrl+S`, `Ctrl+D`, `Esc`), and Drag-and-Drop `.json` loading. All new features and future updates target this edition.
 - **Tauri Desktop (`v1.4.14` — Future Legacy)**: Portable Windows `.zip` (`SuiSaveEditor-Tauri-win64.zip`) packaging the classic Web UI for 100% offline use with silent `.bak` backups.
 - **Web Edition (`v1.4.14` — Future Legacy)**: Instant browser-based editor at `editor.html` (reachable from the `index.html` 3-edition landing page) with zero install and silent `localStorage` `.bak` snapshots.
 

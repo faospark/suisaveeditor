@@ -2,7 +2,7 @@
 
 All notable changes to the Suikoden II HD Remaster Save Editor.
 
-## [1.4.17] - Nov 22, 2026 (Native Desktop)
+## [2.0.0] - Nov 22, 2026 (Native Desktop)
 
 ### Added
 
@@ -39,6 +39,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Auto-Detect Recruitment Mods, Full Reset Buttons & Usage Warning**: Automatically checks `d3xMachina.suikoden_fix.cfg` (`BetterLeona = true`) and `BepInEx\plugins\SquidFam.dll` / `faospark.SquidFam.cfg` (`SquidFam = true`) to pre-enable **Better Leona Option** and **Kraken Patch** in the **Recruits** tab, displays a prominent warning notice advising against manually forcing mutually exclusive recruits (Kasumi/Valeria or all Beasts), and restores the per-character **Full Reset** button (with hover tooltip) across all 33 story-flagged recruits to clear associated `event_flag` bits, remove granted quest items (`Listening Crystal`, `Rose Brooch`, `Suiko Map`, `Clay`), and reset Jude's `parts_no[3]`.
 - **Combatants Layout Reorganization & Quick Portrait Jump**: Moved **Base Stats (`para`)** below **Level, HP & Weapon** in the left column, placed **Rune Magic Points (`mp[0..3]`)** (stacked vertically Lv.1–Lv.4 like in-game) and **Equipped Runes (`mon_eqp`)** (with paired unlock levels) stacked beside them in the right column, and made **Active Party & Convoy** portraits in the **General** tab clickable to jump directly to that character's **Combatants** page.
 - **SuikodenFix DLL Detection**: Normalized underscores/hyphens/spaces when scanning `BepInEx\plugins` so `Suikoden_Fix.dll` and `SuikodenFix.dll` are both detected reliably.
+- **Weapon Runes (`buki_mon`) Fix**: Added missing **Fire Lizard Orb (`92`)** and **Magic Drain Orb (`93`)** to the **Weapon Rune** dropdown in **Combatants** and classified both as weapon-only runes.
 - **Investigations Character Filtering**: Excluded Pilika (`#123`, `#124`) and Gremio (`#125`) — alongside Bonaparte (`#84`) — from Richmond's Investigations character grid, Target Character dropdown, and unlocked clue total (`484` total clues).
 
 ## [1.4.16] - Nov 22, 2026 (Native Desktop)

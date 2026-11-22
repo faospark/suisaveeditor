@@ -118,6 +118,8 @@ pub const WEAPON_RUNES: &[NamedOption] = &[
     opt(8, "Mother Earth Orb"),
     opt(9, "Lightning Orb"),
     opt(10, "Thunder Orb"),
+    opt(92, "Fire Lizard Orb"),
+    opt(93, "Magic Drain Orb"),
     opt(94, "Hunter Orb"),
     opt(95, "Technique Orb"),
     opt(96, "Silence Orb"),
@@ -134,7 +136,7 @@ pub fn rune_attrs(id: i64) -> &'static [&'static str] {
     match id {
         1..=10 => &["N", "Wep"],
         11 => &["82", "RH", "X"],
-        12 | 15 | 16 | 27..=31 | 62..=88 | 92 | 93 => &["N"],
+        12 | 15 | 16 | 27..=31 | 62..=88 => &["N"],
         13 => &["1", "RH", "X"],
         14 => &["80", "81", "RH", "X"],
         17 => &["N", "HR"],
@@ -164,7 +166,7 @@ pub fn rune_attrs(id: i64) -> &'static [&'static str] {
         53 => &["25", "RH", "X"],
         54 => &["40", "HR", "X"],
         89 => &["67", "HR", "X"],
-        94..=102 | 105 => &["Wep", "ExR"],
+        92..=102 | 105 => &["Wep", "ExR"],
         _ => &[],
     }
 }
