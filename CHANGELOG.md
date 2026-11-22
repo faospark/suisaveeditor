@@ -14,12 +14,10 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
   - **240 Food Dishes**: Named food lookup, `Food (96+)` picker category, named Restaurant Menu dropdowns, and `FOOD` Data Values tab.
   - **Side-Quests & Story Flags**: Listening Crystal Beasts, Luca Ambush HP, Chaco's Pickpocketed Potch, and 36 annotated story flags with bit labels and search.
   - **Native Desktop QoL**: Fast portrait loading, non-blocking file dialogs, silent `.bak` backups, Save As folder memory, bottom-right version footer, `DEBUG SAVE` top-bar indicator, shortcuts (`Ctrl+O`, `Ctrl+S`, `Ctrl+D`, `Esc`), and Drag-and-Drop `.json` loading.
-- **3-Edition Landing Page**:
-  - Moved the Web Editor to `editor.html` and added a landing page at `index.html` showcasing **Native Desktop (`v1.4.16`)**, **Tauri Desktop (`v1.4.14` — Final Legacy)**, and **Web Edition (`v1.4.14` — Final Legacy)**, along with an Author's Note modal.
 
 ### Improved & Fixed
 
-- **Castle Facility Views**: Upgraded **Tenkou's Window Sets**, **Connell's Sound Sets**, and **Tetsu's Castle Bath House** (Paintings / Girl's Side / Boy's Side) to full web-parity dropdown and grid layouts.
+- **Castle Facility Views**: Upgraded **Tenkou's Window Sets**, **Connell's Sound Sets**, and **Tetsu's Castle Bath House** (Paintings / Girl's Side / Boy's Side) to full dropdown and grid layouts.
 - **Cook-Off Progress**: Live `X / 12 Won` badge and accurate defeated/current/upcoming states regardless of extra flag bits.
 - **Tony's Vegetable Farm**: Simplified to 4 crop columns with a single unified planted toggle per plot.
 - **Yuzu's Castle Pasture**: Added per-animal notes, 4-sheep HD Remaster cap, and `Max All (13)` / `Default Recruited (2)` / `Clear All (0)` presets.
@@ -33,19 +31,12 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 
 ### Added & Grounded
 
-- **Pico Recruitment Flag Grounding (`event_flag[210]` Bit 5 / `0x20`)**:
-  - Live-captured and diff-verified (`Data150.json` -> `Data151.json`) Pico's recruitment inside Greenhill Inn (`ve10_00`).
-  - Added Pico (Character 113) to `RECRUITMENT_STORY_FLAGS` in `src/editors/recruitment.js` with flag byte 210 mask `0x20`.
-  - Updated byte 210 bit 5 (`Mask 32`) in `src/editors/storyFlags.js` to `Pico Recruited in Greenhill Inn (Mask 32)`.
-
-- **Greenhill Reconnaissance, Checkpoint & Nina Town Square Flags (`event_flag[172]`, `event_flag[173]`, `event_flag[238]`, `event_flag[239]`)**:
-  - Live-captured and bytecode-verified the Greenhill City entrance (`ve01_00`) and Town Square (`ve01_01`) progression.
-  - Added Byte `238` (`0xEE` Bit 0: Peacetime Gate State cleared upon starting recon mission).
-  - Added Byte `239` (`0xEF` Bits 0–3: Master Greenhill Recon & Student Disguise state machine — meeting Fitcher, checkpoint briefing, naming Nanami & Flik student aliases, and Academy registration).
-  - Added Byte `172` (`0xAC` Bit 0: Picked Riou & Nanami to help Nina; Bit 1: Picked Flik to help Nina; Bit 6: Fitcher checkpoint inspection passed; Bit 7: Stepped past checkpoint into city).
-  - Added Byte `173` (`0xAD` Bit 0: Town Square initial arrival cutscene; Bit 1: Encountered Nina on the Town Square; Bit 2: Entered New Leaf Academy Reception / Met Emilia; Bit 3: Spoke with Emilia / Student Registration completed; Bit 4: Nina obsessing over Flik in front of the Academy; Bit 5: Checked in with Dormitory Matron; Bit 6: Chose to walk around first upstairs in Dormitory).
-  - Added Byte `174` (`0xAE` Bit 0: Decided to sleep/eat supper in upstairs dorm room, transitioning to night and spawning Nina in the 2F dorm hallway; Bit 1: Completed Nina 2F night hallway encounter & woke up next morning; Bit 2: Exited dormitory next morning; Bit 3: Met Flik outside dormitory to head into town to meet Fitcher; Bit 4: Witnessed Shin, Rowd & Fitcher cutscene in front of the Greenhill Inn).
-  - Grounded **Emilia** (`Character 96`) & **Jeane** Academy flags in `ve07_00`: added Emilia to `RECRUITMENT_STORY_FLAGS` (`Byte 209` Bits 6–7 for revealing true identity / flattery during recon mission; `Byte 210` Bits 0–1 for Emilia recruitment / decline) and annotated `Byte 213` Bit 5 (`0x20`) as speaking to Jeane in the New Leaf Academy Rune classroom.
+- **Pico Recruitment Flag (`event_flag[210]` Bit 5 / `0x20`)**:
+  - Live-captured and diff-verified Pico's recruitment inside Greenhill Inn (`ve10_00`).
+  - Linked Pico (Character 113) with flag byte 210 mask `0x20` (`Pico Recruited in Greenhill Inn`).
+- **Greenhill Reconnaissance, Checkpoint & Nina Town Square Flags (`event_flag[172..174]`, `event_flag[238..239]`)**:
+  - Grounded Greenhill City entrance (`ve01_00`) and Town Square (`ve01_01`) progression across bytes `172`, `173`, `174`, `238`, and `239` (Fitcher briefing, student disguise aliases, Academy registration, Emilia, Nina's Town Square & 2F Dormitory night encounters, and Greenhill Inn cutscene).
+  - Grounded **Emilia** (`Character 96`, bytes `209`–`210`) and **Jeane** Academy Rune classroom (`byte 213` Bit 5) flags in `ve07_00`.
 
 ## [1.4.14] - 2026-11-03
 
@@ -53,660 +44,149 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 
 - **Kobold Forest Treasure Chests & Stray Lamb Correction (`t_box_flag[6]` / Group 7)**:
   - Corrected Group 7 (`t_box_flag` Byte 6) area designation from Lakewest Town to **Kobold Forest** (`vh10`).
-  - Grounded each of the 4 path chests (#49–52) containing **Collar** (the dog collar accessories placed along the Kobold Forest trail during the Unicorn quest), labeling them distinctly `#49: Collar (Path 1)` through `#52: Collar (Path 4)`.
-  - Retained `#53: Main-Gauche` and `#54: Guard Ring` (hidden behind the tree in the clearing).
-  - Grounded Chest #55 (Bit 6, Mask 64) as **Lamb (Yuzu Farm)**, which corresponds to finding Yuzu's stray sheep in the forest and registers via `vh10` Submap 2 event bytecode `[97, 6, 64]`.
+  - Labeled path chests `#49`–`#52` as `Collar (Path 1)` through `Collar (Path 4)`, retained `#53: Main-Gauche` and `#54: Guard Ring`, and grounded Chest `#55` (Bit 6) as **Lamb (Yuzu Farm)**.
 
 ## [1.4.13] - 2026-11-03
 
 ### Added & Grounded
 
-- **Jeane Recruitment Flag Grounding (`event_flag[213]` Bit 7 / `0x80`)**:
-  - Live-captured Jeane's recruitment in Two River City Rune Shop (`vh11`).
-  - Added Jeane (Character 116) to `RECRUITMENT_STORY_FLAGS` in `src/editors/recruitment.js` with flag byte 213 mask `0x80`.
-  - Annotated byte 213 (bit 7) in `src/editors/storyFlags.js`.
-
-- **Yuzu Recruitment & Sheep Minigame Story Flags Grounding (`event_flag[68]` & `event_flag[70]`)**:
-  - Captured exact runtime flag transitions using PKCore's live flag monitor during Kobold Village quest progression (`vh03` / `vh10`).
-  - Added Yuzu (Character 102) to `RECRUITMENT_STORY_FLAGS` in `src/editors/recruitment.js`, linking byte 68 mask `0xF0` (dialogue & sheep 1–3 minigame triggers) and byte 70 mask `0x01` (HQ recruitment status) for synchronized reset and status management.
-  - Annotated byte 68 (bits 4, 5, 6, 7) and byte 70 (bit 0) in `src/editors/storyFlags.js` with human-readable labels and area info.
-
-- **World Map Treasure Chests Human-Readable Labels & Locations (`t_box_flag[0..31]`)**:
-  - Fully reverse-engineered and grounded all 256 individual chest flags from `GameAssembly.dll` native routine `EVENTCON$$ECTkFlgSet` and map event bytecode in `Mobobehaviour/<map>.json`.
-  - Added comprehensive `src/config/chests.js` cataloging each chest's exact in-game item or reward (`Mega Medicine`, `Water Orb`, `Dragon Plans 2`, `Unicorn Plans 3`, `Cape of Darkness`, `Old book` volumes, seeds, armor, etc.), geographical area, and internal map ID.
-  - **Granular UI Labels**: Replaced generic `Chest #X` checkboxes with rich item names (e.g. `#1: Mega Medicine`, `#5: Water Orb`, `#148: Cape of Darkness`) alongside detailed tooltip descriptions showing exact map names and locations.
-  - **Contextual Byte Group Headers**: Card headers now display the primary geographical areas for each group (e.g. `Group 1: Ancient Sindar Ruins Caverns (Byte 0)`, `Group 3: Mt. Rakutei Dragon Cliffs (Byte 2)`, `Group 19: Two River Subterranean Sewers / Tinto Mines (Byte 18)`), clearly identifying unused slots.
-  - **Universal Search Filter**: Filter input now supports live searching across chest numbers, item names, runes, plans, equipment, location names, and byte indices.
+- **Jeane Recruitment Flag (`event_flag[213]` Bit 7 / `0x80`)**:
+  - Live-captured Jeane's recruitment in Two River City Rune Shop (`vh11`) and linked Character 116 to byte 213 bit 7.
+- **Yuzu Recruitment & Sheep Minigame Story Flags (`event_flag[68]` & `event_flag[70]`)**:
+  - Linked Yuzu (Character 102) to byte 68 mask `0xF0` (dialogue & sheep 1–3 minigame triggers) and byte 70 mask `0x01` (HQ recruitment status).
+- **World Map Treasure Chests Labels & Locations (`t_box_flag[0..31]`)**:
+  - Grounded all 256 chest flags with exact item rewards, geographical area group headers, internal map IDs, and live search filtering by chest number, item name, location, or byte index.
 
 ## [1.4.12] - 2026-11-03
 
 ### Fixed & Grounded
 
 - **Yuzu's Castle Pasture Livestock Synchronization (`food_num[4..7]` & `hon_flag[31..33]`)**:
-  - Completely grounded livestock mechanics in native decompiled engine bytecode (`EventOverlayClass.FarmBase$$RunchMain` at `0x181F81640`).
-  - Corrected primary data source: delivered animal counts are stored in `game_data.food_num[4..7]` (Chicks: 0–3, Pigs: 0–3, Sheep: 0–4, Cattle: 0–3; 13 total animals).
-  - Automatic flag synchronization: accurately calculates and sets all 13 threshold bits across `hon_flag[31]` (bits 4–7), `hon_flag[32]` (bits 0–7), and `hon_flag[33]` (bit 0) without corrupting adjacent vegetable plot flags in `hon_flag[31]` or flag bytes in `hon_flag[33]`.
-  - Removed misleading "World Locations" table to ensure users understand pasture stock is separate from world/map pickup event flags.
+  - Corrected delivered animal counts to `game_data.food_num[4..7]` (Chicks: 0–3, Pigs: 0–3, Sheep: 0–4, Cattle: 0–3; 13 total animals).
+  - Auto-syncs all 13 threshold bits across `hon_flag[31]` (bits 4–7), `hon_flag[32]` (bits 0–7), and `hon_flag[33]` (bit 0) without corrupting adjacent vegetable plot flags.
 
 ## [1.4.11] - 2026-11-03
 
-### Fixed
+### Fixed & Changed
 
 - **Hai Yo's Kitchen Seasonings (`taste_flag`)**:
-  - Corrected Row 0 to "No Seasoning" (Text ID 3606, baseline cooking menu option requiring no item or flag).
-  - Fixed Bit 5 mapping from non-existent "White Sauce" to "Salt (Bit 5 / +32)".
-  - Updated quick-action reset button to "Reset (No Seasonings)".
-
-### Changed
-
+  - Corrected Row 0 to "No Seasoning", fixed Bit 5 mapping to "Salt (Bit 5 / +32)", and updated the reset button to "Reset (No Seasonings)".
 - **Yuzu's Livestock Ranch (`hon_flag[32]`)**:
-  - Replaced generic "Pen 1 / Pen 2" labels with acquisition location context matching in-game discovery (Chickens: Lakewest/Tigermouth; Pigs: Radat/Rokkaku/Greenhill; Sheep: Kobold Forest/Forest Village/Sajah; Cattle: Highway Village/Drakemouth).
-  - Added "Default Recruited (17)" preset reflecting Yuzu's starting stock (1 Chick + 1 Lamb).
-  - Added helpful guidance noting that animal items (#5, #6, #7, #8) can also be added directly to the inventory in the Items tab.
+  - Added acquisition location context for each animal and a "Default Recruited" preset reflecting Yuzu's starting stock.
 
 ## [1.4.10] - 2026-11-02
 
 ### Added
 
-- **Tenkou's Window Sets & Frame Customization Editor (`src/editors/windowSoundSets.js`, `schema.js`, `main.js`)**:
-  - Added dedicated editor card under the **Castle** tab for delivered Window Sets and frame customization.
-  - Granular delivery toggles for Window Sets 1 through 7 mapped to `event_flag[77]` (bits 0–6) with quick "Deliver All" and "Clear All" actions.
-  - Active frame configuration controls for Active Window Style (`game_data.win_typ[0]`), Window Color (`game_data.win_col`), and Opacity/Transparency (`game_data.win_suke`).
-
-- **Connell's Sound Sets & Audio Customization Editor (`src/editors/windowSoundSets.js`, `schema.js`, `main.js`)**:
-  - Added dedicated editor card under the **Castle** tab for delivered Sound Sets and audio effect configuration.
-  - Granular delivery toggles for Sound Sets 1 through 7 mapped to `event_flag[78]` (bits 0–6) with quick "Deliver All" and "Clear All" actions.
-  - Active audio configuration selector for Active Sound Effect Set (`game_data.se_set`).
+- **Tenkou's Window Sets & Frame Customization**:
+  - Delivery toggles for Window Sets 1–7 (`event_flag[77]`, bits 0–6) with "Deliver All" / "Clear All" actions, plus Active Window Style (`win_typ[0]`), Frame Color (`win_col`), and Opacity (`win_suke`).
+- **Connell's Sound Sets & Audio Customization**:
+  - Delivery toggles for Sound Sets 1–7 (`event_flag[78]`, bits 0–6) with "Deliver All" / "Clear All" actions, plus Active Sound Effect Set (`se_set`).
 
 ## [1.4.9] - 2026-11-01
 
 ### Added
 
-- **Automatic Immediate `.bak` Backup on File Open (`src/main.js`, `src-tauri/src/lib.rs`)**:
-  - **Desktop App (Tauri)**: As soon as a `.json` save file is opened via the file dialog or drag-and-drop, the app automatically copies the file to `<filename>.bak` right in that same folder on disk before any edits can be made.
-  - **Web Version**: Silently caches a rollback snapshot in browser storage (`localStorage`). No download or dialog is triggered on open. Browsers cannot write files into the save folder, so the Desktop App is recommended for on-disk `.bak` backups.
-
-- **Native "Save As..." Workflow (`src/main.js`, `src-tauri/src/lib.rs`, `index.html`)**:
-  - Replaced blind direct file download with a full "Save As..." dialog workflow.
-  - **Desktop App (Tauri)**: Invokes the native Windows Save As file dialog prefilled with the current filename, allowing players to save into any folder or as a new slot name, writing clean UTF-8 BOM encoded JSON directly to disk.
-  - **Web Version**: Uses the browser File System Access API (`showSaveFilePicker`) where available (Chrome/Edge; disabled by default in Brave), remembering the folder the file was opened from. Without that API the browser falls back to a normal download.
-
-- **Desktop App Recommendation (`index.html`, `src/style.css`)**:
-  - Added an inline note in the web version recommending the Desktop App for reliable same-folder saving and silent `.bak` backups. Hidden inside the Desktop App.
-
-- **Version Sync (`src/config/constants.js`)**:
-  - Web version label updated from 1.4.8 to 1.4.9 to match `tauri.conf.json` and `Cargo.toml`.
-
-- **Castle Suggestion Box (目安箱 / Meyasubako) Editor (`src/editors/suggestionBox.js`, `schema.js`, `main.js`)**:
-  - Full-featured editor for Dunan Castle's suggestion box system located under the **Castle** tab.
-  - Complete control over `game_data.meyasu_data` (32-byte bitfield managing 2-bit letter progression levels 0–3 for 125+ stars of destiny and castle allies).
-  - Unread mail notification indicator and toggles (`b_meyasu`) plus management of the 4 pending inbox letter slots (`game_data.unread_letter`).
-  - One-click `🔄 Reset All to Unread (0)`: Clears inbox and sets all character letter levels to 0, allowing players to re-experience receiving and reading all suggestion box letters from scratch.
-  - One-click `⚡ Mark All Read (Level 3)`: Instantly sets all 32 bytes to `0xFF` (level 3 for all characters).
-  - Searchable allies roster with live filtering (Read, Unread, Incomplete, Complete) and instant segmented button level selection.
-
-- **Hai Yo Cook-Off Battles Linear Checklist Redesign (`src/main.js`)**:
-  - Replaced the single-select dropdown with a clean, responsive linear checklist covering all 12 culinary matches from Ky Yun through Jinkai.
-  - Added dedicated `🔄 Reset to Start` button (`event_flag[152]=0`, `event_flag[153]=32`), allowing players to replay the cook-off minigame at any time.
-  - Added `⚡ Complete All` button (`event_flag[152]=255`, `event_flag[153]=47`) and dynamic progress status badges.
-
-- **Consolidated Story Flags & Recruitment Resets**:
-  - Moved raw `event_flag` editing into the **Experimental** tab to streamline the main navigation.
-  - Grounded `KNOWN_STORY_FLAGS` strictly to verified story and recruitment events without generic filler.
-  - Added recruitment resets with automatic item removal and story flag synchronization for 12+ multi-step recruits.
-
-
-- **Dedicated "Story Flags" Editor Tab (`src/editors/storyFlags.js`, `schema.js`, `main.js`)**:
-  - Added a full-featured editor tab exposing all 256 bytes (`event_flag[0..255]`) of the game engine's global event ledger.
-  - Built-in registry (`KNOWN_STORY_FLAGS`) annotating key story checkpoints and character recruitments (Badeaux, Tenkou, Simone, Vincent, Annallee, Alberto, Connell, Tony, Wakaba, Tessai, Tomo, Feather, Ayda, Viki, Genshu, Alex & Hilda, Tsai, Millie, Kinnison, Shiro, Zamza, Anita, Templeton, Meg, Gadget, Sid, Hans, Clive Milestones, Hai Yo Cook-Offs).
-  - Searchable toolbar with instant filtering by flag number, character name, area, or description.
-  - Interactive 8-bit checkbox array (`b0` through `b7`) for every byte with descriptive bit tooltips.
-  - Two-way synchronized decimal (`0..255`) and hex (`0x00..0xFF`) inputs with visual state highlighting.
-
-- **Smart Recruitment & Story Flags Reset (`src/editors/recruitment.js`, `src/editors/storyFlags.js`)`:
-  - Added full extensive reset mapping for **Sculptor Jude** (Slot 115, Flag 209 bits 4/8/16/32, Clay quest item #2125/altId 54, and Castle statue assembly state reset).
-  - Extended `removeAssociatedItems` to automatically scan and clear items across Key Items (`event_item`), Inventory (`party_item`), and Warehouse (`base_item`).
-- **Smart Recruitment & Story Flags Reset (`src/editors/recruitment.js`)**:
-  - Added `RECRUITMENT_STORY_FLAGS` mapping characters with multi-step world state flags.
-  - Integrated a compact `🔄 Reset` button directly on character cards for characters with linked story flags.
-  - One-click action sets character status to `0: Not Recruited`, automatically clears corresponding `event_flag` bits, and removes any granted quest items (such as Badeaux's 2× Listening Crystals) from party bag and warehouse.
-  - Selecting `0: Not Recruited` from the dropdown also automatically clears linked story flags.
+- **Automatic Silent `.bak` Backup on File Open**: Automatically copies opened `.json` save files to `<filename>.bak` in the same folder before edits.
+- **Native "Save As..." Workflow**: Opens the native Save As dialog in the same folder as the loaded save, writing UTF-8 BOM JSON directly to disk.
+- **Castle Suggestion Box (`meyasu_data`) Editor**: Full control over 32-byte letter progression levels (0–3) for 125+ allies, unread indicator (`b_meyasu`), 4 pending inbox slots (`unread_letter`), searchable roster, and Reset/Mark All Read actions.
+- **Hai Yo Cook-Off Battles Checklist**: Linear checklist for all 12 culinary matches (Ky Yun through Jinkai) with Reset to Start and Complete All buttons.
+- **Story Flags Editor (`event_flag[0..255]`)**: Searchable 256-byte ledger with annotated story checkpoints and recruitment flags, 8-bit checkboxes, and synced decimal/hex inputs.
+- **Smart Recruitment & Story Flags Reset**: One-click reset on multi-step recruits (including Sculptor Jude and Badeaux) clearing linked `event_flag` bits and associated quest items across Key Items, Party Bag, and Warehouse.
 
 ## [1.4.8] - 2026-10-31
 
-### Changed
-
-- **Decommissioned Service Worker in Favor of Standard HTTP Caching (`sw.js`, `index.html`)**:
-  - Completely decommissioned the legacy Service Worker to eliminate caching interference, stale code loops, and update desyncs.
-  - Web users and developers running locally in XAMPP or via GitHub Pages now receive fresh code updates immediately upon page reload.
-  - Added an automated cleanup script that unregisters any existing Service Workers and purges legacy browser cache stores on visit.
-
 ### Added
 
-- **Standalone Tauri Desktop Application (`src-tauri/`)**:
-  - Introduced an official, native Windows desktop executable (`suisaveeditor.exe`) built with Tauri v2.
-  - Offers 100% full offline capability with zero internet dependency—all HTML, CSS, JavaScript, icons, and character portraits are embedded directly into the binary.
-  - Zero duplicate code: shares the exact same source assets with the web version, automatically bundled during build.
+- **Standalone Desktop Application**: Introduced an offline Windows desktop executable (`v1.4.8` Tauri edition) with bundled portraits and zero internet dependency.
 
 ## [1.4.7] - 2026-10-29
 
-### Added
+### Added & Changed
 
-- **Modern File Action Toolbar & Drag-and-Drop (`index.html`, `style.css`, `helpers.js`, `main.js`)**:
-  - Replaced the unstyled native file input and 2-column grid with a modern flex action bar (`.file-action-bar`).
-  - Added custom-styled file upload button (`.file-upload-btn`) with vector upload icon, automatically toggling between "Choose File" and "Change File".
-  - Integrated dynamic file status badge (`.file-status-badge`) showing a green checkmark, monospace file name, and detected save slot tag (`Slot #88`).
-  - Added drag-and-drop support across the file action bar with visual glow indicators when hovering with `.json` save files.
-  - Aligned the Save / Download button with a matching vector disk icon and smooth hover elevation.
-
-- **Item & Accessory Picker Dialog Modal Controls (`tableEditor.js`, `battleCharacters.js`)**:
-  - Added a dedicated top-right modal close button (`✕` / `.close`) to both the Item Picker and Accessory Picker dialog headers.
-  - Added backdrop click-outside dismissal (`dialog.addEventListener('click')`) to immediately close and clean up dialogs.
-  - Added missing ESC key listener (`cancel` event) to the Accessory Picker dialog for seamless keyboard dismissal.
-
-- **Recruitment Portrait Cards Grid Overhaul (`recruitment.js`, `style.css`)**:
-  - Replaced the legacy single-column HTML `<table>` layout with responsive portrait cards (`.recruitment-cards-grid`).
-  - **Visual Portrait Cards (`.recruitment-card`)**:
-    - Displays 52×52px character portraits (`./image/portraits/fp_###.png`) with automatic fallback handling.
-    - Card header shows character ID and name (`#ID: Name`) alongside color-coded dynamic recruitment status badges (`✓ Recruited`, `✓ Recruited Via SFix`, `✓ Recruited Via Kraken`, `💬 Spoke To`, `📋 On Leave`, `☠ Deceased`, `🔒 Event Locked`, `✗ Not Recruited`).
-    - Replaced raw numeric text input with a stylized `<select class="recruitment-select">` dropdown supporting standard flags (`0`, `1`, `70`, `71`, `86`, `212`, `213`) while preserving custom hex/decimal values.
-    - Active recruited cards highlight with green borders (`.is-recruited`), contacted characters highlight with blue borders (`.is-spoke-to`), while non-recruited cards remain subtly dimmed.
-  - **Live Filter & Search Toolbar (`.recruitment-toolbar`)**:
-    - Real-time search filter matching character name or numeric ID with instant responsiveness.
-    - Quick status filter dropdown (`All Characters`, `✓ Recruited Only`, `💬 Spoke To Only`, `✗ Not Recruited Only`).
-    - Live star counter badge (`⭐ Recruited: X / Total`) that dynamically recalculates on every change.
-    - Excluded unused placeholder slots #126 and #127 ("NA-") from the recruitment card list and total counts.
-
-- **Playable Character Portraits (`battleCharacters.js`, `style.css`)**:
-  - Integrated local 400x400 HD character portraits (`./image/portraits/fp_###.png`) into Column 1 (General) of each character's editor card.
-  - Positioned the portrait side-by-side with Level and Experience inputs in a dedicated top flex row, perfectly balancing the vertical space.
-  - Styled with rounded corners, subtle dark drop shadows, and hover transitions. Gracefully hides without disrupting layout if an image fails to load.
-
-- **Clive Quest Milestones & Completion Flag Tracking (`main.js`, `constants.js`)**:
-  - Upgraded the **Play Time & Clive Quest Tracker** to evaluate both in-game playtime hours and event completion flags (`event_flag[94]`).
-  - **8 Full Story Milestones Tracked**:
-    - `0x01` (Bit 0): Muse City Entrance (<3h)
-    - `0x02` (Bit 1): South Window Recruitment (Clive joins)
-    - `0x04` (Bit 2): Lakewest Town (<11h)
-    - `0x08` (Bit 3): Forest Village (<13h)
-    - `0x10` (Bit 4): Rockaxe Information
-    - `0x20` (Bit 5): Radat Town (<14h)
-    - `0x40` (Bit 6): Muse Hill (<15h)
-    - `0x80` (Bit 7): Sajah Finale (<20h)
-  - **Dynamic State Evaluation**:
-    - **Done**: Shows green `✓ [Milestone] [Done]` if already completed in the save, preventing late-game saves from mistakenly displaying earlier completed cutoffs as expired.
-    - **Open**: Shows blue `⏳ [Milestone] [Open]` if pending and current play time is still under the cutoff.
-    - **Expired**: Shows red `✗ [Milestone] [Expired]` if pending and current play time has exceeded the cutoff.
-  - **Interactive Toggles & Quick Actions**:
-    - Clicking any milestone badge directly toggles its completion bit in `event_flag[94]`.
-    - Added "Toggle All Done (Flag 94)" quick-action button in the card header alongside "Set Hours = 1".
-
-- **Guardian Deity Statue & Blueprints Editor (`parts_no`) under Castle Tab**:
-  - Implemented `createGuardianDeityEditor` in `src/editors/guardianDeity.js` and registered in `schema.js`, `main.js`, and `src/editors/index.js`.
-  - **Blueprints Delivered to Jude (`parts_no[0]` & `parts_no[1]`)**:
-    - 16 interactive toggle checkboxes for all Dragon, Unicorn, Rabbit, and Turtle plans with drop/acquisition locations and anatomical segment info.
-    - Quick actions: "Deliver All 16 Plans" (`[255, 255]`) and "Clear Plans" (`[0, 0]`).
-  - **Modular Statue Customizer (`parts_no[2]`)**:
-    - 4 Anatomical selectors for Head, Body, Legs, and Tail (Dragon, Unicorn, Rabbit, Turtle).
-    - Bitwise 8-bit combination calculation: `(Tail << 6) | (Legs << 4) | (Body << 2) | Head`.
-    - Live reward evaluation dynamically previewing Jude's exact blessing across all 256 combinations (Pure relics, permanent stat stones, supreme runes, cash, or dud warning).
-    - Quick presets dropdown for iconic Pure statues, all 7 permanent stat stones (+3 ATK, DEF, MAG, MDEF, SKL, SPD, LUK), and top rewards.
-  - **Shrine Statue Active & Reward Claim State (`parts_no[3]`)**:
-    - Toggle for whether the statue has been inspected and Jude's blessing collected at the Castle Shrine (`vk33`).
-
-### Changed
-
-- **Integrated Bath House into Castle Tab (`schema.js`, `bathItems.js`, `style.css`)**:
-  - Integrated Dunan Castle Bath House items (`furo_item[0..7]`) into the **Castle** tab alongside the Guardian Deity, Library Books, Farm, and Fishing facilities.
-  - Eliminated the redundant standalone "Bath" tab from the main navigation bar.
-  - Redesigned `createBathItemsEditor` to match the Castle tab card design:
-    - **Paintings** (Slots 2 & 5): Symmetrically arranged in a 2-column grid (`.bath-paintings-grid`).
-    - **Ornaments** (Girl's Side: Slots 0, 1, 3; Boy's Side: Slots 4, 6, 7): Arranged side-by-side in a responsive 2-column card grid (`.bath-ornaments-grid`).
-    - Added change callback triggers to ensure instant save state indicator updates on edits.
-
-- **Recruitment Flag 2-Column Info & Warning Grid (`recruitment.js`, `style.css`)**:
-  - Replaced the stacked description with a 2-column layout (`.recruitment-info-grid`):
-    - **Status Values Column (240px)**: Compact list of recruitment status codes (`1`, `70`, `71`, `86`, `212`, `213`) with representative icons and descriptions.
-    - **Warning Column (1fr)**: Amber-accented callout box detailing the SuikodenFix & Kraken Patch guidance for multi-beast and dual-ninja recruitments.
-    - Includes responsive breakpoint collapsing to a single column on screens under 768px.
-
-- **Recruited Characters Mod Settings Card Styling (`recruitment.js`)**:
-  - Unified the "Recruitment Mods that you have on" card in the Recruited Characters tab to identically match the design in the Battle Characters tab.
-  - Applied `.recruitment-mods-section` styling with dark semi-transparent card background, border, header note, and compact label layout.
-  - Added bidirectional event synchronization via `recruitment-mods-changed` so toggling Better Leona or Kraken options instantly updates both tabs without a reload.
-
-- **Strict Grid Alignment for Magic MP Levels (`battleCharacters.js`, `style.css`)**:
-  - Replaced the flexbox layout in `Magic (MP Levels)` with a dedicated 5-column CSS grid (`.mp-level-row` with `56px 48px 12px 48px auto`).
-  - Locks all 4 MP level rows into straight vertical columns:
-    - Level label column (`56px`)
-    - Current MP input column (`48px`)
-    - Centered slash separator column (`12px`)
-    - Max MP capacity input column (`48px`)
-    - Clickable MP squares (`0` button + 9 fixed-width square indicators)
-  - Prevents input stretching and horizontal drift caused by differing square glyph widths across rows.
-
-- **3-Column Vertical-Count Inventory & Warehouse Grid (`tableEditor.js`, `style.css`)**:
-  - Replaced the single-column HTML `<table>` layout for Party Bag (`party_item`, 30 slots), Warehouse (`base_item`, 60 slots), and Room Items (`room_item`, 8 slots) with a responsive 3-column chip grid (`.items-3col-grid`).
-  - Implemented **vertical (column-first) slot counting**:
-    - **Party Bag (30 slots)**: Column 1 = Slots 1–10, Column 2 = Slots 11–20, Column 3 = Slots 21–30.
-    - **Warehouse (60 slots)**: Column 1 = Slots 1–20, Column 2 = Slots 21–40, Column 3 = Slots 41–60.
-    - **Room Items (8 slots)**: Column 1 = Slots 1–3, Column 2 = Slots 4–6, Column 3 = Slots 7–8.
-  - Each column features a distinct column header indicating the slot range (e.g. `📦 Slots 1–10 (10 slots)`).
-  - **Slimmed-down Slot Chips (`.item-slot-chip`)**:
-    - Removed bulky standalone numeric inputs for `item_no` and `use_cnt`.
-    - Compact representation showing Slot badge (`#01`), `[🔍 Pick]` button, `[✕]` clear button, bold item name, and inline metadata (`#ID · use: X · Type`). Empty slots display dimmed `Empty Slot` with clear button hidden.
-  - **Enhanced Item Picker Modal (`createItemPickerDialog`)**:
-    - Auto-detects and pre-selects the item category based on the current slot's `use_cnt`.
-    - Added instant real-time search filter by item name or ID.
-    - Added an `✕ Clear Slot` button in the dialog footer alongside `Cancel`.
-  - Converted the static item type explanation into a compact collapsible `<details>` guide.
-
-- **Streamlined Battle Characters Accessories UI (`battleCharacters.js`)**:
-  - Replaced the standalone numeric `<input>` fields (`item_no` and `use_cnt`) with compact inline text displaying item name, ID, and usage count (e.g. `Power Ring (#82 · use_cnt: 16)` or `None (Empty)`).
-  - Added an inline `[✕]` unequip button to each equipped accessory slot for instant clearing.
-  - Added an `✕ Unequip / Clear Slot` button to the accessory picker dialog footer.
-  - Eliminates horizontal stretching and overflow in Column 3 (Equipment & Gear) of the character cards.
-
-- **Castle Library Old Books Grid Layout (`unlocksAndQuests.js`, `style.css`)**:
-  - Replaced the auto-fill wrapping layout with a dedicated 6-column grid (`.library-books-grid`), neatly organizing all 12 volumes into two symmetrical rows of 6 (Vol. 1-6 and Vol. 7-12) with responsive breakpoints for narrower screens.
-
-- **Guardian Deity Blueprints Layout (`guardianDeity.js`, `style.css`)**:
-  - Reorganized the 16 blueprint checkboxes into 4 dedicated columns (1 column per guardian deity: Dragon, Unicorn, Rabbit, Turtle) with anatomical parts (#1 Head, #2 Body, #3 Legs, #4 Tail) aligned symmetrically across rows.
-
-- **Battle Characters Editor 3-Column Card Architecture (`battleCharacters.js`, `style.css`)**:
-  - Maximized horizontal space and established full visual consistency with the 3 archetype cards by structuring character controls into 3 styled dark cards (`.battle-character-col`):
-    - **Column 1 (General & Stats)**: General info and Core Stats arranged in a compact 2-column grid matching the elemental affinities format.
-    - **Column 2 (Magic & Runes)**: Magic MP charges (Levels 1-4 with interactive visual pips, header `⚡ Max All` button), Runes, and Rune Slot Unlock Levels.
-    - **Column 3 (Weapon & Equipment)**: Weapon stats (Level & Rune), Armor (Helmet, Armor, Shield), and equipped Accessories.
-    - Standardized headers (`strong` 0.82rem), dashed sub-section dividers, and responsive breakpoints (2 columns on tablets <= 1200px, 1 column on mobile <= 768px).
+- **Drag-and-Drop Save Loading**: Drag `.json` save files directly onto the app to load them.
+- **Recruitment Portrait Cards Grid**: Character portrait cards with color-coded recruitment status badges, dropdown status selector, live search, status filter, and star counter.
+- **Playable Character Portraits**: Integrated HD character portraits into each character's editor card in Battle Characters.
+- **Clive Quest Milestones & Completion Flag Tracking (`event_flag[94]`)**: Evaluates all 8 Clive Quest milestones against playtime and completion flags (Done / Open / Expired) with direct bit toggles and quick actions.
+- **Guardian Deity Statue & Blueprints Editor (`parts_no`)**: 16 blueprint delivery toggles across 4 deity columns, modular Head/Body/Legs/Tail statue customizer with live reward preview, presets, and shrine claim toggle.
+- **Castle Bath House Integrated into Castle Tab**: Paintings (Slots 2 & 5) and Girl's/Boy's Side Ornaments (Slots 0, 1, 3, 4, 6, 7) with automatic `use_cnt = 64`.
+- **3-Column Inventory & Warehouse Grids**: Compact slot layout for Party Bag (30 slots), Warehouse (60 slots), and Room Items (8 slots) with searchable Item Picker modal.
+- **Battle Characters 3-Column Layout**: Organized into General & Stats, Magic & Runes, and Weapon & Equipment with inline accessory unequip buttons.
 
 ## [1.4.6] - 2026-10-26
 
 ### Changed
 
-- **Disabled Collapsible Groups in Cooking Tab (`unlocksAndQuests.js`, `main.js`)**:
-  - Converted **Known Cooking Recipes (Hai Yo)** (`food_resipi`) from a `<details>` collapsible into a permanent, non-collapsible card with header and recipe count badge.
-  - Converted **Hai Yo's Kitchen Ingredient Stock** (`food_num[0..11]`) and **Seasonings** (`taste_flag`) into permanently open, non-collapsible cards.
-  - Converted **Cook-Off Battles Won** (`cook_off_progress`) into a styled non-collapsible card matching the rest of the tab.
-  - All sections on the **Cooking** tab now remain permanently visible and accessible without collapsing or accordion state.
+- **Cooking Tab**: Made Known Recipes, Kitchen Ingredient Stock, Seasonings, and Cook-Off Battles permanently open cards.
 
 ## [1.4.5] - 2026-10-26
 
 ### Fixed
 
-- **Fixed Syntax Error in General Tab (`src/main.js`)**:
-  - Corrected `extraOpt.textContent` string assignment for custom Listening Crystal Beast fallback options to eliminate `SyntaxError: Unexpected token '{'`.
-  - Synced `src/main.min.js`.
+- Fixed custom Listening Crystal Beast option handling in the General tab.
 
 ## [1.4.4] - 2026-10-26
 
-### Changed & Fixed
+### Changed
 
-- **Standardized Yam Koo's Fishing Minigame Table (`unlocksAndQuests.js`)**:
-  - Restyled the table to match standard application tables using Pico CSS `class="striped"`.
-  - Removed custom red, yellow, and green header inline color styles and removed the enclosing boxed background container, bringing the table into full visual harmony with the rest of the application.
-- **Relocated All 50 Castle Flag Bytes to Experimental Tab (`unlocksAndQuests.js`, `schema.js`, `main.js`)**:
-  - Moved **🏰 All 50 Castle Flag Bytes (`hon_flag[0–49] — Granular Bit & Byte Editor`)** back to the **Experimental** tab.
-  - Converted the 50-byte editor into a permanently open, **non-collapsible** card (`collapsible: false`) with header, count badge, search filter, and bulk Unlock/Reset buttons.
-  - The **Castle** tab now cleanly focuses on **🌱 Castle Farm Plots & Livestock (`hon_flag[30–32]`)**, Library Old Books, and Fishing Records.
+- **Castle Flags (`hon_flag[0–49]`)**: Relocated the raw 50-byte castle flag editor to the **Experimental** tab so the **Castle** tab stays focused on farm plots, livestock, library books, and fishing records.
 
 ## [1.4.3] - 2026-10-26
 
 ### Added & Fixed
 
-- **Recruitment Mods Honored in Battle Characters Tab (`battleCharacters.js`, `recruitment.js`)**:
-  - **Embedded Recruitment Mods Section**: Placed the "Recruitment Mods that you have on" box with "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Chuchara recruits Abizboah & Rulodia) directly at the top of the **Battle Characters** tab.
-  - **Two-Way Cross-Tab State Synchronization**: Toggling recruitment mods in either the Battle Characters tab or Recruited Characters tab automatically synchronizes checkboxes, updates `localStorage`, and instantly dispatches live refresh events.
-  - **Dynamic Recruitment Status & Filter Integration**:
-    - Character recruitment badges (`✓ Recruited Via SFix`, `✓ Recruited Via Kraken`) and `dataset.isRecruited` dynamically re-evaluate on the fly without page reloads.
-    - Selecting the "✓ Recruited Only" filter in Battle Characters now properly includes characters unlocked via Better Leona Option and Kraken Patch.
-  - **In-Place Recruitment Status Editor in Battle Characters**:
-    - Added an editable **Recruitment Status (`chara_flag`)** dropdown inside each character card's General section (allowing direct recruitment, revive from deceased, event-lock, or on-leave status editing right alongside character combat stats).
-- **Listening Crystal Beasts Selectors Fixed (`src/main.js`)**:
-  - Corrected monster IDs (49: Abizboah, 50: Feather, 72: Siegfried, 74: Rulodia, 79: Chuchara) with strict value-type matching and fallback option generation to prevent blank select controls.
+- **Recruitment Mods Honored in Battle Characters**: Synced "Better Leona Option" (Valeria & Kasumi) and "Kraken Patch" (Abizboah & Rulodia) across both Recruited Characters and Battle Characters tabs, plus in-place recruitment status editing.
+- **Listening Crystal Beasts**: Corrected monster IDs (`49`: Abizboah, `50`: Feather, `72`: Siegfried, `74`: Rulodia, `79`: Chuchara).
 
 ## [1.4.0] - 2026-10-26
 
 ### Added
 
-- **Advanced Character Archetype Editor (`c_kotei_dat`) in Battle Characters**
-  - **Rune Slot Unlock Levels (`mon_kosu_type[0..2]`)**: Granular level inputs (`1–99` or `100` for never) for Head, Right Hand, and Left Hand rune slots, plus one-click "Unlock All 3 Slots at Lv 1" and "Restore Game Defaults" buttons.
-  - **Rune Elemental Affinities (`mon_zoku_aisyo[0..3]`)**: Granular dropdowns (`Rank A (+40%)` through `Rank E (-20% & Backfire)`) for all 8 elements (Fire, Water, Wind, Earth, Lightning, Resurrection, Darkness, Special), plus a "Set All to Rank A" button.
-  - **Slot Change Locks (`soubi_henkou`)**: 8 individual checkboxes for locking/unlocking Helmet, Armor, Shield, Head Rune, Right Hand Rune, Left Hand Rune, Accessories, and Weapon Rune slots.
-  - **Equippable Gear Classes (`soubi_kanou`)**: 6 individual checkboxes for Heavy Helmet, Cap/Hat, Heavy Armor, Light Armor, Robe, and Shield permissions.
-  - **Per-Character "Allow Locked / Any Rune" Toggle**: Bypass exclusive rune restrictions to equip any rune on any character slot.
-  - **Friendship / Affection (`suki_value`)**: Direct editor for each character's hidden affection stat in the General section.
-  - **Search Bar & Bulk Actions Toolbar**: Filter characters by name/ID or recruited status, and run bulk actions (Heal All HP & MP, Max All Weapons Lv 16, Unlock All 3 Rune Slots Lv 1, All Elemental Affinities Rank A).
-
-- **Investigation-Themed Redesign for General Tab (`src/main.js`)**
-  - Restructured the entire **General** tab to match the sleek card & chip visual aesthetic from the Investigations tab.
-  - Divided all general fields into 7 cohesive, permanent cards with dark translucent backdrops (`rgba(0,0,0,0.12)`), subtle borders, emoji titles, and header divider bars:
-    - **⚔️ Active Party Members & Convoy (`party_cha_no`)**: Responsive 8-slot card layout with distinct battle combatant (1–83) and convoy (1–124) roster dropdowns and slot badge.
-    - **🗺️ World & Map Location (`location`)**: Compact 5-field grid for Area, Town, Map, and X/Y coordinates.
-    - **⏱️ Play Time & Clive Quest Tracker (`play_time`, `date_time_now`)**: Hours/Minutes/Seconds inputs, in-game last saved timestamp, quick "Set Hours = 1" button, and live Clive Quest cutoffs checklist.
-    - **👤 Hero & Legacy Identifiers (`bozu_name`, `bozu_name2`, `macd_name`, `m_base_name`)**: Dedicated card for S2 Hero, Real Name, and S1 transferred Hero and HQ names.
-    - **🏰 Castle Headquarters, Army & Facilities (`base_name`, `team_name`, `base_lv`, `gold`, `ninki`, etc.)**: Integrated card with "Max Potch (999,999)" quick action, castle level, popularity, blacksmith level, bath level, and S1 stars.
-    - **🎓 Greenhill Mission Aliases (`kari_name`)**: Thematic cover names card for Hero, Nanami, and Flik.
-    - **🎖️ Side-Quests, Beasts & Battle Counters (`side_quests`)**: Grid of styled chips for Gordon's trading progress with 50k badge, Listening Crystal beasts selectors, escaped battles, and Luca Blight ambush HP with 0 HP kill button.
-
-- **Dedicated Castle Tab (`main.js`, `schema.js`, `unlocksAndQuests.js`)**
-  - Added dedicated **Castle** tab situated immediately before **Experimental**.
-  - Moved **Castle Library Old Books (Vol. 1–12)** (`lib_flag`), **Castle Farm Plots & Livestock** (`hon_flag[30–32]`), and **Yam Koo's Fishing Minigame Records** (`tsuri_data`) into the Castle tab.
-  - Converted these sections into non-collapsible, permanently open card groups for faster editing.
-
-- **Dedicated Cooking Tab (`main.js`, `schema.js`, `unlocksAndQuests.js`)**
-  - **Cook-Off Battles Won (`cook_off_progress`)**: Progress counter for Hai Yo's 16 culinary battles.
-  - **Hai Yo's Kitchen Stock & Seasonings (`food_num[0..11]`, `taste_flag`)**: Granular stock quantities for all 12 ingredients with one-click "Fill Max (3 Each)" button, plus granular seasoning unlocks (Mayonnaise, Red Pepper, Sugar, Soy Sauce, White Sauce).
-  - **Castle Restaurant Menu (`food_menu[0..6]`)**: Full interactive course slot dropdowns for all 7 restaurant menu items using the 240-dish recipe database, complete with a "Clear Menu" button.
-  - **Known Cooking Recipes (`food_resipi[0..4]`)**: 40 individual recipe checkboxes with dish names, search filtering, and "Unlock All 40" / "Clear All" buttons.
-
-- **Granular Unlocks, Collections & Side Quest Editors (`unlocksAndQuests.js`)**
-  - **Castle Library Old Books (`lib_flag`)**: 12 individual checkboxes for Old Book Vol. 1–12 with "Unlock All 12" / "Clear All" buttons.
-  - **Side Quests & Special Counters**:
-    - **Clive's Quest Time-Trial Tracker (`play_time`)**: Live milestone eligibility badges (`Elza at Lakewest < 11h` through `Sajah Village Finale < 20h`) and a one-click "Reset Timer for Clive's Quest" button.
-    - **Gordon's Trading Quest (`trade_transaction_total`)**: Edit cumulative trading profit with live `>= 50,000 Potch` recruitment badge and one-click "Set 50,000 Potch" button.
-    - **Listening Crystal Beasts (`l_mon_no[0..1]`)**: Dropdown selectors for the two Listening Crystal recruitment slots (Abizboah, Feather, Sieg, Rulodia, Chuchara).
-    - **Escaped Battles (`nige_cnt`) & Luca Blight Ambush HP (`luka_hp`)**: Direct editors in the General tab.
-  - **Castle Farm, Ranch & Facility Flags (`hon_flag[0..49]`)**: Granular bit checkboxes and preset buttons for Vegetable Seedlings Group A (`hon_flag[30]`), Group B (`hon_flag[31]`), and Yuzu's Ranch Livestock (`hon_flag[32]`), plus an expandable 50-byte bit/byte editor.
-  - **Richmond's Detective Investigations (`tantei_cano`, `tantei_ca_lv`, `tantei_lv[0..64]`)**: Active investigation target and stage selectors, plus a granular 65-byte clue bit/byte editor with bulk unlock/clear controls.
-  - **World Map Treasure Chests (`t_box_flag[0..31]`)**: 256 individual chest checkboxes across 32 byte groups with "Open All 256 Chests" and "Reset All" buttons.
-  - **Major War Battle Units (`war_data`)**: Granular dropdowns for all 14 Unit Commanders (`leader_no`), 28 Sub-Officers (`sub_no`), and unit assignments (`sub_to_leader`).
+- **Advanced Character Archetype Editor (`c_kotei_dat`)**: Rune slot unlock levels, elemental affinities (Ranks A–E), slot change locks, equippable gear classes, "Allow Locked / Any Rune" bypass, friendship (`suki_value`), and bulk heal/max actions.
+- **Dedicated Castle & Cooking Tabs**: Organized Castle Library Books (`lib_flag`), Farm/Ranch (`hon_flag`), Fishing Records (`tsuri_data`), Cook-Off Progress, Kitchen Stock, Restaurant Menu (`food_menu`), and 40 Cooking Recipes (`food_resipi`).
+- **Side Quests & Collections**: Clive Quest timer tracker, Gordon's Trading Quest (`trade_transaction_total`), Listening Crystal Beasts, Escaped Battles, Luca Blight Ambush HP, Richmond's Detective Investigations (`tantei_lv`), 256 Treasure Chests (`t_box_flag`), and Major War Battle Units (`war_data`).
 
 ### Fixed
 
-- **Packed-Nibble Magic Points (MP) Editor (`chara_data.c_varia_dat.mp[0..3]`)**:
-  - Properly decodes and encodes the high nibble (`Current MP`, `0–9`) and low nibble (`Max MP`, `0–9`) per spell level (`(cur << 4) | max`), with individual `Cur` / `Max` inputs, interactive `■/□` squares, and a "Max All (9/9)" button.
-- **Character Database (`src/gamedata.js`)**:
-  - Added missing entry `103: Taki` (fixing duplicate key `105` that overwrote Tetsu) and fixed duplicate key `127` (`126: NA-`).
-- **Auto-Save Recovery Dialog (`src/main.js`)**:
-  - Fixed inverted button action logic so clicking "Restore" restores the auto-save and clicking "Discard" discards it.
-
-### Removed
-
-- Removed legacy standalone `.exe` and `suisaveeditor-winui3/` desktop wrapper in favor of the unified web/PWA editor.
+- **Packed-Nibble Magic Points (MP)**: Properly decodes/encodes Current MP (high nibble) and Max MP (low nibble) per spell level.
+- **Character Database**: Added missing entry `103: Taki` and fixed duplicate slot `127`.
 
 ## [1.3.2] - 2025-12-12
 
-### Fixed - IMPORTANT
-  - Fixed Party Slot Identifier 
-  - Better keyboard support in editing value manually  
+### Fixed
+
+- Fixed Party Slot Identifier and improved keyboard input when editing values manually.
 
 ## [1.3.1] - 2025-12-08
 
-### Fixed - IMPORTANT
-- **Save File Format Compatibility** - Critical fix for game save file format
-  - UTF-8 BOM (Byte Order Mark) now properly added to saved files
-  - Unicode characters properly escaped with uppercase hexadecimal (e.g., `\u30B7`)
-  - CRLF line endings correctly applied (Windows format)
-  - Fixed file encoding to match game's expected format exactly
-  - **Previous saves from v1.3.0 may not work with the game - please re-save your files**
+### Fixed
 
-### Summary
-This is a critical hotfix that ensures saved files match the exact format expected by Suikoden II HD Remaster. All users should update immediately and re-save any edited files.
+- **Save File Format Compatibility**: Added UTF-8 BOM, uppercase `\uXXXX` Unicode escapes, and Windows CRLF line endings to match the exact format expected by *Suikoden II HD Remaster*.
 
 ## [1.3.0] - 2025-12-08
 
-### Added
+### Added & Fixed
 
-- **Smart Item Picker** for Party Bag, Warehouse, Battle Character Accessories, and Room Items
-  - Modal dialog with item type filtering (Regular Items, Equipment, Runes, Farming, Trade, Base/Warehouse, Food)
-  - Checkbox-based type selector with side-by-side layout (200px sidebar | item list)
-  - Automatically updates both item_no and use_cnt fields
-- **Smart HTML Alerts**
-  - All alerts now use modern day html 5 dialogue element giving you a much more consisten experience
-- **Recruitment Tab Enhancements**
-
-  - Hero Name (Suikoden 1) detection: Auto-adjusts McDohl/Gremio recruitment status if macd_name is set
-  - "Better Leona Option" checkbox: Reads Valeria/Kasumi data recruitment of the chacters when Suikoden fix is used
-  - "Kraken Patch" checkbox: Reads Character Data of Abizboah and Rulodia Correctly when Kraken Patch is Used
-  - Checkbox states persist via localStorage across sessions
-  - Conditional recruitment status logic applied to both Recruitment and Battle Characters tabs
-
-- **Constants Centralization** (constants.js)
-
-  - CHAR_INDEX: Special character indices (McDohl: 82, Gremio: 125, Valeria: 12, Kasumi: 73, etc.)
-  - RECRUIT_STATUS: Status values (0, 1, 70, 71, 86, 212, 213)
-  - EVENT_FLAG_INDEX: Cook-off byte indices (152, 153)
-  - COOK_OFF_STAGES: Array of 13 tournament stages with byte values
-
-- **Room Items** now use unified table renderer with smart picker (previously custom editor)
-
-- **Warning Message** for Room Items: "⚠️ Experimental feature - Room items are unused in the game. Purpose unknown. Edit at your own risk."
-
-### Changed
-
-- **Table Editor Layout** for Party Bag/Warehouse/Room Items:
-
-  - Column order: Slot # | Actions | Item Name | Item Type | item_no | use_cnt
-  - Item names now display without ID prefix (cleaner presentation)
-  - Slot numbers added as first column for easier reference
-  - Actions (Pick button) moved before item name
-
-- **Auto-Save Dialog** button order: "Discard" now left, "Restore" now right (more intuitive)
-
-- **GameData.js Updates**:
-
-  - ITEMS converted to object format: `{ "name": "...", "attrs": [...] }`
-  - FOOD items updated with proper use_cnt values (101-106) in attrs
-  - Fixed item name resolution in Key Items editor, Battle Characters accessories, and all table editors
-
-- **Equipment Description**: Clarified that all equipment types use value 16 (not separate values per type)
-
-### Fixed
-
-- Key Items editor now correctly displays item names (was showing "[object Object]")
-- Battle Characters accessories now show proper item names (was showing "[object Object]")
-- Equipment picker no longer shows duplicate "None" entries (deduplicated across HELMET, ARMOR, SHIELD, OTHER_EQUIP_GEAR)
-- Item name extraction now handles both string format and object format with `.name` property
-- Fixed Character List: Hoi
-
-### Technical
-
-- Split room_items from custom renderer to standard table renderer for consistency
-- Removed createRoomItemsEditor from imports and factory registrations
-- Updated all item lookup functions to support object format: `typeof item === 'string' ? item : item.name`
-- Data attribute system for input field identification: `input.dataset.column`
-
-### Summary
-
-Version 1.3.0 focuses on enhancing item management with smart pickers, improving recruitment workflow with mod compatibility options, and centralizing constants for maintainability. Major UI improvements include reorganized table layouts and curated item selection dialogs.
+- **Smart Item Picker**: Category-filtered item selection dialog automatically updating both `item_no` and `use_cnt` for Party Bag, Warehouse, Room Items, and Battle Character Accessories.
+- **Recruitment Mod Toggles**: Added Suikoden 1 Hero (`macd_name`) detection for McDohl/Gremio, "Better Leona Option", and "Kraken Patch" support.
+- Fixed item name display across Key Items, Equipment, and Accessories, and fixed Hoi in the character list.
 
 ## [1.2.0] - 2025-12-06
 
-### Added
+### Added & Fixed
 
-- **Experimental Tab** - Advanced features for power users
-
-  - Richmond's Detective Clues (tantei_lv) - 64-byte array for tracking detective case progress
-  - Castle Flags (hon_flag) - 50-byte array including vegetable garden and farm animal flags
-    - Indices 30-31: Vegetable plots (255 = all vegetables unlocked)
-    - Index 32: Farm animals
-  - Treasure Chests (t_box_flag) - 32-byte array tracking all 256 treasure chests (bit flags)
-
-- **Suikoden 1 Recruited Stars** (nakam_1_num) - Read-only display showing total recruited characters from Suikoden 1 import data
-
-  - Positioned in General tab after HQ Name field
-
-- **Cook-Off Battle Progress Editor** (event_flag[152-153]) - Track cooking competition victories
-  - Dropdown selector showing all 12 opponents in tournament order
-  - Match progression: Ky Yun → Goetsu → Shinki → Ryuki → Bashok → Ryuko → Antoio → Gyokuran → Retso → Lester → Retso → Jinkai
-  - Auto-detects current tournament stage from save data
-  - Positioned in General tab after Gold field
-
-### Changed
-
-- Fixed Character List: Added Boris
-- Array editors now use responsive two-column CSS layout instead of single vertical column
-- Improved spacing and readability for large data arrays (50+ items)
-- Field ordering in General tab: Hero Name (S1) → HQ Name (S1) → Recruited Stars (S1) → Hero Name (S2) → Team Name → Gold → Cook-Off Progress → Map Location
-- Enhanced markdown rendering with proper indentation preservation and heading cleanup
-- Moved embedded README styles from JavaScript to CSS file for better maintainability
-
-### Summary
-
-- Internal refactor: the codebase was split into smaller ES6 modules for better performance, reliability, and faster updates.
-- No changes to save file format or workflows — all editor features behave the same.
-
-## [1.2.0] - 2025-12-03
-
-### Added
-
-- Active Party Members Editor (exit_member)
-  - 6 battle slots with character selection (0-83, playable characters only)
-  - 2 convoy slots with extended selection (0-124, includes NPCs)
-  - Dropdown menus with character names from GameData
-  - Positioned at top of General tab for easy party management
-- Key Items Editor (event_item)
-  - 6 item slots for story-critical items
-  - Specific item IDs: 29, 35-46, 51-55, 72-74
-  - 2-column grid layout
-  - Separated from regular Party Bag inventory
-  - "Party Items" title added above Key Items section
-- Save File Indicator badge
-  - Displays save file number extracted from filename
-  - Supports patterns: Data##, Save ##, Slot ##, File ##
-  - Located in editor tabs header for visibility
-- Magic Points (MP) Editor for Battle Characters
-  - 4 MP levels (Level 1-4) with 0-153 range
-  - Visual progress bars using filled (■) and empty (□) squares
-  - 1 square fills per 17 MP points (9 total squares per level)
-  - Positioned between General and Stats sections
-- Castle Editors Combined layout
-  - Greenhill Aliases and Food Menu editors side-by-side
-  - 2-column grid on desktop, stacks on mobile
-  - Saves horizontal space and improves visual organization
-- Debug Mode state persistence
-  - Debug mode state saved to localStorage
-  - Automatically restores debug mode on page reload
-  - Persists across browser sessions
-- Auto-exit Debug Mode on file load
-  - Clicking "Load JSON File" button exits debug mode
-  - Shows alert and refreshes page before file selection
-  - Prevents mixing debug and user save files
-- Enhanced tab navigation system
-  - Tabs persist in dedicated `#editor-tabs` container
-  - Header buttons (Data Values, About, Changelog) stay visible
-  - Active tab highlighting works correctly across all views
-  - Switching between tabs properly updates content without removing navigation
-
-### Fixed
-
-- Battle Characters Weapon section positioning moved above Runes
-- Active tab CSS styling now applies to Data Values, About, and Changelog buttons
-- Tab navigation no longer removes tabs when switching to header button views
-- Content properly replaces when switching between regular tabs and header views
-- Fixed duplicate weapon rune code causing syntax errors
-- Version display restored in header (v1.2.0)
-
-### Changed
-
-- Battle Characters layout: Weapon section moved to right column above Runes
-- Tab system refactored to use persistent container instead of dynamic creation
-- All content now renders into same container for consistent behavior
-- General tab field order reorganized:
-  - Active Party Members → Map Location → Play Time → Date/Time → Save details → Castle info
-  - Logical grouping: party composition first, then session info, then game state
-- System tab hidden (commented out) - no editable fields yet
-
-## [Previous Updates]
-
-### Added
-
-- Service Worker for complete offline functionality
-  - Cache-first strategy for instant loading
-  - Works completely offline after first visit
-  - Automatic cache updates on version changes
-  - Debug save file cached for offline testing
-- Debug Mode keyboard shortcut (Ctrl+D)
-  - Toggle debug mode on/off with Ctrl+D
-  - Automatically loads `./debug/save.json` when enabled
-  - Page reload on disable for clean state reset
-  - All debug code organized in dedicated section at top of main.js
-- Battle Characters "General" section
-  - Groups Level, Experience, Max HP, Current HP, and Killed Enemies
-  - Positioned at top of left column for easy access
-- Battle Characters "Weapon" section
-  - Groups Weapon Level and Weapon Rune together
-  - Positioned in right column above Runes section
-  - Weapon Rune uses dropdown with all weapon orb options
-  - Properly handles beast/monster characters (disables weapon rune selection)
-
-### Changed
-
-- Battle Characters editor layout reorganization
-  - Left column: General → MP → Stats
-  - Right column: Weapon → Runes → Equipment → Accessories
-  - Improved logical grouping of related fields
-- Debug mode now reloads page when disabled for complete state reset
-- Service worker registration added to index.html for PWA support
-
-### Technical
-
-- Service Worker implementation in `src/sw.js`
-- Progressive Web App (PWA) capabilities
-- Offline-first architecture with cache management
-- Debug mode code consolidated and properly organized
+- Added **Experimental Tab** (`tantei_lv`, `hon_flag`, `t_box_flag`), Suikoden 1 Recruited Stars (`nakam_1_num`), Cook-Off Battle Progress, Active Party Members (`exit_member`), Key Items (`event_item`), Magic Points (MP) editor, and `Ctrl+D` Debug Save shortcut.
+- Added Boris to the character list and reorganized Battle Characters sections.
 
 ## [1.1.0] - 2025-12-02
 
-### Added
+### Added & Fixed
 
-- Item Type Classification guide displayed at the top of Inventory, Party Bag, and Warehouse sections
-- Comprehensive documentation for item type categorization by use_cnt values
-- Version number display in About section (APP_VERSION constant in main.js)
-- Header buttons for Data Values and About tabs for easier navigation
-- Data Values and About tabs now accessible before loading a save file
-
-### Fixed
-
-- Rune data now displays correctly in party items when cycling through item types (use_cnt 32)
-- Item names now properly show for both string and object formats (runes, equipment, etc.)
-- Equipment items now display with item ID for consistency
-- Tab navigation now works correctly when switching between all views
-- Fixed undefined variable error when clicking regular tabs after using header buttons
-
-### Changed
-
-- Moved Data Values and About buttons to header for better accessibility
-- Updated footer links to point to full Nexus Mods URLs instead of relative paths
-- Improved tab switching behavior to preserve navigation state
+- Added Item Type classification guide (`use_cnt` categories) and Data Values / About tabs accessible before loading a save.
+- Fixed rune and equipment name resolution in Party Bag and Warehouse.
 
 ## [1.0.0] - 2025-11-28
 
 ### Added
 
-- Initial release of Suikoden II HD Remaster Save Editor
-- Web-based save file editor built with Vite and Pico CSS
-- Support for editing multiple save file sections:
-  - General tab (hero names, castle name, gold, play time, etc.)
-  - Battle Characters editor with full character data
-  - Party Bag with Key Items and Inventory
-  - Warehouse with base items and room items
-  - Bath items editor with paintings and ornaments
-  - Recruited Characters tracker
-  - System settings
-- Castle Cuisine Recipes editor with unlockable food items
-- Greenhill Mission Aliases editor (Hero, Nanami, Flik)
-- Key Items editor with 2-column grid layout (6 slots)
-- Map Location editor grouping area, town, map coordinates
-- Data Values viewer for raw save file inspection
-- About tab with project information and PayPal donation button
-
-### Features
-
-- Real-time JSON save file editing
-- Item name lookup from comprehensive game data
-- Item type classification (Regular Items, Equipment, Runes, Farming, Trade, Base Items, Food)
-- Automatic use_cnt handling for different item categories
-- Responsive layout with side-by-side sections on large screens
-- Play time editor with Hours, Minutes, Seconds fields
-- Character recruitment status tracking
-- Battle character stats and equipment management
-
-### Technical
-
-- Built with vanilla JavaScript (no framework dependencies)
-- Styled with Pico CSS for clean, modern UI
-- Modular code structure with separate game data file
-- Support for both development and production builds
-- Local file handling with FileReader API
+- Initial release of the Suikoden II HD Remaster Save Editor with General, Battle Characters, Party Bag, Warehouse, Bath Items, Recruited Characters, Cooking Recipes, Greenhill Aliases, Map Location, and Data Values support.
