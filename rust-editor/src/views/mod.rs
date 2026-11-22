@@ -52,11 +52,6 @@ impl EditorTab {
         EditorTab::About,
     ];
 
-    pub fn is_implemented(self) -> bool {
-        let _ = self;
-        true
-    }
-
     pub fn label(self) -> &'static str {
         let key = match self {
             EditorTab::Saves => "tab_saves",
@@ -112,7 +107,7 @@ impl EditorTab {
             EditorTab::DataValues => "Reference tables for all characters, items, equipment, and runes.",
             EditorTab::Settings => "Theme accent colors and automatic game, BepInEx, and SuikodenFix detection.",
             EditorTab::Changelog => "Version history from CHANGELOG.md.",
-            EditorTab::About => "SuiSaveEditor Rust (iced) native desktop edition.",
+            EditorTab::About => "Sui2SaveEditor Rust (iced) native desktop edition.",
         }
     }
 }

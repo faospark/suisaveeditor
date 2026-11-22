@@ -14,14 +14,16 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
   - Added a persisted **Language** selector in Settings supporting **English**, **日本語**, **Deutsch**, **Español**, **Français**, **Italiano**, **简体中文**, and **繁體中文**.
   - Embedded **Noto Sans**, **Noto Sans CJK JP** (SIL OFL 1.1), and **Material Symbols Rounded** iconography (Apache 2.0) directly into the application for consistent typography across all 8 languages and crisp vector icons across the sidebar and action buttons, with full license files (`README.txt`, `OFL.txt`, `LICENSE-APACHE.txt`) packaged in the release ZIP.
   - Localizes core UI labels and embeds official *Suikoden II HD Remaster* game data translations for items, gear, runes, food dishes, and Data Values.
-- **Backup Subfolder, Per-Slot Restore Diff Modal & Full ZIP Snapshots**:
-  - Organized silent `.bak` backups into a dedicated `backups\` subfolder inside the save directory and automatically migrates legacy loose `.bak` files.
-  - Clicking **Restore `.bak`** on a save card now opens a **Restore Backup Diff Modal** comparing the current save against `backups\<file>.bak` side-by-side (Hero/Castle, Play Time, Potch, Recruited Stars, and highlighted field-by-field changes including bit-level flag diffs and resolved character/item names) before confirming restore.
+- **Backup Subfolder, Immutable `.bak` Backups, Restore Diff Modal & Full ZIP Snapshots**:
+  - Organized silent `.bak` backups into a dedicated `backups\` subfolder inside the save directory, automatically migrates legacy loose `.bak` files, and preserves each `.bak` as immutable once created (never overwritten on re-open or re-save).
+  - Save cards show live backup comparison status (whether the `.bak` matches or differs from the current save); clicking **Restore `.bak`** opens a **Restore Backup Diff Modal** showing side-by-side metadata and highlighted field-by-field changes (including bit-level flag diffs and resolved character/item names) before confirming restore.
   - Added **Full Backup Snapshots (`.zip`)** creation and one-click restore on the `Saves` tab, plus an automatic initial `.zip` snapshot on first run.
-- **5 Base Background Themes**: Added a persisted **Base Background** switcher in Settings (**Dark Navy**, **High Contrast Black**, **Dark Gray**, **Dark Green**, and **Dark Purple**) alongside the 6 accent themes.
+- **Rebranded Native Edition to `Bright Shield Save Editor` (`BrightShield.exe`)**: Renamed the Rust desktop application, executable, and release archive (`BrightShield-win64.zip`).
+- **6 Base Background Themes**: Added a persisted **Base Background** switcher in Settings (**Dark Navy**, **High Contrast Black**, **Dark Gray**, **Dark Green**, **Dark Purple**, and **Dark Red**) alongside the 6 accent themes.
 - **Suikoden I Save Transfer Data Card**: Added a dedicated card in the **General** tab (with McDohl portrait) showing imported Suikoden I clear-save fields (`macd_name`, `m_base_name`, `nakam_1_num`) and Gremio survival status.
 - **Tessai's Blacksmith Hammers Card**: Added a **Castle** tab section tracking Iron, Copper, Silver, and Golden Hammer deliveries (`event_flag[143]` Bits 3–6), live forge level cap badge (Lv 6 → 16), and Deliver All / Clear All actions while preserving unrelated bits.
 - **Location Hints for Books, Recipes & Pasture Animals**: Added grounded acquisition location hints for all 12 of Emilia's Castle Library Old Books, all 40 of Hai Yo's Cooking Recipes, and every individual animal in Yuzu's Castle Pasture.
+- **Smart Guardian Deity Blueprint Annotations**: Automatically scans the Party Bag (`party_data.party_item`) and Castle Warehouse (`game_data.base_item`) for undelivered Guardian Deity Plans (Base items #27–#42) and displays `In Party` / `In Warehouse` badges on blueprint cards and a header summary counter for plans not yet given to Jude.
 - **SuikodenFix `EditSave` Detection & Single File Mode**:
   - Displays detected `gsd2` saves folder and `EditSave` status from `d3xMachina.suikoden_fix.cfg` in Settings (with a warning banner on the Saves tab if `EditSave = false`).
   - Demoted `Open Save...` to a fallback action and added an amber `SINGLE FILE MODE` top-bar badge when editing standalone files outside `gsd2`.
@@ -31,9 +33,13 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Styled Changelog View & Abbreviated Release Dates**: Replaced the raw text dump in the `Changelog` tab with per-version release cards, version/latest/category badges, indented bullet hierarchy, and rich inline bold, italic, and monospace code formatting, and standardized all release dates to abbreviated month names (e.g., `Nov 22, 2026`).
 - **Windows Single-Instance & Window Layout**: Added a Windows single-instance guard to prevent duplicate app launches, centered the window on startup, and enforced a `1160×680` minimum window size.
 - **Read-Only Castle Progression Stats**: Displayed Castle Level, Blacksmith Level, Popularity, and Bath House Level as read-only badges in the **General** tab to prevent unintended save corruption.
-- **Sidebar Tab State**: Editing tabs below `Saves` remain disabled until a save file is loaded; all editing tabs share the unified empty-state card when no save is open.
-- **Inventory Category Badges**: Renamed the `Equip` badge to `Gear` (localized per language) across Party Bag, Warehouse, and Battle Characters.
+- **Sidebar Tab Renames & State**: Renamed `Battle Characters` → **Combatants** and `Recruited Characters` → **Recruits** (localized across all 8 languages) for cleaner sidebar spacing alongside Material Symbols icons; editing tabs below `Saves` remain disabled until a save file is loaded.
+- **Inventory Category Badges**: Renamed the `Equip` badge to `Gear` (localized per language) and assigned 7 distinct category tag colors (**Item** emerald green, **Gear** sky cyan, **Rune** orchid purple, **Farm** lime, **Trade** gold, **Base** rose pink, **Food** warm orange) across the Item Picker tabs/tags, Party Bag, Warehouse, and Combatants.
+- **Tony's Vegetable Farm Grounding & Seed Locations**: Reworked Tony's Farm in the **Castle** tab to match actual in-game mechanics (`food_num[0..3]`, 3 plots per crop, 12 total) with `Tony Default` (Cabbage #1 + Potato #1), all 10 collectible seedling locations, `Max All (12)` / `Default Recruited (2)` / `Clear All (0)` presets, and bit-safe syncing of `hon_flag[30..31]` that preserves Yuzu's pasture bits (`hon_flag[31]` Bits 4–7).
+- **Auto-Detect Recruitment Mods, Full Reset Buttons & Usage Warning**: Automatically checks `d3xMachina.suikoden_fix.cfg` (`BetterLeona = true`) and `BepInEx\plugins\SquidFam.dll` / `faospark.SquidFam.cfg` (`SquidFam = true`) to pre-enable **Better Leona Option** and **Kraken Patch** in the **Recruits** tab, displays a prominent warning notice advising against manually forcing mutually exclusive recruits (Kasumi/Valeria or all Beasts), and restores the per-character **Full Reset** button (with hover tooltip) across all 33 story-flagged recruits to clear associated `event_flag` bits, remove granted quest items (`Listening Crystal`, `Rose Brooch`, `Suiko Map`, `Clay`), and reset Jude's `parts_no[3]`.
+- **Combatants Layout Reorganization & Quick Portrait Jump**: Moved **Base Stats (`para`)** below **Level, HP & Weapon** in the left column, placed **Rune Magic Points (`mp[0..3]`)** (stacked vertically Lv.1–Lv.4 like in-game) and **Equipped Runes (`mon_eqp`)** (with paired unlock levels) stacked beside them in the right column, and made **Active Party & Convoy** portraits in the **General** tab clickable to jump directly to that character's **Combatants** page.
 - **SuikodenFix DLL Detection**: Normalized underscores/hyphens/spaces when scanning `BepInEx\plugins` so `Suikoden_Fix.dll` and `SuikodenFix.dll` are both detected reliably.
+- **Investigations Character Filtering**: Excluded Pilika (`#123`, `#124`) and Gremio (`#125`) — alongside Bonaparte (`#84`) — from Richmond's Investigations character grid, Target Character dropdown, and unlocked clue total (`484` total clues).
 
 ## [1.4.16] - Nov 22, 2026 (Native Desktop)
 
@@ -111,8 +117,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 
 ### Added
 
-- **Tenkou's Window Sets & Frame Customization**:
-  - Delivery toggles for Window Sets 1–7 (`event_flag[77]`, bits 0–6) with "Deliver All" / "Clear All" actions, plus Active Window Style (`win_typ[0]`), Frame Color (`win_col`), and Opacity (`win_suke`).
+- **Tenkou's Window Sets & Frame Customization**:  - Delivery toggles for Window Sets 1–7 (`event_flag[77]`, bits 0–6) with "Deliver All" / "Clear All" actions, plus Active Window Style (`win_typ[0]`), Frame Color (`win_col`), and Opacity (`win_suke`).
 - **Connell's Sound Sets & Audio Customization**:
   - Delivery toggles for Sound Sets 1–7 (`event_flag[78]`, bits 0–6) with "Deliver All" / "Clear All" actions, plus Active Sound Effect Set (`se_set`).
 

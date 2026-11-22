@@ -1,14 +1,14 @@
-SuiSaveEditor — Native Rust Desktop Edition
-============================================
+Bright Shield Save Editor — Native Rust Desktop Edition
+========================================================
 Save editor for Suikoden II HD Remaster (Suikoden I & II HD Remaster).
 
 QUICK START
 -----------
 1. Extract the entire contents of this ZIP archive to a folder of your choice
-   (keep `SuiSaveEditor.exe` and the `portraits\` folder together).
+   (keep `BrightShield.exe` and the `portraits\` folder together).
 2. Ensure BepInEx and SuikodenFix (`EditSave = true` in
    `BepInEx\config\d3xMachina.suikoden_fix.cfg`) are installed for your game.
-3. Launch `SuiSaveEditor.exe`. The editor automatically detects your decrypted
+3. Launch `BrightShield.exe`. The editor automatically detects your decrypted
    saves in `<GAME_PATH>\SuikodenFix\Decrypted\gsd2\`.
 4. Before any edit, `.bak` backups are silently saved inside `backups\` and can
    be compared and restored at any time from the Saves tab.

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use iced::widget::{button, column, container, image, row, scrollable, text, text_input, Space};
+use iced::widget::{button, column, container, image, row, scrollable, stack, text, text_input, Space};
 use iced::{Alignment, Element, Length};
 
 use crate::env_detect::{GameEnvStatus, SaveSlotSummary, SavesSortMode, SnapshotInfo};
@@ -8,6 +8,10 @@ use crate::gamedata::PortraitCache;
 use crate::i18n;
 use crate::theme;
 use crate::Message;
+
+pub fn scroll_id() -> scrollable::Id {
+    scrollable::Id::new("saves_scroll")
+}
 
 pub fn view<'a>(
     env: &'a GameEnvStatus,
@@ -18,6 +22,7 @@ pub fn view<'a>(
     active_path: Option<&'a Path>,
     search: &'a str,
     sort_mode: SavesSortMode,
+    show_back_to_top: bool,
 ) -> Element<'a, Message> {
     let dir_label = env
         .decrypted_saves_dir
@@ -147,6 +152,91 @@ pub fn view<'a>(
         );
     }
 
+    // Full ZIP Backup Snapshots card (placed above the save files list)
+    let mut snap_col = column![
+        row![
+            column![
+                text(i18n::tr("snapshots_title"))
+                    .size(15)
+                    .color(theme::accent()),
+                text("Dated ZIP archives of all decrypted saves stored inside backups\\.")
+                    .size(11)
+                    .color(theme::TEXT_MUTED),
+            ]
+            .spacing(2),
+            Space::with_width(Length::Fill),
+            button(
+                row![
+                    theme::icon(theme::icons::ARCHIVE, 14.0),
+                    text(i18n::tr("create_snapshot")).size(12),
+                ]
+                .spacing(6)
+                .align_y(Alignment::Center),
+            )
+            .padding([6, 12])
+            .style(theme::primary_button_style)
+            .on_press(Message::CreateFullSnapshot),
+        ]
+        .align_y(Alignment::Center),
+    ]
+    .spacing(10);
+
+    if snapshots.is_empty() {
+        snap_col = snap_col.push(
+            text("No full ZIP snapshots yet. Click \"Full Snapshot (.zip)\" to archive all saves.")
+                .size(12)
+                .color(theme::TEXT_MUTED),
+        );
+    } else {
+        let mut snap_list = column![].spacing(6);
+        for snap in snapshots {
+            let zip_path = snap.path.clone();
+            snap_list = snap_list.push(
+                container(
+                    row![
+                        container(text("ZIP").size(10).color(theme::ACCENT_CYAN))
+                            .padding([2, 7])
+                            .style(theme::badge_style(theme::ACCENT_CYAN)),
+                        column![
+                            text(&snap.date_label)
+                                .size(13)
+                                .color(theme::TEXT_PRIMARY),
+                            text(format!("{}  •  {} saves", snap.file_name, snap.file_count))
+                                .size(11)
+                                .color(theme::TEXT_MUTED),
+                        ]
+                        .spacing(2)
+                        .width(Length::Fill),
+                        button(
+                            row![
+                                theme::icon(theme::icons::RESTORE, 13.0),
+                                text(i18n::tr("restore_all")).size(11),
+                            ]
+                            .spacing(5)
+                            .align_y(Alignment::Center),
+                        )
+                        .padding([5, 12])
+                        .style(theme::secondary_button_style)
+                        .on_press(Message::RestoreFullSnapshot(zip_path)),
+                    ]
+                    .spacing(10)
+                    .align_y(Alignment::Center),
+                )
+                .padding([8, 12])
+                .width(Length::Fill)
+                .style(theme::empty_slot_card_style),
+            );
+        }
+        snap_col = snap_col.push(snap_list);
+    }
+
+    content = content.push(
+        container(snap_col)
+            .padding(16)
+            .width(Length::Fill)
+            .style(theme::card_style),
+    );
+
     // Filter & sort toolbar
     let toolbar = row![
         text_input(i18n::tr("search_saves_placeholder"), search)
@@ -271,14 +361,6 @@ pub fn view<'a>(
                     );
                 }
 
-                if save.has_backup {
-                    title_row = title_row.push(
-                        container(text("BAK").size(10).color(theme::ACCENT_GOLD))
-                            .padding([2, 7])
-                            .style(theme::badge_style(theme::ACCENT_GOLD)),
-                    );
-                }
-
                 let subtitle = if save.castle_name != "—" {
                     format!("{}  •  {} HQ", save.hero_name, save.castle_name)
                 } else {
@@ -368,12 +450,22 @@ pub fn view<'a>(
 
                 let slot_widget: Element<'a, Message> = if save.has_backup {
                     let restore_path = save.path.clone();
+                    let note_text = if save.backup_differs {
+                        "Backup differs from current save"
+                    } else {
+                        "Backup matches current save (identical)"
+                    };
+                    let note_color = if save.backup_differs {
+                        theme::ACCENT_GOLD
+                    } else {
+                        theme::TEXT_MUTED
+                    };
                     column![
                         open_card,
                         row![
-                            text("Backup available in backups\\")
+                            text(note_text)
                                 .size(10)
-                                .color(theme::TEXT_MUTED),
+                                .color(note_color),
                             Space::with_width(Length::Fill),
                             button(
                                 row![
@@ -384,7 +476,11 @@ pub fn view<'a>(
                                 .align_y(Alignment::Center),
                             )
                             .padding([3, 10])
-                            .style(theme::secondary_button_style)
+                            .style(if save.backup_differs {
+                                theme::primary_button_style
+                            } else {
+                                theme::secondary_button_style
+                            })
                             .on_press(Message::OpenRestoreModal(restore_path)),
                         ]
                         .align_y(Alignment::Center)
@@ -409,81 +505,38 @@ pub fn view<'a>(
         content = content.push(grid);
     }
 
-    // Full ZIP Backup Snapshots card
-    let mut snap_col = column![
-        row![
-            column![
-                text(i18n::tr("snapshots_title"))
-                    .size(15)
-                    .color(theme::accent()),
-                text("Dated ZIP archives of all decrypted saves stored inside backups\\.")
-                    .size(11)
-                    .color(theme::TEXT_MUTED),
-            ]
-            .spacing(2),
-            Space::with_width(Length::Fill),
-            button(text(i18n::tr("create_snapshot")).size(12))
-                .padding([6, 12])
-                .style(theme::primary_button_style)
-                .on_press(Message::CreateFullSnapshot),
-        ]
-        .align_y(Alignment::Center),
-    ]
-    .spacing(10);
+    let scroll_view = scrollable(content)
+        .id(scroll_id())
+        .on_scroll(|vp| Message::SavesScrolled(vp.absolute_offset().y))
+        .height(Length::Fill)
+        .style(theme::scrollable_style);
 
-    if snapshots.is_empty() {
-        snap_col = snap_col.push(
-            text("No full ZIP snapshots yet. Click \"Full Snapshot (.zip)\" to archive all saves.")
-                .size(12)
-                .color(theme::TEXT_MUTED),
-        );
-    } else {
-        let mut snap_list = column![].spacing(6);
-        for snap in snapshots {
-            let zip_path = snap.path.clone();
-            snap_list = snap_list.push(
-                container(
-                    row![
-                        container(text("ZIP").size(10).color(theme::ACCENT_CYAN))
-                            .padding([2, 7])
-                            .style(theme::badge_style(theme::ACCENT_CYAN)),
-                        column![
-                            text(&snap.date_label)
-                                .size(13)
-                                .color(theme::TEXT_PRIMARY),
-                            text(format!("{}  •  {} saves", snap.file_name, snap.file_count))
-                                .size(11)
-                                .color(theme::TEXT_MUTED),
-                        ]
-                        .spacing(2)
-                        .width(Length::Fill),
-                        button(text(i18n::tr("restore_all")).size(11))
-                            .padding([5, 12])
-                            .style(theme::secondary_button_style)
-                            .on_press(Message::RestoreFullSnapshot(zip_path)),
-                    ]
-                    .spacing(10)
-                    .align_y(Alignment::Center),
-                )
-                .padding([8, 12])
-                .width(Length::Fill)
-                .style(theme::empty_slot_card_style),
-            );
-        }
-        snap_col = snap_col.push(snap_list);
+    let mut root = stack![scroll_view];
+
+    if show_back_to_top {
+        let top_btn = button(
+            row![
+                theme::icon(theme::icons::ARROW_UPWARD, 15.0),
+                text("Top").size(12),
+            ]
+            .spacing(5)
+            .align_y(Alignment::Center),
+        )
+        .padding([8, 14])
+        .style(theme::primary_button_style)
+        .on_press(Message::ScrollSavesToTop);
+
+        let overlay = container(top_btn)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_x(iced::alignment::Horizontal::Right)
+            .align_y(iced::alignment::Vertical::Bottom)
+            .padding(24);
+
+        root = root.push(overlay);
     }
 
-    content = content.push(
-        container(snap_col)
-            .padding(16)
-            .width(Length::Fill)
-            .style(theme::card_style),
-    );
-
-    scrollable(content)
-        .height(Length::Fill)
-        .style(theme::scrollable_style)
-        .into()
+    root.into()
 }
 
 fn format_with_commas(n: i64) -> String {

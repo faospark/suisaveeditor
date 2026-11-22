@@ -9,6 +9,12 @@ use crate::save_file::SaveDocument;
 use crate::theme;
 use crate::Message;
 
+const EXCLUDED_INVESTIGATION_IDS: &[i64] = &[84, 123, 124, 125];
+
+fn is_investigable(char_id: i64) -> bool {
+    (1..=122).contains(&char_id) && !EXCLUDED_INVESTIGATION_IDS.contains(&char_id)
+}
+
 pub fn view<'a>(
     doc: &'a SaveDocument,
     portraits: &'a PortraitCache,
@@ -20,7 +26,12 @@ pub fn view<'a>(
     // Active Richmond Investigation Card (tantei_cano & tantei_ca_lv)
     let active_char_id = doc.get_i64(Some("game_data"), "tantei_cano");
     let active_stage = doc.get_i64(Some("game_data"), "tantei_ca_lv");
-    let selected_target = find_option(party_options, active_char_id);
+    let investigation_options: Vec<NamedOption> = party_options
+        .iter()
+        .filter(|opt| opt.id == 0 || is_investigable(opt.id))
+        .cloned()
+        .collect();
+    let selected_target = find_option(&investigation_options, active_char_id);
 
     let mut active_header = row![].spacing(10).align_y(Alignment::Center);
     if let Some(handle) = portraits.get(99) {
@@ -39,7 +50,7 @@ pub fn view<'a>(
                 text("Target Character:")
                     .size(13)
                     .color(theme::TEXT_MUTED),
-                pick_list(party_options, Some(selected_target), |opt| {
+                pick_list(investigation_options, Some(selected_target), |opt| {
                     Message::SetIntField(Some("game_data"), "tantei_cano", opt.id.to_string())
                 })
                 .text_size(12)
@@ -67,9 +78,14 @@ pub fn view<'a>(
     .width(Length::Fill)
     .style(theme::card_style);
 
-    // Count total unlocked clues across characters 1..=125
+    // Count total unlocked clues across investigable characters (1..=122, excluding 84)
     let mut unlocked_clues = 0usize;
-    for char_id in 1..=125 {
+    let mut total_clues = 0usize;
+    for char_id in 1..=125usize {
+        if !is_investigable(char_id as i64) {
+            continue;
+        }
+        total_clues += 4;
         let byte_idx = char_id / 2;
         let bit_base = if char_id % 2 == 1 { 4 } else { 0 };
         let byte_val = doc.get_array_i64(Some("game_data"), "tantei_lv", byte_idx) as u8;
@@ -89,7 +105,7 @@ pub fn view<'a>(
                 .width(Length::Fixed(260.0))
                 .style(theme::input_style),
             container(
-                text(format!("Clues Unlocked: {} / 500", unlocked_clues))
+                text(format!("Clues Unlocked: {} / {}", unlocked_clues, total_clues))
                     .size(12)
                     .color(theme::ACCENT_GOLD),
             )
@@ -115,7 +131,7 @@ pub fn view<'a>(
     // Character cards (each character has 4 clues packed into a nibble of tantei_lv[char_id / 2])
     let matching: Vec<usize> = (1..=125)
         .filter(|&id| {
-            if id == 84 {
+            if !is_investigable(id as i64) {
                 return false;
             }
             let name = character_name(id as i64);

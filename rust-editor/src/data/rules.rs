@@ -320,6 +320,19 @@ impl ItemCategory {
         }
     }
 
+    pub fn color(self) -> iced::Color {
+        let key = match self {
+            ItemCategory::Item => "Item",
+            ItemCategory::Equip => "Gear",
+            ItemCategory::Rune => "Rune",
+            ItemCategory::Farm => "Farm",
+            ItemCategory::Trade => "Trade",
+            ItemCategory::Base => "Base",
+            ItemCategory::Food => "Food",
+        };
+        crate::theme::item_category_color(key)
+    }
+
     pub fn options(self) -> Vec<NamedOption> {
         match self {
             ItemCategory::Item => (0..=85).map(|id| opt(id, regular_item_name(id))).collect(),

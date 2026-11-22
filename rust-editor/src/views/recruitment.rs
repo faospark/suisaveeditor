@@ -1,10 +1,11 @@
 use iced::widget::{
-    button, checkbox, column, container, image, pick_list, row, scrollable, text, text_input, Space,
+    button, checkbox, column, container, image, pick_list, row, scrollable, text, text_input,
+    tooltip, Space,
 };
 use iced::{Alignment, Element, Length};
 
 use crate::gamedata::{character_name, PortraitCache, RecruitStatus};
-use crate::save_file::SaveDocument;
+use crate::save_file::{recruit_story_reset, SaveDocument};
 use crate::theme;
 use crate::Message;
 
@@ -176,9 +177,30 @@ pub fn view<'a>(
         grid = grid.push(r);
     }
 
+    let warning_card = container(
+        column![
+            row![
+                theme::icon(theme::icons::WARNING, 16.0).color(theme::ACCENT_ORANGE),
+                text("Warning").size(13).color(theme::ACCENT_ORANGE),
+            ]
+            .spacing(6)
+            .align_y(Alignment::Center),
+            text("Do not use this tool as a method to recruit both Kasumi and Valeria simultaneously, or to recruit all of the Beasts at once. If you want those outcomes, please use SuikodenFix together with the Kraken Patch (enabled above).")
+                .size(12)
+                .color(theme::TEXT_PRIMARY),
+            text("This tool is best suited for reviving characters that you may have lost during war battles. It also provides a convenient way to track and review your recruitment progress, giving you an overview of which characters have already joined and which ones are still pending.")
+                .size(12)
+                .color(theme::TEXT_MUTED),
+        ]
+        .spacing(6),
+    )
+    .padding([12, 16])
+    .width(Length::Fill)
+    .style(theme::badge_style(theme::ACCENT_ORANGE));
+
     let content = column![
         column![
-            text("Recruited Characters (108 Stars & Extras)")
+            text("Recruits (108 Stars & Extras)")
                 .size(22)
                 .color(theme::TEXT_PRIMARY),
             text(format!(
@@ -190,6 +212,7 @@ pub fn view<'a>(
         ]
         .spacing(4),
         mods_card,
+        warning_card,
         toolbar,
         grid,
     ]
@@ -259,7 +282,33 @@ fn character_card<'a>(
     .spacing(10)
     .align_y(Alignment::Center);
 
-    container(column![header, picker].spacing(10))
+    let controls: Element<'a, Message> = if let Some(reset_cfg) = recruit_story_reset(idx) {
+        let reset_btn = button(
+            theme::icon(theme::icons::RESTORE, 14.0).color(theme::TEXT_PRIMARY),
+        )
+        .padding([5, 7])
+        .style(theme::secondary_button_style)
+        .on_press(Message::ResetRecruitFull(idx));
+
+        let tip_text = reset_cfg.tooltip_text(name);
+        let reset_with_tip = tooltip(
+            reset_btn,
+            container(text(tip_text).size(11).color(theme::TEXT_PRIMARY))
+                .padding([6, 10])
+                .style(theme::card_style),
+            tooltip::Position::Top,
+        )
+        .gap(6);
+
+        row![picker, reset_with_tip]
+            .spacing(6)
+            .align_y(Alignment::Center)
+            .into()
+    } else {
+        picker.into()
+    };
+
+    container(column![header, controls].spacing(10))
         .padding(12)
         .width(Length::FillPortion(1))
         .style(theme::card_style)

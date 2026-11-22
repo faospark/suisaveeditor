@@ -42,7 +42,7 @@ pub fn main() -> iced::Result {
     };
 
     let icon = window::icon::from_file_data(APP_ICON_PNG, None).ok();
-    iced::application("SuiSaveEditor", App::update, App::view)
+    iced::application("Bright Shield Save Editor", App::update, App::view)
         .font(NOTO_SANS_CJK_OTF)
         .font(NOTO_SANS_TTF)
         .font(MATERIAL_SYMBOLS_TTF)
@@ -105,6 +105,8 @@ struct App {
     auto_snapshot_banner: Option<String>,
     saves_search: String,
     saves_sort: SavesSortMode,
+    saves_scroll_y: f32,
+    saves_scrolling_to_top: bool,
 }
 
 impl Default for App {
@@ -153,8 +155,8 @@ impl Default for App {
             status_message: None,
             recruit_search: String::new(),
             recruit_filter: RecruitFilter::All,
-            better_leona_mod: false,
-            kraken_patch_mod: false,
+            better_leona_mod: game_env.better_leona_active(),
+            kraken_patch_mod: game_env.kraken_patch_enabled,
             selected_battle_char: 1,
             battle_search: String::new(),
             battle_recruited_only: false,
@@ -177,6 +179,8 @@ impl Default for App {
             auto_snapshot_banner,
             saves_search: String::new(),
             saves_sort: SavesSortMode::MostRecent,
+            saves_scroll_y: 0.0,
+            saves_scrolling_to_top: false,
         }
     }
 }
@@ -205,8 +209,10 @@ pub enum Message {
     SetBetterLeonaMod(bool),
     SetKrakenPatchMod(bool),
     SetCharaFlag(usize, i64),
+    ResetRecruitFull(usize),
     // Battle Characters
     SelectBattleChar(usize),
+    JumpToCombatant(usize),
     SetBattleSearch(String),
     SetBattleRecruitedOnly(bool),
     SetBypassRuneRestrictions(bool),
@@ -239,7 +245,10 @@ pub enum Message {
     SetInvestigationSearch(String),
     SetAllInvestigations(i64),
     DeliverAllGuardianPlans,
+    SetTonyCrop(usize, i64),
     MaxVegetableFarm,
+    DefaultVegetableFarm,
+    ClearVegetableFarm,
     SetBathItem(usize, i64),
     SetYuzuLivestock(usize, i64),
     MaxYuzuPasture,
@@ -275,6 +284,9 @@ pub enum Message {
     CreateFullSnapshot,
     RestoreFullSnapshot(PathBuf),
     DismissAutoSnapshotBanner,
+    SavesScrolled(f32),
+    ScrollSavesToTop,
+    ScrollSavesStep,
 }
 
 impl App {
@@ -423,9 +435,20 @@ impl App {
                     doc.set_chara_flag(idx, flag);
                 }
             }
+            Message::ResetRecruitFull(idx) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    if let Some(msg) = doc.reset_recruit_full(idx) {
+                        self.status_message = Some((msg, false));
+                    }
+                }
+            }
             // Battle Characters
             Message::SelectBattleChar(id) => {
                 self.selected_battle_char = id;
+            }
+            Message::JumpToCombatant(id) => {
+                self.selected_battle_char = id;
+                self.active_tab = EditorTab::BattleCharacters;
             }
             Message::SetBattleSearch(q) => {
                 self.battle_search = q;
@@ -607,10 +630,30 @@ impl App {
                     doc.set_array_i64(Some("game_data"), "parts_no", 1, 255);
                 }
             }
+            Message::SetTonyCrop(food_index, count) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    doc.set_tony_crop(food_index, count);
+                }
+            }
             Message::MaxVegetableFarm => {
                 if let Some(doc) = self.doc.as_mut() {
-                    doc.set_array_i64(Some("game_data"), "hon_flag", 30, 255);
-                    doc.set_array_i64(Some("game_data"), "hon_flag", 31, 255);
+                    doc.max_tony_farm();
+                }
+            }
+            Message::DefaultVegetableFarm => {
+                if let Some(doc) = self.doc.as_mut() {
+                    doc.set_tony_crop(0, 1);
+                    doc.set_tony_crop(1, 1);
+                    doc.set_tony_crop(2, 0);
+                    doc.set_tony_crop(3, 0);
+                }
+            }
+            Message::ClearVegetableFarm => {
+                if let Some(doc) = self.doc.as_mut() {
+                    doc.set_tony_crop(0, 0);
+                    doc.set_tony_crop(1, 0);
+                    doc.set_tony_crop(2, 0);
+                    doc.set_tony_crop(3, 0);
                 }
             }
             Message::SetYuzuLivestock(food_index, count) => {
@@ -715,6 +758,8 @@ impl App {
             Message::RedetectGameEnv => {
                 self.game_env =
                     env_detect::detect_game_env(self.settings.custom_game_dir.as_deref());
+                self.better_leona_mod = self.game_env.better_leona_active();
+                self.kraken_patch_mod = self.game_env.kraken_patch_enabled;
                 self.refresh_managed_saves();
             }
             Message::BrowseGameDir => {
@@ -729,6 +774,8 @@ impl App {
                 self.settings.save();
                 self.game_env =
                     env_detect::detect_game_env(self.settings.custom_game_dir.as_deref());
+                self.better_leona_mod = self.game_env.better_leona_active();
+                self.kraken_patch_mod = self.game_env.kraken_patch_enabled;
                 self.refresh_managed_saves();
             }
             Message::GameDirPicked(None) => {}
@@ -736,6 +783,8 @@ impl App {
                 self.settings.custom_game_dir = None;
                 self.settings.save();
                 self.game_env = env_detect::detect_game_env(None);
+                self.better_leona_mod = self.game_env.better_leona_active();
+                self.kraken_patch_mod = self.game_env.kraken_patch_enabled;
                 self.refresh_managed_saves();
             }
             Message::RefreshSaves => {
@@ -842,6 +891,37 @@ impl App {
             Message::DismissAutoSnapshotBanner => {
                 self.auto_snapshot_banner = None;
             }
+            Message::SavesScrolled(y) => {
+                // If user manually scrolls downward during animated scroll-to-top, stop animating
+                if self.saves_scrolling_to_top && y > self.saves_scroll_y + 2.0 {
+                    self.saves_scrolling_to_top = false;
+                }
+                self.saves_scroll_y = y;
+            }
+            Message::ScrollSavesToTop => {
+                if self.saves_scroll_y > 0.5 {
+                    self.saves_scrolling_to_top = true;
+                }
+            }
+            Message::ScrollSavesStep => {
+                if !self.saves_scrolling_to_top {
+                    return Task::none();
+                }
+                let next_y = (self.saves_scroll_y * 0.78 - 10.0).max(0.0);
+                self.saves_scroll_y = next_y;
+                if next_y <= 0.5 {
+                    self.saves_scroll_y = 0.0;
+                    self.saves_scrolling_to_top = false;
+                    return scrollable::scroll_to(
+                        views::saves::scroll_id(),
+                        scrollable::AbsoluteOffset { x: 0.0, y: 0.0 },
+                    );
+                }
+                return scrollable::scroll_to(
+                    views::saves::scroll_id(),
+                    scrollable::AbsoluteOffset { x: 0.0, y: next_y },
+                );
+            }
         }
         Task::none()
     }
@@ -935,7 +1015,7 @@ impl App {
         container(
             row![
                 Space::with_width(Length::Fill),
-                text(concat!("SuiSaveEditor v", env!("CARGO_PKG_VERSION")))
+                text(concat!("Bright Shield Save Editor v", env!("CARGO_PKG_VERSION")))
                     .size(11)
                     .color(theme::TEXT_MUTED),
             ]
@@ -948,7 +1028,7 @@ impl App {
     }
 
     fn view_top_bar(&self) -> Element<'_, Message> {
-        let title_group = text("SuiSaveEditor").size(18).color(theme::accent());
+        let title_group = text("Bright Shield Save Editor").size(18).color(theme::accent());
 
         let status_badge: Element<'_, Message> = if let Some(doc) = &self.doc {
             let label = if doc.dirty {
@@ -1069,29 +1149,12 @@ impl App {
 
         for &tab in EditorTab::EDITOR_TABS {
             let is_active = tab == active;
-            let suffix = match (tab, &self.doc) {
-                (EditorTab::Saves, _) => format!(" ({})", self.managed_saves.len()),
-                (EditorTab::RecruitedCharacters, Some(d)) => format!(" ({})", d.recruited_count()),
-                (EditorTab::PartyBag, Some(d)) => format!(" ({})", d.party_item_count()),
-                (EditorTab::Warehouse, Some(d)) => format!(" ({})", d.warehouse_item_count()),
-                _ => String::new(),
-            };
             let enabled = tab == EditorTab::Saves || self.doc.is_some();
-            let dot_color = if !enabled {
-                theme::BORDER_SUBTLE
-            } else if tab.is_implemented() {
-                theme::ACCENT_GREEN
-            } else {
-                theme::BORDER_SUBTLE
-            };
-            let dot_char = if enabled && tab.is_implemented() { "●" } else { "○" };
 
             let mut btn = button(
                 row![
                     theme::icon(tab.icon(), 16.0),
-                    text(format!("{}{}", tab.label(), suffix)).size(13),
-                    Space::with_width(Length::Fill),
-                    text(dot_char).size(10).color(dot_color),
+                    text(tab.label()).size(13),
                 ]
                 .spacing(8)
                 .align_y(Alignment::Center),
@@ -1148,6 +1211,7 @@ impl App {
                 doc_opt.as_ref().map(|d| d.path.as_path()),
                 &self.saves_search,
                 self.saves_sort,
+                self.saves_scroll_y > 180.0,
             ),
             (EditorTab::General, Some(doc)) => {
                 views::general::view(doc, &self.portraits, &self.party_options)
@@ -1301,7 +1365,12 @@ impl App {
             _ => None,
         });
         let opened = window::open_events().map(Message::WindowOpened);
-        Subscription::batch([events, opened])
+        if self.saves_scrolling_to_top {
+            let frames = window::frames().map(|_| Message::ScrollSavesStep);
+            Subscription::batch([events, opened, frames])
+        } else {
+            Subscription::batch([events, opened])
+        }
     }
 }
 
@@ -1426,10 +1495,10 @@ fn acquire_single_instance() -> Option<SingleInstanceGuard> {
         fn SetForegroundWindow(hWnd: *mut c_void) -> i32;
     }
 
-    let mutex_name: Vec<u16> = "Local\\SuiSaveEditor_SingleInstance_Mutex\0"
+    let mutex_name: Vec<u16> = "Local\\BrightShield_SingleInstance_Mutex\0"
         .encode_utf16()
         .collect();
-    let title_w: Vec<u16> = "SuiSaveEditor\0".encode_utf16().collect();
+    let title_w: Vec<u16> = "Bright Shield Save Editor\0".encode_utf16().collect();
 
     unsafe {
         let handle = CreateMutexW(std::ptr::null_mut(), 0, mutex_name.as_ptr());

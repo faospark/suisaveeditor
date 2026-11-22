@@ -132,6 +132,8 @@ pub struct GameEnvStatus {
     pub decrypted_saves_dir: Option<PathBuf>,
     pub decrypted_saves_exists: bool,
     pub edit_save_enabled: Option<bool>,
+    pub better_leona_enabled: Option<bool>,
+    pub kraken_patch_enabled: bool,
 }
 
 impl GameEnvStatus {
@@ -141,6 +143,10 @@ impl GameEnvStatus {
 
     pub fn is_ready(&self) -> bool {
         self.bepinex_installed && self.suikodenfix_installed()
+    }
+
+    pub fn better_leona_active(&self) -> bool {
+        self.better_leona_enabled == Some(true)
     }
 }
 
@@ -164,6 +170,7 @@ pub struct SaveSlotSummary {
     pub modified_secs: u64,
     pub party_members: [i64; 8],
     pub has_backup: bool,
+    pub backup_differs: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -196,6 +203,8 @@ pub fn detect_game_env(custom_dir: Option<&Path>) -> GameEnvStatus {
             decrypted_saves_dir: None,
             decrypted_saves_exists: false,
             edit_save_enabled: None,
+            better_leona_enabled: None,
+            kraken_patch_enabled: false,
         };
     };
 
@@ -206,19 +215,29 @@ pub fn detect_game_env(custom_dir: Option<&Path>) -> GameEnvStatus {
 
     let plugins_dir = dir.join("BepInEx").join("plugins");
     let suikodenfix_path = if plugins_dir.is_dir() {
-        find_suikodenfix_dll(&plugins_dir, 0)
+        find_plugin_dll(&plugins_dir, "suikodenfix", 0)
     } else {
         None
+    };
+
+    let kraken_dll_present = if plugins_dir.is_dir() {
+        find_plugin_dll(&plugins_dir, "squidfam", 0).is_some()
+            || find_plugin_dll(&plugins_dir, "krakenpatch", 0).is_some()
+    } else {
+        false
     };
 
     let decrypted_dir = dir.join("SuikodenFix").join("Decrypted").join("gsd2");
     let decrypted_saves_exists = decrypted_dir.is_dir();
 
-    let cfg_path = dir
-        .join("BepInEx")
-        .join("config")
-        .join("d3xMachina.suikoden_fix.cfg");
-    let edit_save_enabled = parse_edit_save_cfg(&cfg_path);
+    let config_dir = dir.join("BepInEx").join("config");
+    let cfg_path = config_dir.join("d3xMachina.suikoden_fix.cfg");
+    let edit_save_enabled = parse_cfg_bool(&cfg_path, "EditSave");
+    let better_leona_enabled = parse_cfg_bool(&cfg_path, "BetterLeona");
+
+    let squid_cfg_path = config_dir.join("faospark.SquidFam.cfg");
+    let kraken_patch_enabled =
+        kraken_dll_present && parse_cfg_bool(&squid_cfg_path, "SquidFam").unwrap_or(true);
 
     GameEnvStatus {
         game_dir: Some(dir),
@@ -229,10 +248,12 @@ pub fn detect_game_env(custom_dir: Option<&Path>) -> GameEnvStatus {
         decrypted_saves_dir: Some(decrypted_dir),
         decrypted_saves_exists,
         edit_save_enabled,
+        better_leona_enabled,
+        kraken_patch_enabled,
     }
 }
 
-fn parse_edit_save_cfg(cfg_path: &Path) -> Option<bool> {
+fn parse_cfg_bool(cfg_path: &Path, key: &str) -> Option<bool> {
     let content = std::fs::read_to_string(cfg_path).ok()?;
     for line in content.lines() {
         let trimmed = line.trim();
@@ -240,7 +261,7 @@ fn parse_edit_save_cfg(cfg_path: &Path) -> Option<bool> {
             continue;
         }
         if let Some((k, v)) = trimmed.split_once('=') {
-            if k.trim().eq_ignore_ascii_case("EditSave") {
+            if k.trim().eq_ignore_ascii_case(key) {
                 return Some(v.trim().eq_ignore_ascii_case("true"));
             }
         }
@@ -284,7 +305,13 @@ pub fn scan_decrypted_saves(dir: &Path) -> Vec<SaveSlotSummary> {
 
         let (hero_name, castle_name, potch, play_time, recruited_stars, date_saved, party_members) =
             parse_save_summary(&path);
-        let has_backup = crate::save_file::backup_path_for_save(&path).is_file();
+        let bak_path = crate::save_file::backup_path_for_save(&path);
+        let has_backup = bak_path.is_file();
+        let backup_differs = if has_backup {
+            files_differ(&path, &bak_path)
+        } else {
+            false
+        };
 
         saves.push(SaveSlotSummary {
             path,
@@ -299,10 +326,24 @@ pub fn scan_decrypted_saves(dir: &Path) -> Vec<SaveSlotSummary> {
             modified_secs,
             party_members,
             has_backup,
+            backup_differs,
         });
     }
 
     saves
+}
+
+/// Fast byte-level check to determine whether two files differ.
+pub fn files_differ(a: &Path, b: &Path) -> bool {
+    let Ok(ma) = std::fs::metadata(a) else { return true };
+    let Ok(mb) = std::fs::metadata(b) else { return true };
+    if ma.len() != mb.len() {
+        return true;
+    }
+    match (std::fs::read(a), std::fs::read(b)) {
+        (Ok(ba), Ok(bb)) => ba != bb,
+        _ => true,
+    }
 }
 
 fn extract_slot_number(file_name: &str) -> Option<u32> {
@@ -480,7 +521,7 @@ fn parse_vdf_library_paths(vdf: &str) -> Vec<PathBuf> {
     paths
 }
 
-fn find_suikodenfix_dll(dir: &Path, depth: usize) -> Option<PathBuf> {
+fn find_plugin_dll(dir: &Path, needle: &str, depth: usize) -> Option<PathBuf> {
     if depth > 5 {
         return None;
     }
@@ -491,12 +532,12 @@ fn find_suikodenfix_dll(dir: &Path, depth: usize) -> Option<PathBuf> {
             if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                 let lower = name.to_ascii_lowercase();
                 let normalized = lower.replace(['_', '-', ' '], "");
-                if normalized.contains("suikodenfix") && lower.ends_with(".dll") {
+                if normalized.contains(needle) && lower.ends_with(".dll") {
                     return Some(path);
                 }
             }
         } else if path.is_dir() {
-            if let Some(found) = find_suikodenfix_dll(&path, depth + 1) {
+            if let Some(found) = find_plugin_dll(&path, needle, depth + 1) {
                 return Some(found);
             }
         }

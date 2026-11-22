@@ -10,21 +10,21 @@ $StagingTauri = Join-Path $ReleaseDir "_stage_tauri"
 New-Item -ItemType Directory -Force -Path $ReleaseDir | Out-Null
 
 # ----------------------------------------------------------------------------
-# 1. Build & Package Native Rust (iced) Edition -> SuiSaveEditor-Rust-win64.zip
+# 1. Build & Package Native Rust (iced) Edition -> Sui2SaveEditor-win64.zip
 # ----------------------------------------------------------------------------
-Write-Host "`n[1/2] Building Native Rust (iced) release binary..." -ForegroundColor Cyan
+Write-Host "`n[1/2] Building Sui2SaveEditor (Native Rust / iced) release binary..." -ForegroundColor Cyan
 cargo build --release --manifest-path (Join-Path $Root "rust-editor\Cargo.toml")
 
 if (Test-Path $StagingRust) { Remove-Item -Recurse -Force $StagingRust }
 New-Item -ItemType Directory -Force -Path $StagingRust | Out-Null
 
-Copy-Item (Join-Path $Root "rust-editor\target\release\suisaveeditor-rust.exe") (Join-Path $StagingRust "SuiSaveEditor.exe")
+Copy-Item (Join-Path $Root "rust-editor\target\release\Sui2SaveEditor.exe") (Join-Path $StagingRust "Sui2SaveEditor.exe")
 Copy-Item -Recurse (Join-Path $Root "image\portraits") (Join-Path $StagingRust "portraits")
 Copy-Item (Join-Path $Root "rust-editor\README.txt") (Join-Path $StagingRust "README.txt")
 Copy-Item (Join-Path $Root "rust-editor\assets\fonts\OFL.txt") (Join-Path $StagingRust "OFL.txt")
 Copy-Item (Join-Path $Root "rust-editor\assets\fonts\LICENSE-APACHE.txt") (Join-Path $StagingRust "LICENSE-APACHE.txt")
 
-$RustZip = Join-Path $ReleaseDir "SuiSaveEditor-Rust-win64.zip"
+$RustZip = Join-Path $ReleaseDir "Sui2SaveEditor-win64.zip"
 if (Test-Path $RustZip) { Remove-Item -Force $RustZip }
 Compress-Archive -Path (Join-Path $StagingRust "*") -DestinationPath $RustZip -CompressionLevel Optimal
 Remove-Item -Recurse -Force $StagingRust

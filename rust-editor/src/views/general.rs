@@ -1,5 +1,6 @@
 use iced::widget::{
-    button, checkbox, column, container, image, pick_list, row, scrollable, text, text_input, Space,
+    button, checkbox, column, container, image, pick_list, row, scrollable, text, text_input,
+    tooltip, Space,
 };
 use iced::{Alignment, Element, Length};
 
@@ -72,6 +73,7 @@ fn view_active_party<'a>(
     party_options: &'a [NamedOption],
 ) -> Element<'a, Message> {
     let party = doc.active_party();
+    let max_combatants = doc.battle_character_count().saturating_sub(1).min(83) as i64;
     let mut row1 = row![].spacing(10);
     let mut row2 = row![].spacing(10);
 
@@ -86,7 +88,7 @@ fn view_active_party<'a>(
         let name = character_name(char_id);
         let selected = find_option(party_options, char_id);
 
-        let portrait: Element<'a, Message> = if let Some(handle) = portraits.get(char_id) {
+        let portrait_raw: Element<'a, Message> = if let Some(handle) = portraits.get(char_id) {
             image(handle).width(56).height(56).into()
         } else {
             container(
@@ -99,6 +101,26 @@ fn view_active_party<'a>(
             .center_x(Length::Fixed(56.0))
             .center_y(Length::Fixed(56.0))
             .into()
+        };
+
+        let portrait: Element<'a, Message> = if char_id >= 1 && char_id <= max_combatants {
+            tooltip(
+                button(portrait_raw)
+                    .padding(0)
+                    .style(theme::portrait_button_style)
+                    .on_press(Message::JumpToCombatant(char_id as usize)),
+                container(
+                    text(format!("Edit {} in Combatants", name))
+                        .size(11)
+                        .color(theme::TEXT_PRIMARY),
+                )
+                .padding([4, 8])
+                .style(theme::card_style),
+                tooltip::Position::Top,
+            )
+            .into()
+        } else {
+            portrait_raw
         };
 
         let picker = pick_list(party_options, Some(selected), move |opt| {

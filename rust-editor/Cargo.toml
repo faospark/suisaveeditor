@@ -1,8 +1,12 @@
 [package]
-name = "suisaveeditor-rust"
+name = "brightshield"
 version = "1.4.17"
 edition = "2021"
-description = "Native Rust (iced) edition of the Suikoden II HD Remaster Save Editor"
+description = "Bright Shield Save Editor — Native Rust (iced) edition of the Suikoden II HD Remaster Save Editor"
+
+[[bin]]
+name = "BrightShield"
+path = "src/main.rs"
 
 [dependencies]
 iced = { version = "0.13", features = ["image"] }

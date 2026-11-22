@@ -252,8 +252,8 @@ pub fn tr(key: &str) -> &'static str {
         "tools" => pick(["TOOLS", "ツール", "WERKZEUGE", "HERRAMIENTAS", "OUTILS", "STRUMENTI", "工具", "工具"]),
         "tab_saves" => pick(["Saves", "セーブ一覧", "Spielstände", "Partidas", "Sauvegardes", "Salvataggi", "存档列表", "存檔列表"]),
         "tab_general" => pick(["General", "全般", "Allgemein", "General", "Général", "Generale", "常规", "一般"]),
-        "tab_battle_chars" => pick(["Battle Characters", "戦闘メンバー", "Kampfcharaktere", "Personajes", "Combattants", "Personaggi", "战斗角色", "戰鬥角色"]),
-        "tab_recruited" => pick(["Recruited Characters", "仲間キャラクター", "Rekrutierte Sterne", "Reclutados", "Recrutés", "Reclutati", "已招募角色", "已招募角色"]),
+        "tab_battle_chars" => pick(["Combatants", "戦闘メンバー", "Kämpfer", "Combatientes", "Combattants", "Combattenti", "战斗角色", "戰鬥角色"]),
+        "tab_recruited" => pick(["Recruits", "仲間", "Rekruten", "Reclutados", "Recrues", "Reclute", "已招募", "已招募"]),
         "tab_party_bag" => pick(["Party Bag", "持ち物", "Inventar", "Mochila", "Sac d'équipe", "Borsa gruppo", "队伍背包", "隊伍背包"]),
         "tab_warehouse" => pick(["Warehouse", "倉庫", "Lagerhaus", "Almacén", "Entrepôt", "Magazzino", "仓库", "倉庫"]),
         "tab_cooking" => pick(["Cooking", "料理", "Kochen", "Cocina", "Cuisine", "Cucina", "料理", "料理"]),
@@ -276,14 +276,14 @@ pub fn tr(key: &str) -> &'static str {
 
         // Empty state
         "welcome_title" => pick([
-            "Welcome to SuiSaveEditor",
-            "SuiSaveEditor へようこそ",
-            "Willkommen bei SuiSaveEditor",
-            "Bienvenido a SuiSaveEditor",
-            "Bienvenue dans SuiSaveEditor",
-            "Benvenuto in SuiSaveEditor",
-            "欢迎使用 SuiSaveEditor",
-            "歡迎使用 SuiSaveEditor",
+            "Welcome to Bright Shield Save Editor",
+            "Bright Shield Save Editor へようこそ",
+            "Willkommen bei Bright Shield Save Editor",
+            "Bienvenido a Bright Shield Save Editor",
+            "Bienvenue dans Bright Shield Save Editor",
+            "Benvenuto in Bright Shield Save Editor",
+            "欢迎使用 Bright Shield Save Editor",
+            "歡迎使用 Bright Shield Save Editor",
         ]),
         "welcome_desc" => pick([
             "Load a Suikoden II HD Remaster JSON save file to begin editing.\nA silent .bak backup will be created automatically in the same folder.",
@@ -321,7 +321,7 @@ pub fn tr(key: &str) -> &'static str {
         ]),
         "base_bg_title" => pick(["Base Background", "ベース背景", "Hintergrund", "Fondo base", "Arrière-plan", "Sfondo base", "基础背景", "基礎背景"]),
         "base_bg_desc" => pick([
-            "Choose the base surface palette (Dark Navy, High Contrast Black, Dark Gray, Dark Green, or Dark Purple).",
+            "Choose the base surface palette (Dark Navy, High Contrast Black, Dark Gray, Dark Green, Dark Purple, or Dark Red).",
             "ベースとなる背景パレットを選択します（ダークネイビー、ハイコントラストブラック、ダークグレー、ダークグリーン、ダークパープル）。",
             "Wähle die Hintergrundpalette (Dunkelblau, Kontrastreiches Schwarz, Dunkelgrau, Dunkelgrün oder Dunkellila).",
             "Elige la paleta de fondo (Azul oscuro, Negro alto contraste, Gris oscuro, Verde oscuro o Morado oscuro).",

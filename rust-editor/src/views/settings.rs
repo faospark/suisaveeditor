@@ -507,7 +507,7 @@ pub fn view_env_blocking_overlay<'a>(env: &'a GameEnvStatus) -> Element<'a, Mess
             ]
             .spacing(10)
             .align_y(Alignment::Center),
-            text("SuiSaveEditor requires BepInEx and SuikodenFix installed in your Suikoden I and II HD Remaster directory to load and save decrypted JSON saves. Please install them or select your game folder below to continue.")
+            text("Sui2SaveEditor requires BepInEx and SuikodenFix installed in your Suikoden I and II HD Remaster directory to load and save decrypted JSON saves. Please install them or select your game folder below to continue.")
                 .size(13)
                 .color(theme::TEXT_MUTED),
             horizontal_rule(1),

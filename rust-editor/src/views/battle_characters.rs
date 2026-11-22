@@ -183,7 +183,7 @@ fn view_character_detail<'a>(
             portrait,
             column![
                 title_row,
-                text(format!("Battle Character ID #{} (chara_data.c_varia_dat[{}])", id, id))
+                text(format!("Combatant ID #{} (chara_data.c_varia_dat[{}])", id, id))
                     .size(12)
                     .color(theme::TEXT_MUTED),
                 row![
@@ -275,7 +275,7 @@ fn view_character_detail<'a>(
         .spacing(8),
     )
     .padding(16)
-    .width(Length::FillPortion(1))
+    .width(Length::Fill)
     .style(theme::card_style);
 
     let mut para_col = column![text("Base Stats (para)").size(15).color(theme::ACCENT_GOLD)].spacing(8);
@@ -287,11 +287,11 @@ fn view_character_detail<'a>(
     }
     let para_card = container(para_col)
         .padding(16)
-        .width(Length::FillPortion(1))
+        .width(Length::Fill)
         .style(theme::card_style);
 
-    // Visual 9-Pip MP Bars with - / + cast steppers (17 pts per cast, max 153)
-    let mut mp_row = row![].spacing(12);
+    // Visual 9-Pip MP Bars with - / + cast steppers (17 pts per cast, max 153) — stacked vertically like in-game
+    let mut mp_col = column![].spacing(8);
     for slot in 0..4 {
         let val = doc.get_battle_char_array_i64(id, "mp", slot).clamp(0, 153);
         let casts = (val / 17).clamp(0, 9);
@@ -301,54 +301,52 @@ fn view_character_detail<'a>(
         let dec_val = (casts - 1).max(0) * 17;
         let inc_val = (casts + 1).min(9) * 17;
 
-        mp_row = mp_row.push(
+        mp_col = mp_col.push(
             container(
-                column![
+                row![
+                    text(format!("Lv.{} MP", slot + 1))
+                        .size(12)
+                        .color(theme::ACCENT_GOLD)
+                        .width(Length::Fixed(58.0)),
                     row![
-                        text(format!("Lv.{} MP", slot + 1))
-                            .size(12)
-                            .color(theme::ACCENT_GOLD),
-                        Space::with_width(Length::Fill),
-                        text(format!("{}/9", casts))
-                            .size(12)
-                            .color(theme::ACCENT_CYAN),
+                        text(filled).size(13).color(theme::ACCENT_CYAN),
+                        text(empty).size(13).color(theme::BORDER_SUBTLE),
                     ],
-                    row![
-                        text(filled).size(12).color(theme::ACCENT_CYAN),
-                        text(empty).size(12).color(theme::BORDER_SUBTLE),
-                    ],
-                    row![
-                        button(text("-").size(12))
-                            .padding([3, 10])
-                            .style(theme::secondary_button_style)
-                            .on_press(Message::SetBattleCharArrayInt(
-                                id,
-                                "mp",
-                                slot,
-                                dec_val.to_string()
-                            )),
-                        text_input("0", &val.to_string())
-                            .on_input(move |v| Message::SetBattleCharArrayInt(id, "mp", slot, v))
-                            .padding(4)
-                            .size(12)
-                            .style(theme::input_style),
-                        button(text("+").size(12))
-                            .padding([3, 10])
-                            .style(theme::secondary_button_style)
-                            .on_press(Message::SetBattleCharArrayInt(
-                                id,
-                                "mp",
-                                slot,
-                                inc_val.to_string()
-                            )),
-                    ]
-                    .spacing(6)
-                    .align_y(Alignment::Center),
+                    Space::with_width(Length::Fill),
+                    text(format!("{}/9", casts))
+                        .size(12)
+                        .color(theme::ACCENT_CYAN)
+                        .width(Length::Fixed(28.0)),
+                    button(text("-").size(12))
+                        .padding([3, 10])
+                        .style(theme::secondary_button_style)
+                        .on_press(Message::SetBattleCharArrayInt(
+                            id,
+                            "mp",
+                            slot,
+                            dec_val.to_string()
+                        )),
+                    text_input("0", &val.to_string())
+                        .on_input(move |v| Message::SetBattleCharArrayInt(id, "mp", slot, v))
+                        .padding(4)
+                        .size(12)
+                        .width(Length::Fixed(52.0))
+                        .style(theme::input_style),
+                    button(text("+").size(12))
+                        .padding([3, 10])
+                        .style(theme::secondary_button_style)
+                        .on_press(Message::SetBattleCharArrayInt(
+                            id,
+                            "mp",
+                            slot,
+                            inc_val.to_string()
+                        )),
                 ]
-                .spacing(6),
+                .spacing(8)
+                .align_y(Alignment::Center),
             )
-            .padding(10)
-            .width(Length::FillPortion(1))
+            .padding([8, 12])
+            .width(Length::Fill)
             .style(theme::empty_slot_card_style),
         );
     }
@@ -358,9 +356,10 @@ fn view_character_detail<'a>(
             row![
                 text("Rune Magic Points (mp[0..3])").size(15).color(theme::ACCENT_GOLD),
                 Space::with_width(Length::Fill),
-                text("17 pts = 1 cast • Max 153 (9 casts)").size(11).color(theme::TEXT_MUTED),
-            ],
-            mp_row,
+                text("17 pts = 1 cast • Max 153").size(11).color(theme::TEXT_MUTED),
+            ]
+            .align_y(Alignment::Center),
+            mp_col,
         ]
         .spacing(10),
     )
@@ -368,16 +367,32 @@ fn view_character_detail<'a>(
     .width(Length::Fill)
     .style(theme::card_style);
 
-    // Runes
+    // Equipped Runes (mon_eqp) & Rune Slot Unlock Levels (c_kotei_dat.mon_kosu_type[0..2])
     let rune_labels = ["Head / Forehead", "Right Hand", "Left Hand"];
-    let mut rune_row = row![].spacing(12);
+    let mut rune_col = column![
+        text("Equipped Runes (mon_eqp)").size(15).color(theme::ACCENT_GOLD),
+    ]
+    .spacing(10);
     for (slot, lbl) in rune_labels.iter().enumerate() {
         let val = doc.get_battle_char_array_i64(id, "mon_eqp", slot);
         let allowed = filter_runes_for_character(char_id, slot, bypass_runes);
         let selected = find_option(&allowed, val);
-        rune_row = rune_row.push(
+        let unlock_lv = doc.get_kotei_array_i64(id, "mon_kosu_type", slot);
+        rune_col = rune_col.push(
             column![
-                text(*lbl).size(12).color(theme::TEXT_MUTED),
+                row![
+                    text(*lbl).size(12).color(theme::TEXT_MUTED),
+                    Space::with_width(Length::Fill),
+                    text("Unlock Lv").size(11).color(theme::TEXT_MUTED),
+                    text_input("0", &unlock_lv.to_string())
+                        .on_input(move |v| Message::SetKoteiArrayInt(id, "mon_kosu_type", slot, v))
+                        .padding([3, 6])
+                        .size(12)
+                        .width(Length::Fixed(52.0))
+                        .style(theme::input_style),
+                ]
+                .spacing(8)
+                .align_y(Alignment::Center),
                 pick_list(allowed, Some(selected), move |opt| {
                     Message::SetBattleCharArrayInt(id, "mon_eqp", slot, opt.id.to_string())
                 })
@@ -387,10 +402,13 @@ fn view_character_detail<'a>(
                 .style(theme::pick_list_style)
                 .menu_style(theme::pick_list_menu_style),
             ]
-            .spacing(4)
-            .width(Length::FillPortion(1)),
+            .spacing(4),
         );
     }
+    let runes_card = container(rune_col)
+        .padding(16)
+        .width(Length::Fill)
+        .style(theme::card_style);
 
     // Armor
     let helmet_widget: Element<'a, Message> = if beast && !bypass_equip {
@@ -468,12 +486,7 @@ fn view_character_detail<'a>(
             let (item_no, use_cnt) = doc.get_battle_char_accessory(id, slot);
             let is_empty = item_no == 0;
             let (cat, item_name) = resolve_inventory_item(item_no, use_cnt);
-            let cat_color = match cat {
-                "Gear" => theme::ACCENT_CYAN,
-                "Item" => theme::ACCENT_GREEN,
-                "Rune" => theme::ACCENT_GOLD,
-                _ => theme::TEXT_MUTED,
-            };
+            let cat_color = theme::item_category_color(cat);
 
             let target = ModalTarget::BattleCharItem { char_id: id, slot };
             let modal_title = format!("{} — Accessory / Item Slot {}", name, slot + 1);
@@ -539,33 +552,8 @@ fn view_character_detail<'a>(
         acc_col.into()
     };
 
-    // Rune Slot Unlock Levels (c_kotei_dat.mon_kosu_type[0..2])
-    let unlock_labels = ["Head Rune Unlock Lv", "Right Hand Unlock Lv", "Left Hand Unlock Lv"];
-    let mut unlock_row = row![].spacing(12);
-    for (slot, lbl) in unlock_labels.iter().enumerate() {
-        let lv = doc.get_kotei_array_i64(id, "mon_kosu_type", slot);
-        unlock_row = unlock_row.push(
-            row![
-                text(*lbl).size(12).color(theme::TEXT_MUTED),
-                text_input("0", &lv.to_string())
-                    .on_input(move |v| Message::SetKoteiArrayInt(id, "mon_kosu_type", slot, v))
-                    .padding(5)
-                    .size(12)
-                    .width(Length::Fixed(58.0))
-                    .style(theme::input_style),
-            ]
-            .spacing(8)
-            .align_y(Alignment::Center)
-            .width(Length::FillPortion(1)),
-        );
-    }
-
     let equip_card = container(
         column![
-            text("Equipped Runes (mon_eqp)").size(15).color(theme::ACCENT_GOLD),
-            rune_row,
-            unlock_row,
-            Space::with_height(Length::Fixed(6.0)),
             text("Equipped Armor (bogu_eqp)").size(15).color(theme::ACCENT_GOLD),
             gear_row,
             Space::with_height(Length::Fixed(6.0)),
@@ -588,10 +576,17 @@ fn view_character_detail<'a>(
 
     let archetype_card = view_advanced_archetype(doc, id);
 
+    let left_col = column![core_card, para_card]
+        .spacing(16)
+        .width(Length::FillPortion(1));
+
+    let right_col = column![mp_card, runes_card]
+        .spacing(16)
+        .width(Length::FillPortion(1));
+
     let detail = column![
         header_card,
-        row![core_card, para_card].spacing(16),
-        mp_card,
+        row![left_col, right_col].spacing(16),
         equip_card,
         archetype_card,
     ]

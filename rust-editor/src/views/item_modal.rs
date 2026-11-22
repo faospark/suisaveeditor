@@ -45,7 +45,7 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
         cat_tabs = cat_tabs.push(
             button(text(cat.to_string()).size(12))
                 .padding([6, 8])
-                .style(theme::nav_button_style(active))
+                .style(theme::category_tab_style(active, cat.color()))
                 .on_press(Message::SetModalCategory(Some(cat))),
         );
     }
@@ -80,15 +80,7 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
 
     let mut list = column![].spacing(6);
     for (cat, item_id, name, use_cnt) in matches.iter().copied() {
-        let cat_color = match cat {
-            ItemCategory::Item => theme::ACCENT_GREEN,
-            ItemCategory::Equip => theme::ACCENT_CYAN,
-            ItemCategory::Rune => theme::ACCENT_GOLD,
-            ItemCategory::Farm => theme::ACCENT_GREEN,
-            ItemCategory::Trade => theme::ACCENT_GOLD,
-            ItemCategory::Base => theme::ACCENT_CYAN,
-            ItemCategory::Food => theme::ACCENT_GOLD,
-        };
+        let cat_color = cat.color();
 
         let item_btn = button(
             row![

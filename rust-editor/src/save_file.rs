@@ -133,14 +133,16 @@ impl SaveDocument {
         bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
         bytes.extend_from_slice(crlf.as_bytes());
 
-        // Silently snapshot the pre-save on-disk file into backups\<file>.bak before overwriting
+        // Preserve the original .bak as immutable: only create backups\<file>.bak if it does not already exist.
         if target.is_file() {
             let bak_path = backup_path_for_save(target);
-            if let Some(bak_parent) = bak_path.parent() {
-                let _ = std::fs::create_dir_all(bak_parent);
-            }
-            if std::fs::copy(target, &bak_path).is_ok() {
-                self.backup_path = Some(bak_path);
+            if !bak_path.is_file() {
+                if let Some(bak_parent) = bak_path.parent() {
+                    let _ = std::fs::create_dir_all(bak_parent);
+                }
+                if std::fs::copy(target, &bak_path).is_ok() {
+                    self.backup_path = Some(bak_path);
+                }
             }
         }
 
@@ -256,27 +258,101 @@ impl SaveDocument {
         }
         // Auto-clear associated story flags when un-recruiting (matching RECRUITMENT_STORY_FLAGS)
         if status == 0 {
-            let clears: &[(usize, u8)] = match index {
-                51 => &[(211, 0x06), (230, 0x02)],  // Badeaux
-                97 => &[(211, 0x18)],               // Tenkou
-                65 => &[(29, 0x08)],                // Simone
-                64 => &[(29, 0xE0)],                // Vincent
-                112 => &[(92, 0x01), (112, 0x30)],  // Annallee
-                114 => &[(212, 0x03), (114, 0x30)], // Alberto
-                108 => &[(216, 0x03)],              // Connell
-                104 => &[(216, 0x30)],              // Tony
-                102 => &[(68, 0xF0), (70, 0x01)],   // Yuzu
-                68 => &[(216, 0x80)],               // Wakaba
-                110 => &[(110, 0x02)],              // Tessai
-                17 => &[(171, 0x40), (20, 0x80)],   // Tomo
-                50 => &[(230, 0x03), (215, 0x14)],  // Feather
-                43 => &[(230, 0x03), (215, 0x40)],  // Ayda
-                _ => &[],
-            };
-            for &(byte_idx, mask) in clears {
-                self.toggle_event_flag_bit(byte_idx, mask, false);
+            if let Some(cfg) = recruit_story_reset(index) {
+                for &(byte_idx, mask) in cfg.flags {
+                    self.toggle_event_flag_bit(byte_idx, mask, false);
+                }
             }
         }
+    }
+
+    /// Full recruitment reset: sets `chara_flag[index] = 0`, clears associated story/event flag
+    /// bits, removes granted quest items from Party Bag / Event Items / Warehouse, and applies
+    /// character-specific cleanup (e.g., Jude's `parts_no[3]`).
+    pub fn reset_recruit_full(&mut self, index: usize) -> Option<String> {
+        let cfg = recruit_story_reset(index)?;
+        if let Some(Value::Array(arr)) = self.data.get_mut("chara_flag") {
+            if let Some(slot) = arr.get_mut(index) {
+                *slot = Value::Number(0.into());
+                self.dirty = true;
+            }
+        }
+        for &(byte_idx, mask) in cfg.flags {
+            self.toggle_event_flag_bit(byte_idx, mask, false);
+        }
+        let mut items_removed = 0usize;
+        if !cfg.items.is_empty() {
+            items_removed += self.remove_quest_items_from_slots("party_data", "party_item", cfg.items);
+            items_removed += self.remove_quest_items_from_id_array("party_data", "event_item", cfg.items);
+            items_removed += self.remove_quest_items_from_slots("game_data", "base_item", cfg.items);
+        }
+        if cfg.reset_jude_parts {
+            if let Some(Value::Array(parts)) = self
+                .data
+                .get_mut("game_data")
+                .and_then(|g| g.get_mut("parts_no"))
+            {
+                if parts.len() >= 4 {
+                    parts[3] = Value::Number(0.into());
+                    self.dirty = true;
+                }
+            }
+        }
+        let flag_list = cfg.flag_list_label();
+        let extra = if items_removed > 0 {
+            format!(" & removed {} quest item(s)", items_removed)
+        } else {
+            String::new()
+        };
+        Some(format!(
+            "Reset {} to Not Recruited (cleared {}{})",
+            crate::gamedata::character_name(index as i64),
+            flag_list,
+            extra
+        ))
+    }
+
+    fn remove_quest_items_from_slots(
+        &mut self,
+        section: &str,
+        key: &str,
+        items: &[(i64, i64)],
+    ) -> usize {
+        let mut removed = 0usize;
+        if let Some(Value::Array(arr)) = self.data.get_mut(section).and_then(|s| s.get_mut(key)) {
+            for slot in arr.iter_mut() {
+                if let Value::Object(obj) = slot {
+                    let item_no = obj.get("item_no").and_then(|v| v.as_i64()).unwrap_or(0);
+                    if items.iter().any(|&(id, alt)| item_no == id || item_no == alt) {
+                        obj.insert("item_no".to_string(), Value::Number(0.into()));
+                        obj.insert("use_cnt".to_string(), Value::Number(0.into()));
+                        self.dirty = true;
+                        removed += 1;
+                    }
+                }
+            }
+        }
+        removed
+    }
+
+    fn remove_quest_items_from_id_array(
+        &mut self,
+        section: &str,
+        key: &str,
+        items: &[(i64, i64)],
+    ) -> usize {
+        let mut removed = 0usize;
+        if let Some(Value::Array(arr)) = self.data.get_mut(section).and_then(|s| s.get_mut(key)) {
+            for slot in arr.iter_mut() {
+                let id_val = slot.as_i64().unwrap_or(0);
+                if items.iter().any(|&(id, alt)| id_val == id || id_val == alt) {
+                    *slot = Value::Number(0.into());
+                    self.dirty = true;
+                    removed += 1;
+                }
+            }
+        }
+        removed
     }
 
     // ---- Battle Characters (chara_data.c_varia_dat[id]) ----
@@ -617,6 +693,49 @@ impl SaveDocument {
             .sum()
     }
 
+    pub fn set_tony_crop(&mut self, food_index: usize, count: i64) {
+        if food_index > 3 {
+            return;
+        }
+        let clamped = count.clamp(0, 3);
+        self.set_array_i64(Some("game_data"), "food_num", food_index, clamped);
+        self.sync_tony_farm_flags();
+    }
+
+    pub fn max_tony_farm(&mut self) {
+        for i in 0..4 {
+            self.set_array_i64(Some("game_data"), "food_num", i, 3);
+        }
+        self.sync_tony_farm_flags();
+    }
+
+    fn sync_tony_farm_flags(&mut self) {
+        let cabbage = self.get_array_i64(Some("game_data"), "food_num", 0).clamp(0, 3);
+        let potato = self.get_array_i64(Some("game_data"), "food_num", 1).clamp(0, 3);
+        let spinach = self.get_array_i64(Some("game_data"), "food_num", 2).clamp(0, 3);
+        let tomato = self.get_array_i64(Some("game_data"), "food_num", 3).clamp(0, 3);
+
+        // hon_flag[30]: Cabbage 1..3 (B0..2), Potato 1..3 (B3..5), Spinach 1..2 (B6..7)
+        let mut f30 = 0u8;
+        if cabbage >= 1 { f30 |= 0x01; }
+        if cabbage >= 2 { f30 |= 0x02; }
+        if cabbage >= 3 { f30 |= 0x04; }
+        if potato >= 1 { f30 |= 0x08; }
+        if potato >= 2 { f30 |= 0x10; }
+        if potato >= 3 { f30 |= 0x20; }
+        if spinach >= 1 { f30 |= 0x40; }
+        if spinach >= 2 { f30 |= 0x80; }
+        self.set_array_i64(Some("game_data"), "hon_flag", 30, f30 as i64);
+
+        // hon_flag[31]: preserve bits 4..7 (Yuzu's Chickens & Pig #1), update bits 0..3 (Spinach 3, Tomato 1..3)
+        let mut f31 = (self.get_array_i64(Some("game_data"), "hon_flag", 31) as u8) & 0xF0;
+        if spinach >= 3 { f31 |= 0x01; }
+        if tomato >= 1 { f31 |= 0x02; }
+        if tomato >= 2 { f31 |= 0x04; }
+        if tomato >= 3 { f31 |= 0x08; }
+        self.set_array_i64(Some("game_data"), "hon_flag", 31, f31 as i64);
+    }
+
     pub fn set_yuzu_livestock(&mut self, food_index: usize, count: i64) {
         let max_val = if food_index == 6 { 4 } else { 3 };
         let clamped = count.clamp(0, max_val);
@@ -815,4 +934,89 @@ pub async fn pick_save_as_file_async(suggested_name: String, source_path: PathBu
     }
 
     dialog.save_file().await.map(|h| h.path().to_path_buf())
+}
+
+/// Complete registry of recruits with associated story/event flags and quest items
+/// (exact 33-character parity with `RECRUITMENT_STORY_FLAGS`).
+#[derive(Debug, Clone, Copy)]
+pub struct RecruitStoryReset {
+    pub flags: &'static [(usize, u8)],
+    pub items: &'static [(i64, i64)],
+    pub reset_jude_parts: bool,
+}
+
+impl RecruitStoryReset {
+    pub fn flag_list_label(&self) -> String {
+        let mut seen: Vec<usize> = Vec::new();
+        for &(byte, _) in self.flags {
+            if !seen.contains(&byte) {
+                seen.push(byte);
+            }
+        }
+        seen.into_iter()
+            .map(|b| format!("Flag {}", b))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+
+    pub fn tooltip_text(&self, char_name: &str) -> String {
+        let flags_str = self.flag_list_label();
+        let items_suffix = if !self.items.is_empty() {
+            ", and removes granted quest items"
+        } else {
+            ""
+        };
+        format!(
+            "Full reset: Sets {} to 'Not Recruited', clears {}{}",
+            char_name, flags_str, items_suffix
+        )
+    }
+}
+
+pub fn recruit_story_reset(index: usize) -> Option<RecruitStoryReset> {
+    let mk = |flags: &'static [(usize, u8)],
+              items: &'static [(i64, i64)],
+              reset_jude_parts: bool| {
+        Some(RecruitStoryReset {
+            flags,
+            items,
+            reset_jude_parts,
+        })
+    };
+    match index {
+        51 => mk(&[(211, 0x06), (230, 0x02)], &[(2126, 55)], false), // Badeaux (Listening Crystal)
+        97 => mk(&[(211, 0x18)], &[], false),                        // Tenkou
+        65 => mk(&[(29, 0x08)], &[(2128, 75)], false),               // Simone (Rose Brooch)
+        64 => mk(&[(29, 0xE0)], &[], false),                         // Vincent
+        112 => mk(&[(92, 0x01), (112, 0x30)], &[], false),           // Annallee
+        114 => mk(&[(212, 0x03), (114, 0x30)], &[], false),          // Alberto
+        108 => mk(&[(216, 0x03)], &[], false),                       // Connell
+        104 => mk(&[(216, 0x30)], &[], false),                       // Tony
+        102 => mk(&[(68, 0xF0), (70, 0x01)], &[], false),            // Yuzu
+        68 => mk(&[(216, 0x80)], &[], false),                        // Wakaba
+        110 => mk(&[(110, 0x02)], &[], false),                       // Tessai
+        17 => mk(&[(171, 0x40), (20, 0x80)], &[], false),            // Tomo
+        50 => mk(&[(230, 0x03), (215, 0x14)], &[], false),           // Feather
+        43 => mk(&[(230, 0x03), (215, 0x40)], &[], false),           // Ayda
+        4 => mk(&[(210, 0xC0)], &[], false),                         // Viki
+        47 => mk(&[(23, 0x08)], &[], false),                         // Genshu
+        94 => mk(&[(206, 0x07)], &[], false),                        // Hilda
+        95 => mk(&[(206, 0x07)], &[], false),                        // Alex
+        24 => mk(&[(160, 0x41)], &[], false),                        // Millie
+        30 => mk(&[(164, 0x06)], &[], false),                        // Kinnison
+        26 => mk(&[(164, 0x06)], &[], false),                        // Shiro
+        27 => mk(&[(166, 0x04)], &[], false),                        // Zamza
+        39 => mk(&[(166, 0x01)], &[], false),                        // Anita
+        86 => mk(&[(166, 0x30)], &[(2090, 35)], false),              // Templeton (Suiko Map)
+        41 => mk(&[(216, 0x40)], &[], false),                        // Meg
+        42 => mk(&[(216, 0x40)], &[], false),                        // Gadget
+        52 => mk(&[(208, 0x03)], &[], false),                        // Tsai
+        56 => mk(&[(65, 0x02)], &[], false),                         // Sid
+        107 => mk(&[(68, 0x01)], &[], false),                        // Hans
+        115 => mk(&[(209, 0x3C)], &[(2125, 54)], true),              // Jude (Clay + parts_no[3])
+        116 => mk(&[(213, 0x80)], &[], false),                       // Jeane
+        113 => mk(&[(210, 0x20)], &[], false),                       // Pico
+        96 => mk(&[(209, 0xC0), (210, 0x03)], &[], false),           // Emilia
+        _ => None,
+    }
 }

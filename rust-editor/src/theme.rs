@@ -27,6 +27,8 @@ pub mod icons {
     pub const TABLE_CHART: char = '\u{e265}';
     pub const SETTINGS: char = '\u{e8b8}';
     pub const INFO: char = '\u{e88e}';
+    pub const WARNING: char = '\u{e002}';
+    pub const ARROW_UPWARD: char = '\u{e5d8}';
 }
 
 pub fn icon<'a>(codepoint: char, size: f32) -> text::Text<'a> {
@@ -171,6 +173,7 @@ pub enum BaseTheme {
     DarkGray,
     DarkGreen,
     DarkPurple,
+    DarkRed,
 }
 
 impl BaseTheme {
@@ -180,6 +183,7 @@ impl BaseTheme {
         BaseTheme::DarkGray,
         BaseTheme::DarkGreen,
         BaseTheme::DarkPurple,
+        BaseTheme::DarkRed,
     ];
 
     pub fn label(self) -> &'static str {
@@ -189,6 +193,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => "Dark Gray",
             BaseTheme::DarkGreen => "Dark Green",
             BaseTheme::DarkPurple => "Dark Purple",
+            BaseTheme::DarkRed => "Dark Red",
         }
     }
 
@@ -199,6 +204,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => "Neutral charcoal-gray surface",
             BaseTheme::DarkGreen => "Deep forest-emerald surface",
             BaseTheme::DarkPurple => "Deep obsidian-violet surface",
+            BaseTheme::DarkRed => "Deep crimson-burgundy surface",
         }
     }
 
@@ -209,6 +215,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => "gray",
             BaseTheme::DarkGreen => "green",
             BaseTheme::DarkPurple => "purple",
+            BaseTheme::DarkRed => "red",
         }
     }
 
@@ -218,6 +225,7 @@ impl BaseTheme {
             "gray" | "grey" | "dark_gray" | "dark_grey" => BaseTheme::DarkGray,
             "green" | "dark_green" => BaseTheme::DarkGreen,
             "purple" | "dark_purple" => BaseTheme::DarkPurple,
+            "red" | "dark_red" | "crimson" => BaseTheme::DarkRed,
             _ => BaseTheme::DarkNavy,
         }
     }
@@ -229,6 +237,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => 2,
             BaseTheme::DarkGreen => 3,
             BaseTheme::DarkPurple => 4,
+            BaseTheme::DarkRed => 5,
         }
     }
 
@@ -238,6 +247,7 @@ impl BaseTheme {
             2 => BaseTheme::DarkGray,
             3 => BaseTheme::DarkGreen,
             4 => BaseTheme::DarkPurple,
+            5 => BaseTheme::DarkRed,
             _ => BaseTheme::DarkNavy,
         }
     }
@@ -256,6 +266,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgb(0.071, 0.075, 0.086),   // #121316
             BaseTheme::DarkGreen => Color::from_rgb(0.035, 0.071, 0.055),  // #09120E
             BaseTheme::DarkPurple => Color::from_rgb(0.063, 0.043, 0.090), // #100B17
+            BaseTheme::DarkRed => Color::from_rgb(0.090, 0.043, 0.051),    // #170B0D
         }
     }
 
@@ -266,6 +277,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgb(0.094, 0.102, 0.118),   // #181A1E
             BaseTheme::DarkGreen => Color::from_rgb(0.051, 0.098, 0.078),  // #0D1914
             BaseTheme::DarkPurple => Color::from_rgb(0.086, 0.063, 0.125), // #161020
+            BaseTheme::DarkRed => Color::from_rgb(0.125, 0.063, 0.075),    // #201013
         }
     }
 
@@ -276,6 +288,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgb(0.118, 0.125, 0.145),   // #1E2025
             BaseTheme::DarkGreen => Color::from_rgb(0.067, 0.133, 0.106),  // #11221B
             BaseTheme::DarkPurple => Color::from_rgb(0.114, 0.082, 0.169), // #1D152B
+            BaseTheme::DarkRed => Color::from_rgb(0.169, 0.082, 0.098),    // #2B1519
         }
     }
 
@@ -286,6 +299,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgb(0.149, 0.161, 0.188),   // #262930
             BaseTheme::DarkGreen => Color::from_rgb(0.090, 0.180, 0.145),  // #172E25
             BaseTheme::DarkPurple => Color::from_rgb(0.153, 0.114, 0.227), // #271D3A
+            BaseTheme::DarkRed => Color::from_rgb(0.227, 0.114, 0.133),    // #3A1D22
         }
     }
 
@@ -296,6 +310,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgb(0.212, 0.227, 0.263),   // #363A43
             BaseTheme::DarkGreen => Color::from_rgb(0.137, 0.259, 0.212),  // #234236
             BaseTheme::DarkPurple => Color::from_rgb(0.227, 0.173, 0.329), // #3A2C54
+            BaseTheme::DarkRed => Color::from_rgb(0.329, 0.173, 0.200),    // #542C33
         }
     }
 
@@ -306,6 +321,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgba(0.118, 0.125, 0.145, 0.50),
             BaseTheme::DarkGreen => Color::from_rgba(0.067, 0.133, 0.106, 0.50),
             BaseTheme::DarkPurple => Color::from_rgba(0.114, 0.082, 0.169, 0.50),
+            BaseTheme::DarkRed => Color::from_rgba(0.169, 0.082, 0.098, 0.50),
         }
     }
 
@@ -316,6 +332,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgb(0.21, 0.22, 0.26),
             BaseTheme::DarkGreen => Color::from_rgb(0.13, 0.24, 0.19),
             BaseTheme::DarkPurple => Color::from_rgb(0.21, 0.16, 0.31),
+            BaseTheme::DarkRed => Color::from_rgb(0.31, 0.16, 0.19),
         }
     }
 
@@ -326,6 +343,7 @@ impl BaseTheme {
             BaseTheme::DarkGray => Color::from_rgb(0.16, 0.17, 0.20),
             BaseTheme::DarkGreen => Color::from_rgb(0.10, 0.19, 0.15),
             BaseTheme::DarkPurple => Color::from_rgb(0.17, 0.13, 0.25),
+            BaseTheme::DarkRed => Color::from_rgb(0.25, 0.13, 0.15),
         }
     }
 }
@@ -387,6 +405,24 @@ pub const ACCENT_GOLD: Color = Color::from_rgb(0.941, 0.725, 0.043);   // #F0B90
 pub const ACCENT_CYAN: Color = Color::from_rgb(0.220, 0.741, 0.973);   // #38BDF8
 pub const ACCENT_GREEN: Color = Color::from_rgb(0.133, 0.773, 0.369);  // #22C55E
 pub const ACCENT_RED: Color = Color::from_rgb(0.937, 0.267, 0.267);    // #EF4444
+pub const ACCENT_PURPLE: Color = Color::from_rgb(0.753, 0.518, 0.988); // #C084FC
+pub const ACCENT_LIME: Color = Color::from_rgb(0.639, 0.902, 0.208);   // #A3E635
+pub const ACCENT_ROSE: Color = Color::from_rgb(0.957, 0.447, 0.714);   // #F472B6
+pub const ACCENT_ORANGE: Color = Color::from_rgb(0.984, 0.573, 0.235); // #FB923C
+
+/// Unique, high-contrast color for each canonical inventory item category.
+pub fn item_category_color(cat: &str) -> Color {
+    match cat {
+        "Item" => ACCENT_GREEN,
+        "Gear" => ACCENT_CYAN,
+        "Rune" => ACCENT_PURPLE,
+        "Farm" => ACCENT_LIME,
+        "Trade" => ACCENT_GOLD,
+        "Base" => ACCENT_ROSE,
+        "Food" => ACCENT_ORANGE,
+        _ => TEXT_MUTED,
+    }
+}
 
 pub fn app_theme() -> Theme {
     Theme::custom(
@@ -458,6 +494,28 @@ pub fn portrait_card_style(is_convoy: bool) -> impl Fn(&Theme) -> container::Sty
     }
 }
 
+pub fn portrait_button_style(_theme: &Theme, status: button::Status) -> button::Style {
+    let border_color = match status {
+        button::Status::Hovered => accent(),
+        button::Status::Pressed => Color { a: 0.85, ..accent() },
+        _ => Color::TRANSPARENT,
+    };
+    button::Style {
+        background: Some(Background::Color(Color::TRANSPARENT)),
+        text_color: TEXT_PRIMARY,
+        border: Border {
+            color: border_color,
+            width: if matches!(status, button::Status::Hovered | button::Status::Pressed) {
+                2.0
+            } else {
+                0.0
+            },
+            radius: 6.0.into(),
+        },
+        ..Default::default()
+    }
+}
+
 pub fn badge_style(color: Color) -> impl Fn(&Theme) -> container::Style {
     move |_theme| container::Style {
         background: Some(Background::Color(Color { a: 0.16, ..color })),
@@ -467,6 +525,44 @@ pub fn badge_style(color: Color) -> impl Fn(&Theme) -> container::Style {
             radius: 6.0.into(),
         },
         ..Default::default()
+    }
+}
+
+pub fn category_tab_style(
+    active: bool,
+    color: Color,
+) -> impl Fn(&Theme, button::Status) -> button::Style {
+    move |_theme, status| {
+        let bg = if active {
+            Color { a: 0.22, ..color }
+        } else {
+            match status {
+                button::Status::Hovered => Color { a: 0.14, ..color },
+                button::Status::Pressed => Color { a: 0.18, ..color },
+                _ => Color { a: 0.06, ..color },
+            }
+        };
+        let border_color = if active {
+            Color { a: 0.65, ..color }
+        } else if matches!(status, button::Status::Hovered | button::Status::Pressed) {
+            Color { a: 0.40, ..color }
+        } else {
+            Color { a: 0.22, ..color }
+        };
+        button::Style {
+            background: Some(Background::Color(bg)),
+            text_color: if active {
+                color
+            } else {
+                Color { a: 0.88, ..color }
+            },
+            border: Border {
+                color: border_color,
+                width: 1.0,
+                radius: 7.0.into(),
+            },
+            ..Default::default()
+        }
     }
 }
 

@@ -130,16 +130,7 @@ pub fn view<'a>(
             continue;
         }
 
-        let cat_color = match cat {
-            "Item" => theme::ACCENT_GREEN,
-            "Gear" => theme::ACCENT_CYAN,
-            "Rune" => theme::ACCENT_GOLD,
-            "Farm" => theme::ACCENT_GREEN,
-            "Trade" => theme::ACCENT_GOLD,
-            "Base" => theme::ACCENT_CYAN,
-            "Food" => theme::ACCENT_GOLD,
-            _ => theme::TEXT_MUTED,
-        };
+        let cat_color = theme::item_category_color(cat);
 
         let modal_title = format!("{} — #{}", title, slot + 1);
         let select_btn = button(

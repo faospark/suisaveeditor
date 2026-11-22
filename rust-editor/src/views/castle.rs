@@ -349,6 +349,23 @@ fn view_guardian_deity<'a>(
     let statue_byte = doc.get_array_i64(Some("game_data"), "parts_no", 2) as u8;
     let delivered = bp0.count_ones() + bp1.count_ones();
 
+    // Scan Party Bag (party_data.party_item) and Warehouse (game_data.base_item)
+    // for Base-category Guardian Deity Plans (item_no 27..=42, use_cnt 80..=95).
+    let mut party_counts = [0usize; 16];
+    for (_, item_no, use_cnt) in doc.get_inventory_items("party_data", "party_item") {
+        if (80..=95).contains(&use_cnt) && (27..=42).contains(&item_no) {
+            party_counts[(item_no - 27) as usize] += 1;
+        }
+    }
+    let mut warehouse_counts = [0usize; 16];
+    for (_, item_no, use_cnt) in doc.get_inventory_items("game_data", "base_item") {
+        if (80..=95).contains(&use_cnt) && (27..=42).contains(&item_no) {
+            warehouse_counts[(item_no - 27) as usize] += 1;
+        }
+    }
+
+    let mut held_undelivered = 0usize;
+
     // 4-column Blueprint grid (Dragon, Unicorn, Rabbit, Turtle)
     let mut bp_cols = row![].spacing(10);
     for deity_idx in 0..4 {
@@ -359,27 +376,68 @@ fn view_guardian_deity<'a>(
             let checked = (cur_byte & mask) != 0;
             let byte_idx = bp.byte_idx;
 
+            let plan_idx = (bp.base_item_id - 27) as usize;
+            let in_party = party_counts[plan_idx];
+            let in_warehouse = warehouse_counts[plan_idx];
+
+            let mut card_col = column![
+                checkbox(format!("{} ({})", bp.name, bp.segment), checked)
+                    .on_toggle(move |on| {
+                        Message::ToggleArrayFlagBit(
+                            Some("game_data"),
+                            "parts_no",
+                            byte_idx,
+                            mask,
+                            on,
+                        )
+                    })
+                    .text_size(12),
+                text(bp.loc).size(10).color(theme::TEXT_MUTED),
+            ]
+            .spacing(2);
+
+            if !checked && (in_party > 0 || in_warehouse > 0) {
+                held_undelivered += 1;
+                let mut badges = row![].spacing(5).align_y(Alignment::Center);
+                if in_party > 0 {
+                    let lbl = if in_party > 1 {
+                        format!("In Party ×{}", in_party)
+                    } else {
+                        "In Party".to_string()
+                    };
+                    badges = badges.push(
+                        container(text(lbl).size(10).color(theme::ACCENT_CYAN))
+                            .padding([1, 6])
+                            .style(theme::badge_style(theme::ACCENT_CYAN)),
+                    );
+                }
+                if in_warehouse > 0 {
+                    let lbl = if in_warehouse > 1 {
+                        format!("In Warehouse ×{}", in_warehouse)
+                    } else {
+                        "In Warehouse".to_string()
+                    };
+                    badges = badges.push(
+                        container(text(lbl).size(10).color(theme::ACCENT_GOLD))
+                            .padding([1, 6])
+                            .style(theme::badge_style(theme::ACCENT_GOLD)),
+                    );
+                }
+                if in_party == 0 || in_warehouse == 0 {
+                    badges = badges.push(
+                        text("Not yet given to Jude")
+                            .size(10)
+                            .color(theme::TEXT_MUTED),
+                    );
+                }
+                card_col = card_col.push(badges);
+            }
+
             col = col.push(
-                container(
-                    column![
-                        checkbox(format!("{} ({})", bp.name, bp.segment), checked)
-                            .on_toggle(move |on| {
-                                Message::ToggleArrayFlagBit(
-                                    Some("game_data"),
-                                    "parts_no",
-                                    byte_idx,
-                                    mask,
-                                    on,
-                                )
-                            })
-                            .text_size(12),
-                        text(bp.loc).size(10).color(theme::TEXT_MUTED),
-                    ]
-                    .spacing(2),
-                )
-                .padding(8)
-                .width(Length::Fill)
-                .style(theme::empty_slot_card_style),
+                container(card_col)
+                    .padding(8)
+                    .width(Length::Fill)
+                    .style(theme::empty_slot_card_style),
             );
         }
         bp_cols = bp_cols.push(col);
@@ -429,15 +487,27 @@ fn view_guardian_deity<'a>(
     if let Some(p) = portrait_thumb(portraits, 115) {
         header = header.push(p);
     }
+    header = header.push(
+        text(format!(
+            "Jude's Guardian Deity Blueprints ({} / 16) & Statue",
+            delivered
+        ))
+        .size(15)
+        .color(theme::ACCENT_GOLD),
+    );
+    if held_undelivered > 0 {
+        let held_lbl = if held_undelivered == 1 {
+            "1 held (not yet given to Jude)".to_string()
+        } else {
+            format!("{} held (not yet given to Jude)", held_undelivered)
+        };
+        header = header.push(
+            container(text(held_lbl).size(11).color(theme::ACCENT_CYAN))
+                .padding([2, 8])
+                .style(theme::badge_style(theme::ACCENT_CYAN)),
+        );
+    }
     header = header
-        .push(
-            text(format!(
-                "Jude's Guardian Deity Blueprints ({} / 16) & Statue",
-                delivered
-            ))
-            .size(15)
-            .color(theme::ACCENT_GOLD),
-        )
         .push(Space::with_width(Length::Fill))
         .push(
             button(text("Deliver All 16 Plans").size(11))
@@ -471,82 +541,136 @@ fn view_farm_ranch<'a>(
     doc: &'a SaveDocument,
     portraits: &'a PortraitCache,
 ) -> Element<'a, Message> {
-    let f30 = doc.get_array_i64(Some("game_data"), "hon_flag", 30) as u8;
-    let f31 = doc.get_array_i64(Some("game_data"), "hon_flag", 31) as u8;
-
-    // Each vegetable has 2 plots; giving Tony seedlings sets both the planted (high nibble)
-    // and visible/grown (low nibble) bits together.
-    let crops: [(&str, usize, u8, u8, u8); 4] = [
-        ("Cabbage", 30, f30, (1 << 4) | (1 << 0), (1 << 5) | (1 << 1)),
-        ("Potato", 30, f30, (1 << 6) | (1 << 2), (1 << 7) | (1 << 3)),
-        ("Spinach", 31, f31, (1 << 4) | (1 << 0), (1 << 5) | (1 << 1)),
-        ("Tomato", 31, f31, (1 << 6) | (1 << 2), (1 << 7) | (1 << 3)),
+    let crops: [(usize, &str, &str, &[&str]); 4] = [
+        (
+            0,
+            "Cabbage",
+            "hon_flag[30] Bits 0, 1, 2",
+            &[
+                "Cabbage #1 — Tony Default",
+                "Cabbage #2 — Lakewest (Rare Find)",
+                "Cabbage #3 — Drakemouth Village",
+            ],
+        ),
+        (
+            1,
+            "Potato",
+            "hon_flag[30] Bits 3, 4, 5",
+            &[
+                "Potato #1 — Tony Default",
+                "Potato #2 — Matilda Forest",
+                "Potato #3 — Banner Village",
+            ],
+        ),
+        (
+            2,
+            "Spinach",
+            "hon_flag[30] B6–7, [31] B0",
+            &[
+                "Spinach #1 — Two River",
+                "Spinach #2 — Forest Village (Chief)",
+                "Spinach #3 — Greenhill Area (Drop)",
+            ],
+        ),
+        (
+            3,
+            "Tomato",
+            "hon_flag[31] Bits 1, 2, 3",
+            &[
+                "Tomato #1 — Banner Village (Shop)",
+                "Tomato #2 — Gregminster (Mr. Yasu)",
+                "Tomato #3 — Tigermouth Village",
+            ],
+        ),
     ];
 
     let mut crop_row = row![].spacing(10);
-    for (crop_name, byte_idx, cur, mask1, mask2) in crops {
-        let p1 = (cur & mask1) == mask1;
-        let p2 = (cur & mask2) == mask2;
+    for (food_idx, crop_name, flag_note, seeds) in crops {
+        let max_val = seeds.len() as i64;
+        let count = doc
+            .get_array_i64(Some("game_data"), "food_num", food_idx)
+            .clamp(0, max_val);
+        let badge_color = if count == max_val {
+            theme::ACCENT_GREEN
+        } else if count > 0 {
+            theme::ACCENT_CYAN
+        } else {
+            theme::TEXT_MUTED
+        };
+
+        let mut col = column![
+            row![
+                text(crop_name).size(13).color(theme::ACCENT_CYAN),
+                Space::with_width(Length::Fill),
+                container(text(format!("{}/{}", count, max_val)).size(11).color(badge_color))
+                    .padding([2, 7])
+                    .style(theme::badge_style(badge_color)),
+            ]
+            .align_y(Alignment::Center),
+        ]
+        .spacing(6);
+
+        for (i, &seed_label) in seeds.iter().enumerate() {
+            let slot_num = (i + 1) as i64;
+            let checked = count >= slot_num;
+            col = col.push(
+                checkbox(seed_label, checked)
+                    .on_toggle(move |on| {
+                        let next = if on { slot_num } else { slot_num - 1 };
+                        Message::SetTonyCrop(food_idx, next)
+                    })
+                    .text_size(11),
+            );
+        }
+
+        col = col.push(text(flag_note).size(10).color(theme::TEXT_MUTED));
+
         crop_row = crop_row.push(
-            container(
-                column![
-                    text(crop_name).size(13).color(theme::ACCENT_CYAN),
-                    checkbox("Plot 1 (Planted)", p1)
-                        .on_toggle(move |on| {
-                            Message::ToggleArrayFlagBit(
-                                Some("game_data"),
-                                "hon_flag",
-                                byte_idx,
-                                mask1,
-                                on,
-                            )
-                        })
-                        .text_size(12),
-                    checkbox("Plot 2 (Planted)", p2)
-                        .on_toggle(move |on| {
-                            Message::ToggleArrayFlagBit(
-                                Some("game_data"),
-                                "hon_flag",
-                                byte_idx,
-                                mask2,
-                                on,
-                            )
-                        })
-                        .text_size(12),
-                ]
-                .spacing(8),
-            )
-            .padding(12)
-            .width(Length::FillPortion(1))
-            .style(theme::empty_slot_card_style),
+            container(col)
+                .padding(12)
+                .width(Length::FillPortion(1))
+                .style(theme::empty_slot_card_style),
         );
     }
 
-    let mut header = row![].spacing(10).align_y(Alignment::Center);
+    let mut header = row![].spacing(8).align_y(Alignment::Center);
     if let Some(p) = portrait_thumb(portraits, 104) {
         header = header.push(p);
     }
     header = header
         .push(
-            text("Tony's Vegetable Farm (hon_flag[30–31])")
-                .size(15)
-                .color(theme::ACCENT_GOLD),
-        )
-        .push(
-            text(format!("0x{:02X} / 0x{:02X}", f30, f31))
-                .size(11)
-                .color(theme::TEXT_MUTED),
+            column![
+                text("Tony's Vegetable Farm (food_num[0..3])")
+                    .size(15)
+                    .color(theme::ACCENT_GOLD),
+                text("Check seedlings delivered to Tony (food_num[0..3]); farm plot flags across hon_flag[30..31] sync automatically.")
+                    .size(11)
+                    .color(theme::TEXT_MUTED),
+            ]
+            .spacing(1),
         )
         .push(Space::with_width(Length::Fill))
         .push(
-            button(text("Plant All Plots").size(11))
+            button(text("Max All (12)").size(11))
                 .padding([5, 10])
                 .style(theme::primary_button_style)
                 .on_press(Message::MaxVegetableFarm),
+        )
+        .push(
+            button(text("Default Recruited (2)").size(11))
+                .padding([5, 10])
+                .style(theme::secondary_button_style)
+                .on_press(Message::DefaultVegetableFarm),
+        )
+        .push(
+            button(text("Clear All (0)").size(11))
+                .padding([5, 10])
+                .style(theme::secondary_button_style)
+                .on_press(Message::ClearVegetableFarm),
         );
 
     container(
-        column![header, crop_row].spacing(10),
+        column![header, crop_row].spacing(12),
     )
     .padding(16)
     .width(Length::Fill)

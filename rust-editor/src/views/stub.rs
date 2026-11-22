@@ -466,7 +466,7 @@ fn view_editor_placeholder<'a>(tab: EditorTab, doc: Option<&'a SaveDocument>) ->
 fn view_about<'a>() -> Element<'a, Message> {
     let card = container(
         column![
-            text(format!("SuiSaveEditor v{} — Native Desktop Edition", env!("CARGO_PKG_VERSION")))
+            text(format!("Sui2SaveEditor v{} — Native Desktop Edition", env!("CARGO_PKG_VERSION")))
                 .size(22)
                 .color(theme::ACCENT_GOLD),
             text("Native Rust desktop save editor for Suikoden II HD Remaster.")

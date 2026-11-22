@@ -830,3 +830,33 @@ fn overview_card<'a>(
     .style(theme::empty_slot_card_style)
     .into()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn detects_potch_flags_and_inventory_diffs() {
+        let cur = json!({
+            "party_data": {
+                "gold": 250000,
+                "party_item": [{ "item_no": 47, "use_cnt": 1 }]
+            },
+            "event_flag": [0, 0, 186]
+        });
+        let bak = json!({
+            "party_data": {
+                "gold": 100000,
+                "party_item": [{ "item_no": 0, "use_cnt": 0 }]
+            },
+            "event_flag": [0, 0, 154]
+        });
+        let mut diffs = Vec::new();
+        collect_diffs("", &cur, &bak, &mut diffs);
+        assert_eq!(diffs.len(), 3);
+        assert!(diffs.iter().any(|d| d.path == "party_data.gold"));
+        assert!(diffs.iter().any(|d| d.path == "party_data.party_item[0]"));
+        assert!(diffs.iter().any(|d| d.path == "event_flag[2]" && d.detail.is_some()));
+    }
+}
