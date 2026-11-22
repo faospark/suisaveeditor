@@ -98,52 +98,91 @@ impl Default for PortraitCache {
     }
 }
 
+const PORTRAITS_ATLAS_WEBP: &[u8] = include_bytes!("../assets/portraits_atlas.webp");
+const PORTRAIT_TILE_SIZE: u32 = 96;
+const PORTRAIT_ATLAS_COLS: u32 = 16;
+
 impl PortraitCache {
     pub fn load() -> Self {
         let mut handles = HashMap::new();
 
-        if let Some(dir) = find_portraits_dir() {
-            const THUMB_SIZE: u32 = 96;
+        // 1. Decode embedded 96x96 WebP portrait atlas (IDs 1..=125)
+        if let Ok(img) = ::image::load_from_memory_with_format(
+            PORTRAITS_ATLAS_WEBP,
+            ::image::ImageFormat::WebP,
+        ) {
+            let rgba = img.to_rgba8();
+            let atlas_w = rgba.width();
+            let atlas_h = rgba.height();
+            let raw = rgba.as_raw();
+            let tile = PORTRAIT_TILE_SIZE;
+            let row_stride = (atlas_w * 4) as usize;
+            let tile_row_bytes = (tile * 4) as usize;
+
+            for id in 1..=125i64 {
+                let idx = (id - 1) as u32;
+                let tx = (idx % PORTRAIT_ATLAS_COLS) * tile;
+                let ty = (idx / PORTRAIT_ATLAS_COLS) * tile;
+                if tx + tile <= atlas_w && ty + tile <= atlas_h {
+                    let mut tile_buf = Vec::with_capacity((tile * tile * 4) as usize);
+                    for y in 0..tile {
+                        let start = ((ty + y) as usize) * row_stride + (tx as usize) * 4;
+                        tile_buf.extend_from_slice(&raw[start..start + tile_row_bytes]);
+                    }
+                    handles.insert(id, image::Handle::from_rgba(tile, tile, tile_buf));
+                }
+            }
+        }
+
+        // 2. Optional external override: if a `portraits\` folder exists next to the executable,
+        //    any `fp_###.png` inside it overrides the built-in portrait.
+        if let Some(dir) = find_portraits_override_dir() {
             let entries: Vec<(i64, PathBuf)> = (1..=125)
                 .map(|id| (id, dir.join(format!("fp_{:03}.png", id))))
                 .filter(|(_, p)| p.exists())
                 .collect();
 
-            let workers = std::thread::available_parallelism()
-                .map(|n| n.get().min(8))
-                .unwrap_or(4);
-            let chunk_size = (entries.len() + workers - 1) / workers.max(1);
+            if !entries.is_empty() {
+                let workers = std::thread::available_parallelism()
+                    .map(|n| n.get().min(8))
+                    .unwrap_or(4);
+                let chunk_size = (entries.len() + workers - 1) / workers.max(1);
 
-            let decoded: Vec<(i64, image::Handle)> = std::thread::scope(|s| {
-                let mut joins = Vec::new();
-                for chunk in entries.chunks(chunk_size.max(1)) {
-                    joins.push(s.spawn(move || {
-                        let mut out = Vec::with_capacity(chunk.len());
-                        for (id, path) in chunk {
-                            if let Ok(img) = ::image::open(path) {
-                                let thumb = img.resize_exact(
-                                    THUMB_SIZE,
-                                    THUMB_SIZE,
-                                    ::image::imageops::FilterType::Triangle,
-                                );
-                                let rgba = thumb.to_rgba8();
-                                out.push((
-                                    *id,
-                                    image::Handle::from_rgba(THUMB_SIZE, THUMB_SIZE, rgba.into_raw()),
-                                ));
+                let decoded: Vec<(i64, image::Handle)> = std::thread::scope(|s| {
+                    let mut joins = Vec::new();
+                    for chunk in entries.chunks(chunk_size.max(1)) {
+                        joins.push(s.spawn(move || {
+                            let mut out = Vec::with_capacity(chunk.len());
+                            for (id, path) in chunk {
+                                if let Ok(img) = ::image::open(path) {
+                                    let thumb = img.resize_exact(
+                                        PORTRAIT_TILE_SIZE,
+                                        PORTRAIT_TILE_SIZE,
+                                        ::image::imageops::FilterType::Triangle,
+                                    );
+                                    let rgba = thumb.to_rgba8();
+                                    out.push((
+                                        *id,
+                                        image::Handle::from_rgba(
+                                            PORTRAIT_TILE_SIZE,
+                                            PORTRAIT_TILE_SIZE,
+                                            rgba.into_raw(),
+                                        ),
+                                    ));
+                                }
                             }
-                        }
-                        out
-                    }));
-                }
-                joins
-                    .into_iter()
-                    .flat_map(|j| j.join().unwrap_or_default())
-                    .collect()
-            });
+                            out
+                        }));
+                    }
+                    joins
+                        .into_iter()
+                        .flat_map(|j| j.join().unwrap_or_default())
+                        .collect()
+                });
 
-            for (id, handle) in decoded {
-                handles.insert(id, handle);
+                for (id, handle) in decoded {
+                    handles.insert(id, handle);
+                }
             }
         }
 
@@ -159,32 +198,15 @@ impl PortraitCache {
     }
 }
 
-fn find_portraits_dir() -> Option<PathBuf> {
+fn find_portraits_override_dir() -> Option<PathBuf> {
     if let Ok(exe) = std::env::current_exe() {
-        for ancestor in exe.ancestors().skip(1).take(6) {
-            let direct = ancestor.join("portraits");
+        if let Some(dir) = exe.parent() {
+            let direct = dir.join("portraits");
             if direct.is_dir() {
                 return Some(direct);
             }
-            let nested = ancestor.join("image").join("portraits");
-            if nested.is_dir() {
-                return Some(nested);
-            }
         }
     }
-
-    for rel in ["portraits", "image/portraits", "../image/portraits"] {
-        let p = PathBuf::from(rel);
-        if p.is_dir() {
-            return Some(p);
-        }
-    }
-
-    let manifest_fallback = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../image/portraits"));
-    if manifest_fallback.is_dir() {
-        return Some(manifest_fallback);
-    }
-
     None
 }
 

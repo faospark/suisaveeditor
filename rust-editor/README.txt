@@ -4,8 +4,11 @@ Save editor for Suikoden II HD Remaster (Suikoden I & II HD Remaster).
 
 QUICK START
 -----------
-1. Extract the entire contents of this ZIP archive to a folder of your choice
-   (keep `BrightShield.exe` and the `portraits\` folder together).
+1. Extract `BrightShield.exe` to any folder of your choice — all 125 character
+   portraits and UI fonts are embedded inside the executable (no external
+   `portraits\` folder required). Optional: place a `portraits\` folder with
+   custom `fp_###.png` files next to `BrightShield.exe` to override built-in
+   portraits.
 2. Ensure BepInEx and SuikodenFix (`EditSave = true` in
    `BepInEx\config\d3xMachina.suikoden_fix.cfg`) are installed for your game.
 3. Launch `BrightShield.exe`. The editor automatically detects your decrypted
