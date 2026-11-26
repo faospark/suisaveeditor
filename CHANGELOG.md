@@ -2,6 +2,22 @@
 
 All notable changes to the Suikoden II HD Remaster Save Editor.
 
+## [2.1.0] - Nov 26, 2026 (Native Desktop)
+
+### Added
+
+- **Bahasa Indonesia Language Support**:
+  - Added **Bahasa Indonesia** (`id`) as the 9th language in Settings (with a balanced 3×3 language grid), localizing the save editor UI and embedding translated item and base book names (`Resep #25–#39`, `Buku Lama Vol.1–10`) from the Indonesian fan translation with English fallback for untranslated game terms.
+- **Save & Snapshot Notification Modal & Dismissible Environment Warning**:
+  - Added a notification modal (matching the warning modal styling) that confirms **Save**, **Save As**, and **Full Snapshot Backup** results (and surfaces any save/snapshot errors) with a top-right **Close** button, backdrop click, and `Escape` dismissal.
+  - Added a top-right **Close** button to the **BepInEx & SuikodenFix Required** warning modal so users can dismiss it if needed.
+
+### Improved & Fixed
+
+- **General Tab Layout Balance**: Paired **Side-Quests, Beasts & Trade Counters (Gordon / Chaco)** beside **Greenhill Mission Aliases** in a two-column row and expanded **Clive Quest Milestones** to full width in a two-column milestone grid.
+- **Bold Active Button Labels**: Styled active sidebar tabs, sub-tabs, filter buttons, and selected roster items with bold text for clearer active-state contrast.
+- **Recruits Warning Card Styling**: Updated the **Recruits** warning notice to use the standard card background with only the **Warning** icon and heading accented in orange.
+
 ## [2.0.0] - Nov 22, 2026 (Native Desktop)
 
 ### Added
@@ -18,6 +34,11 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
   - Organized silent `.bak` backups into a dedicated `backups\` subfolder inside the save directory, automatically migrates legacy loose `.bak` files, and preserves each `.bak` as immutable once created (never overwritten on re-open or re-save).
   - Save cards show live backup comparison status (whether the `.bak` matches or differs from the current save); clicking **Restore `.bak`** opens a **Restore Backup Diff Modal** showing side-by-side metadata and highlighted field-by-field changes (including bit-level flag diffs and resolved character/item names) before confirming restore.
   - Added **Full Backup Snapshots (`.zip`)** creation and one-click restore on the `Saves` tab, plus an automatic initial `.zip` snapshot on first run.
+- **Difficulty Mode, Party Toasty Buff, Cooldown Resets, Visited Towns & Shop Rare-Find Timers**:
+  - Added **Difficulty Mode (`game_data.difficulty`)** selector (`Normal` / `Easy` / `Hard`) and **Active Party Toasty Bath Buff (`party_data.status` / `hoka_time`)** toggles in **General**.
+  - Added one-click **Reset Cooldown (`00:00`)** buttons for **Hai Yo's Cook-Offs (`food_time`)** in **Cooking**, **Richmond's Investigations (`tantei_time`)** in **Investigations**, and **Castle Suggestion Box (`meyasu_time`)** in **Castle**.
+  - Added **Tetsu's Bath Visits (`furo_info[1]`)** counter and **Open-Air Bath Unlocked (`furo_info[0]` Bit 3)** toggle in **Castle**, and fixed the **General** Bath House badge to decode `Lv (val & 0x07) • Open-Air` instead of showing raw `Lv 11`.
+  - Added **Towns / Viki (`town_flag[0..70]`)** and **Shops & Rare Finds (`shop_data`)** sub-tabs (with one-click restock timer resets) plus grounded annotations for **Castle Flags (`hon_flag`)** and **War Room (`war_data.sub_to_leader`)** in **Experimental**.
 - **Embedded Character Portrait Atlas (True Single-File `.exe`)**: Baked all 125 character portraits (`96×96` WebP sprite atlas, ~607 KB) directly into `BrightShield.exe` so no external `portraits\` folder is required (halving the release ZIP size), while still supporting an optional `portraits\` folder next to the executable for custom/mod portrait overrides.
 - **Rebranded Native Edition to `Bright Shield Save Editor` (`BrightShield.exe`)**: Renamed the Rust desktop application, executable, and release archive (`BrightShield-win64.zip`).
 - **6 Base Background Themes**: Added a persisted **Base Background** switcher in Settings (**Dark Navy**, **High Contrast Black**, **Dark Gray**, **Dark Green**, **Dark Purple**, and **Dark Red**) alongside the 6 accent themes.
@@ -31,6 +52,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 
 ### Improved & Fixed
 
+- **Accurate Investigation Secret Counts & Nibble Encoding (`tantei_lv`)**: Fixed `Investigations` to display each character's actual in-game secret count (2 secrets for Richmond and the 5 flying squirrels, 3 secrets for 30 characters, and 4 secrets for the remaining 85; 442 total), corrected the inverted odd/even nibble mapping in `game_data.tantei_lv` (odd IDs in low nibble, even IDs in high nibble), and stored sequential integer levels (`0`–`max`) instead of bitmasks.
 - **Styled Changelog View & Abbreviated Release Dates**: Replaced the raw text dump in the `Changelog` tab with per-version release cards, version/latest/category badges, indented bullet hierarchy, and rich inline bold, italic, and monospace code formatting, and standardized all release dates to abbreviated month names (e.g., `Nov 22, 2026`).
 - **Windows Single-Instance & Window Layout**: Added a Windows single-instance guard to prevent duplicate app launches, centered the window on startup, and enforced a `1160×680` minimum window size.
 - **Read-Only Castle Progression Stats**: Displayed Castle Level, Blacksmith Level, Popularity, and Bath House Level as read-only badges in the **General** tab to prevent unintended save corruption.
@@ -40,7 +62,7 @@ All notable changes to the Suikoden II HD Remaster Save Editor.
 - **Auto-Detect Recruitment Mods, Full Reset Buttons & Usage Warning**: Automatically checks `d3xMachina.suikoden_fix.cfg` (`BetterLeona = true`) and `BepInEx\plugins\SquidFam.dll` / `faospark.SquidFam.cfg` (`SquidFam = true`) to pre-enable **Better Leona Option** and **Kraken Patch** in the **Recruits** tab, displays a prominent warning notice advising against manually forcing mutually exclusive recruits (Kasumi/Valeria or all Beasts), and restores the per-character **Full Reset** button (with hover tooltip) across all 33 story-flagged recruits to clear associated `event_flag` bits, remove granted quest items (`Listening Crystal`, `Rose Brooch`, `Suiko Map`, `Clay`), and reset Jude's `parts_no[3]`.
 - **Combatants Layout Reorganization & Quick Portrait Jump**: Moved **Base Stats (`para`)** below **Level, HP & Weapon** in the left column, placed **Rune Magic Points (`mp[0..3]`)** (stacked vertically Lv.1–Lv.4 like in-game) and **Equipped Runes (`mon_eqp`)** (with paired unlock levels) stacked beside them in the right column, and made **Active Party & Convoy** portraits in the **General** tab clickable to jump directly to that character's **Combatants** page.
 - **SuikodenFix DLL Detection**: Normalized underscores/hyphens/spaces when scanning `BepInEx\plugins` so `Suikoden_Fix.dll` and `SuikodenFix.dll` are both detected reliably.
-- **Weapon Runes (`buki_mon`) Fix**: Added missing **Fire Lizard Orb (`92`)** and **Magic Drain Orb (`93`)** to the **Weapon Rune** dropdown in **Combatants** and classified both as weapon-only runes.
+- **Weapon Runes (`buki_mon`) & Exertion Orb ID Fix**: Added missing **Fire Lizard Orb (`92`)** and **Magic Drain Orb (`93`)** to the **Weapon Rune** dropdown in **Combatants**, classified both as weapon-only runes, and corrected **Exertion Orb**'s rune ID from `105` to `103` across all languages and inventories.
 - **Investigations Character Filtering**: Excluded Pilika (`#123`, `#124`) and Gremio (`#125`) — alongside Bonaparte (`#84`) — from Richmond's Investigations character grid, Target Character dropdown, and unlocked clue total (`484` total clues).
 
 ## [1.4.16] - Nov 22, 2026 (Native Desktop)

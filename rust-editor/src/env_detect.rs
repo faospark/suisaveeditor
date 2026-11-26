@@ -817,3 +817,17 @@ pub fn restore_saves_snapshot(snapshot_path: &Path, saves_dir: &Path) -> Result<
 
     Ok(restored)
 }
+
+/// Permanently deletes a single snapshot `.zip` archive from `backups/`.
+pub fn delete_saves_snapshot(snapshot_path: &Path) -> Result<(), String> {
+    let is_zip = snapshot_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.eq_ignore_ascii_case("zip"))
+        .unwrap_or(false);
+    if !is_zip || !snapshot_path.is_file() {
+        return Err("Snapshot file not found.".to_string());
+    }
+    std::fs::remove_file(snapshot_path)
+        .map_err(|e| format!("Failed to delete snapshot: {}", e))
+}

@@ -25,6 +25,7 @@ use theme::{AccentTheme, BaseTheme};
 use views::data_values::DataValuesCategory;
 use views::experimental::ExperimentalSection;
 use views::item_modal::{ItemModalState, ModalTarget};
+use views::notification_modal::NotificationModalState;
 use views::recruitment::RecruitFilter;
 use views::restore_modal::RestoreModalState;
 use views::EditorTab;
@@ -86,6 +87,7 @@ struct App {
     copied_item: Option<(i64, i64)>,
     item_modal: Option<ItemModalState>,
     restore_modal: Option<RestoreModalState>,
+    notification_modal: Option<NotificationModalState>,
     // Investigations UI state
     investigation_search: String,
     // Castle Suggestion Box UI state
@@ -99,6 +101,7 @@ struct App {
     // Settings & Environment detection
     settings: AppSettings,
     game_env: GameEnvStatus,
+    env_warning_dismissed: bool,
     // Managed Saves browser state
     managed_saves: Vec<SaveSlotSummary>,
     snapshots: Vec<SnapshotInfo>,
@@ -166,6 +169,7 @@ impl Default for App {
             copied_item: None,
             item_modal: None,
             restore_modal: None,
+            notification_modal: None,
             investigation_search: String::new(),
             suggestion_search: String::new(),
             experimental_section: ExperimentalSection::TreasureChests,
@@ -174,6 +178,7 @@ impl Default for App {
             data_values_search: String::new(),
             settings,
             game_env,
+            env_warning_dismissed: false,
             managed_saves,
             snapshots,
             auto_snapshot_banner,
@@ -243,7 +248,8 @@ pub enum Message {
     MaxAllIngredients,
     UnlockAllRecipes,
     SetInvestigationSearch(String),
-    SetAllInvestigations(i64),
+    SetInvestigationLevel(usize, u8),
+    SetAllInvestigations(bool),
     DeliverAllGuardianPlans,
     SetTonyCrop(usize, i64),
     MaxVegetableFarm,
@@ -260,6 +266,11 @@ pub enum Message {
     ClearSuggestionInbox,
     SetAllSuggestionLetters(u8),
     ToggleLibFlagBit(u32, bool),
+    ResetGameTimer(&'static str),
+    TogglePartyToasty(usize, bool),
+    SetShopStim(&'static str, usize, String),
+    SetShopZai(&'static str, usize, usize, String),
+    ResetAllShopTimers(&'static str),
     SelectExperimentalSection(ExperimentalSection),
     SetExperimentalFilter(String),
     SelectDataValuesCategory(DataValuesCategory),
@@ -283,7 +294,10 @@ pub enum Message {
     ConfirmRestoreSaveBackup(PathBuf),
     CreateFullSnapshot,
     RestoreFullSnapshot(PathBuf),
+    DeleteFullSnapshot(PathBuf),
     DismissAutoSnapshotBanner,
+    CloseNotificationModal,
+    DismissEnvWarning,
     SavesScrolled(f32),
     ScrollSavesToTop,
     ScrollSavesStep,
@@ -333,10 +347,21 @@ impl App {
                         Ok(()) => {
                             self.is_debug_save = is_debug_save_path(&target);
                             self.status_message = Some((format!("Saved {}", doc.file_name), false));
+                            self.notification_modal = Some(NotificationModalState::success(
+                                "SAVED",
+                                "Save File Updated",
+                                format!("Successfully saved changes to {}.", doc.file_name),
+                                Some(target.display().to_string()),
+                            ));
                             saved_ok = true;
                         }
                         Err(e) => {
-                            self.status_message = Some((e, true));
+                            self.status_message = Some((e.clone(), true));
+                            self.notification_modal = Some(NotificationModalState::error(
+                                "ERROR",
+                                "Save Failed",
+                                e,
+                            ));
                         }
                     }
                 }
@@ -371,10 +396,21 @@ impl App {
                             self.is_single_file_mode = !is_debug && !in_managed;
                             self.status_message =
                                 Some((format!("Saved as {}", doc.file_name), false));
+                            self.notification_modal = Some(NotificationModalState::success(
+                                "SAVED",
+                                "Save File Created",
+                                format!("Successfully saved as {}.", doc.file_name),
+                                Some(target.display().to_string()),
+                            ));
                             saved_ok = true;
                         }
                         Err(e) => {
-                            self.status_message = Some((e, true));
+                            self.status_message = Some((e.clone(), true));
+                            self.notification_modal = Some(NotificationModalState::error(
+                                "ERROR",
+                                "Save As Failed",
+                                e,
+                            ));
                         }
                     }
                 }
@@ -567,6 +603,10 @@ impl App {
             Message::CloseItemModal => {
                 self.item_modal = None;
                 self.restore_modal = None;
+                self.notification_modal = None;
+                if !self.game_env.is_ready() {
+                    self.env_warning_dismissed = true;
+                }
             }
             Message::SetModalSearch(q) => {
                 if let Some(modal) = self.item_modal.as_mut() {
@@ -616,11 +656,24 @@ impl App {
             Message::SetInvestigationSearch(q) => {
                 self.investigation_search = q;
             }
-            Message::SetAllInvestigations(level) => {
+            Message::SetInvestigationLevel(char_id, level) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    views::investigations::set_character_level(doc, char_id, level);
+                }
+            }
+            Message::SetAllInvestigations(unlock) => {
                 if let Some(doc) = self.doc.as_mut() {
                     let count = doc.get_array_len(Some("game_data"), "tantei_lv");
                     for i in 0..count {
-                        doc.set_array_i64(Some("game_data"), "tantei_lv", i, level);
+                        doc.set_array_i64(Some("game_data"), "tantei_lv", i, 0);
+                    }
+                    if unlock {
+                        for char_id in 1..=122usize {
+                            if views::investigations::is_investigable(char_id as i64) {
+                                let max = views::investigations::max_secrets(char_id as i64) as u8;
+                                views::investigations::set_character_level(doc, char_id, max);
+                            }
+                        }
                     }
                 }
             }
@@ -730,6 +783,35 @@ impl App {
             }
             Message::SetExperimentalFilter(f) => {
                 self.experimental_filter = f;
+            }
+            Message::ResetGameTimer(key) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    doc.reset_game_timer(key);
+                    self.status_message = Some((format!("Reset {} cooldown timer to 00:00", key), false));
+                }
+            }
+            Message::TogglePartyToasty(slot, on) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    doc.toggle_party_toasty(slot, on);
+                }
+            }
+            Message::SetShopStim(cat, idx, val) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    let parsed = val.trim().parse::<i64>().unwrap_or(0);
+                    doc.set_shop_stim(cat, idx, parsed);
+                }
+            }
+            Message::SetShopZai(cat, idx, slot, val) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    let parsed = val.trim().parse::<i64>().unwrap_or(0);
+                    doc.set_shop_zai(cat, idx, slot, parsed);
+                }
+            }
+            Message::ResetAllShopTimers(cat) => {
+                if let Some(doc) = self.doc.as_mut() {
+                    doc.reset_all_shop_timers(cat);
+                    self.status_message = Some((format!("Reset all {} restock timers to 0", cat), false));
+                }
             }
             Message::SelectDataValuesCategory(cat) => {
                 self.data_values_category = cat;
@@ -855,9 +937,23 @@ impl App {
                                 ),
                                 false,
                             ));
+                            self.notification_modal = Some(NotificationModalState::success(
+                                "SNAPSHOT",
+                                "Snapshot Backup Created",
+                                format!(
+                                    "Archived {} save(s) into {}.",
+                                    snap.file_count, snap.file_name
+                                ),
+                                Some(snap.path.display().to_string()),
+                            ));
                         }
                         Err(e) => {
-                            self.status_message = Some((e, true));
+                            self.status_message = Some((e.clone(), true));
+                            self.notification_modal = Some(NotificationModalState::error(
+                                "ERROR",
+                                "Snapshot Backup Failed",
+                                e,
+                            ));
                         }
                     }
                 }
@@ -888,8 +984,31 @@ impl App {
                     }
                 }
             }
+            Message::DeleteFullSnapshot(zip_path) => {
+                let zname = zip_path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("snapshot.zip")
+                    .to_string();
+                match env_detect::delete_saves_snapshot(&zip_path) {
+                    Ok(()) => {
+                        self.refresh_managed_saves();
+                        self.status_message =
+                            Some((format!("Deleted snapshot: {}", zname), false));
+                    }
+                    Err(e) => {
+                        self.status_message = Some((e, true));
+                    }
+                }
+            }
             Message::DismissAutoSnapshotBanner => {
                 self.auto_snapshot_banner = None;
+            }
+            Message::CloseNotificationModal => {
+                self.notification_modal = None;
+            }
+            Message::DismissEnvWarning => {
+                self.env_warning_dismissed = true;
             }
             Message::SavesScrolled(y) => {
                 // If user manually scrolls downward during animated scroll-to-top, stop animating
@@ -1005,7 +1124,10 @@ impl App {
         if let Some(modal) = &self.restore_modal {
             root = root.push(views::restore_modal::view(modal));
         }
-        if !self.game_env.is_ready() {
+        if let Some(modal) = &self.notification_modal {
+            root = root.push(views::notification_modal::view(modal));
+        }
+        if !self.game_env.is_ready() && !self.env_warning_dismissed {
             root = root.push(views::settings::view_env_blocking_overlay(&self.game_env));
         }
         root.into()
@@ -1154,7 +1276,7 @@ impl App {
             let mut btn = button(
                 row![
                     theme::icon(tab.icon(), 16.0),
-                    text(tab.label()).size(13),
+                    theme::active_text(tab.label(), 13.0, is_active),
                 ]
                 .spacing(8)
                 .align_y(Alignment::Center),
@@ -1181,7 +1303,7 @@ impl App {
             let btn = button(
                 row![
                     theme::icon(tab.icon(), 16.0),
-                    text(tab.label()).size(13),
+                    theme::active_text(tab.label(), 13.0, is_active),
                 ]
                 .spacing(8)
                 .align_y(Alignment::Center),

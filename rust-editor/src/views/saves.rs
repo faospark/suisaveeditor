@@ -191,6 +191,7 @@ pub fn view<'a>(
         let mut snap_list = column![].spacing(6);
         for snap in snapshots {
             let zip_path = snap.path.clone();
+            let delete_path = snap.path.clone();
             snap_list = snap_list.push(
                 container(
                     row![
@@ -218,6 +219,17 @@ pub fn view<'a>(
                         .padding([5, 12])
                         .style(theme::secondary_button_style)
                         .on_press(Message::RestoreFullSnapshot(zip_path)),
+                        button(
+                            row![
+                                theme::icon(theme::icons::DELETE, 13.0),
+                                text("Delete").size(11),
+                            ]
+                            .spacing(5)
+                            .align_y(Alignment::Center),
+                        )
+                        .padding([5, 10])
+                        .style(theme::danger_button_style)
+                        .on_press(Message::DeleteFullSnapshot(delete_path)),
                     ]
                     .spacing(10)
                     .align_y(Alignment::Center),

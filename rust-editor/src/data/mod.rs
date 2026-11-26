@@ -339,7 +339,7 @@ pub const RUNES: &[NamedOption] = &[
     opt(100, "Friendship Orb"),
     opt(101, "Solitude Orb"),
     opt(102, "Kindness Orb"),
-    opt(105, "Exertion Orb"),
+    opt(103, "Exertion Orb"),
 ];
 
 // ============================================================================

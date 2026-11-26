@@ -133,7 +133,7 @@ pub fn view<'a>(
     for &f in RecruitFilter::ALL {
         let active = f == filter;
         filter_row = filter_row.push(
-            button(text(f.label()).size(12))
+            button(theme::active_text(f.label(), 12.0, active))
                 .padding([6, 12])
                 .style(theme::nav_button_style(active))
                 .on_press(Message::SetRecruitFilter(f)),
@@ -196,7 +196,7 @@ pub fn view<'a>(
     )
     .padding([12, 16])
     .width(Length::Fill)
-    .style(theme::badge_style(theme::ACCENT_ORANGE));
+    .style(theme::card_style);
 
     let content = column![
         column![

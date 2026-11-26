@@ -7,6 +7,12 @@ use iced::{Background, Border, Color, Font, Shadow, Theme, Vector};
 /// Bundled Google Fonts icon font (`Material Symbols Rounded`, Apache 2.0).
 pub const ICON_FONT: Font = Font::with_name("Material Symbols Rounded");
 
+/// Bold variant of the default UI font (`Noto Sans CJK JP`) for active buttons and labels.
+pub const FONT_BOLD: Font = Font {
+    weight: iced::font::Weight::Bold,
+    ..Font::with_name("Noto Sans CJK JP")
+};
+
 pub mod icons {
     pub const FOLDER_OPEN: char = '\u{e2c8}';
     pub const SAVE: char = '\u{e161}';
@@ -29,10 +35,24 @@ pub mod icons {
     pub const INFO: char = '\u{e88e}';
     pub const WARNING: char = '\u{e002}';
     pub const ARROW_UPWARD: char = '\u{e5d8}';
+    pub const DELETE: char = '\u{e872}';
 }
 
 pub fn icon<'a>(codepoint: char, size: f32) -> text::Text<'a> {
     text(codepoint.to_string()).font(ICON_FONT).size(size)
+}
+
+pub fn active_text<'a>(
+    label: impl text::IntoFragment<'a>,
+    size: f32,
+    active: bool,
+) -> text::Text<'a> {
+    let t = text(label).size(size);
+    if active {
+        t.font(FONT_BOLD)
+    } else {
+        t
+    }
 }
 
 /// User-selectable primary accent palette
@@ -699,6 +719,39 @@ pub fn secondary_button_style(_theme: &Theme, status: button::Status) -> button:
         },
         border: Border {
             color: base.border_subtle(),
+            width: 1.0,
+            radius: 7.0.into(),
+        },
+        ..Default::default()
+    }
+}
+
+pub fn danger_button_style(_theme: &Theme, status: button::Status) -> button::Style {
+    let base = current_base_theme();
+    let (bg, border_color, text_color) = match status {
+        button::Status::Disabled => (base.bg_sidebar(), base.border_subtle(), TEXT_MUTED),
+        button::Status::Hovered => (
+            Color::from_rgba(0.851, 0.306, 0.353, 0.28),
+            Color::from_rgb(0.851, 0.306, 0.353),
+            Color::from_rgb(1.0, 0.72, 0.74),
+        ),
+        button::Status::Pressed => (
+            Color::from_rgba(0.851, 0.306, 0.353, 0.40),
+            Color::from_rgb(0.851, 0.306, 0.353),
+            Color::WHITE,
+        ),
+        button::Status::Active => (
+            Color::from_rgba(0.851, 0.306, 0.353, 0.14),
+            Color::from_rgba(0.851, 0.306, 0.353, 0.55),
+            Color::from_rgb(0.95, 0.56, 0.59),
+        ),
+    };
+
+    button::Style {
+        background: Some(Background::Color(bg)),
+        text_color,
+        border: Border {
+            color: border_color,
             width: 1.0,
             radius: 7.0.into(),
         },

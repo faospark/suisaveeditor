@@ -146,6 +146,9 @@ fn view_cook_off<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
         stage_rows = stage_rows.push(r);
     }
 
+    let food_h = doc.get_array_i64(Some("game_data"), "food_time", 0);
+    let food_m = doc.get_array_i64(Some("game_data"), "food_time", 1);
+
     container(
         column![
             row![
@@ -154,9 +157,13 @@ fn view_cook_off<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
                     .padding([3, 9])
                     .style(theme::badge_style(progress_color)),
                 Space::with_width(Length::Fill),
-                text(format!("event_flag[152] = {}, event_flag[153] = {}", b1, b2))
+                text(format!("Last Cook-Off (food_time): {:02}:{:02}", food_h, food_m))
                     .size(11)
                     .color(theme::TEXT_MUTED),
+                button(text("Reset Cooldown (00:00)").size(11))
+                    .padding([4, 10])
+                    .style(theme::secondary_button_style)
+                    .on_press(Message::ResetGameTimer("food_time")),
             ]
             .spacing(10)
             .align_y(Alignment::Center),

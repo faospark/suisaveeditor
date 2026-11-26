@@ -12,6 +12,8 @@ pub enum ExperimentalSection {
     #[default]
     TreasureChests,
     EventFlags,
+    TownFlags,
+    Shops,
     CastleFlags,
     WarRoom,
 }
@@ -20,16 +22,20 @@ impl ExperimentalSection {
     pub const ALL: &'static [ExperimentalSection] = &[
         ExperimentalSection::TreasureChests,
         ExperimentalSection::EventFlags,
+        ExperimentalSection::TownFlags,
+        ExperimentalSection::Shops,
         ExperimentalSection::CastleFlags,
         ExperimentalSection::WarRoom,
     ];
 
     pub fn label(self) -> &'static str {
         match self {
-            ExperimentalSection::TreasureChests => "World Treasure Chests (256)",
-            ExperimentalSection::EventFlags => "Story & Event Flags (256)",
+            ExperimentalSection::TreasureChests => "Chests (256)",
+            ExperimentalSection::EventFlags => "Story Flags (256)",
+            ExperimentalSection::TownFlags => "Towns / Viki (71)",
+            ExperimentalSection::Shops => "Shops & Rare Finds",
             ExperimentalSection::CastleFlags => "Castle Flags (50)",
-            ExperimentalSection::WarRoom => "Major War Units (war_data)",
+            ExperimentalSection::WarRoom => "War Room",
         }
     }
 }
@@ -41,10 +47,11 @@ pub fn view<'a>(
 ) -> Element<'a, Message> {
     let mut sub_nav = row![].spacing(8);
     for &s in ExperimentalSection::ALL {
+        let active = s == section;
         sub_nav = sub_nav.push(
-            button(text(s.label()).size(12))
+            button(theme::active_text(s.label(), 12.0, active))
                 .padding([7, 14])
-                .style(theme::nav_button_style(s == section))
+                .style(theme::nav_button_style(active))
                 .on_press(Message::SelectExperimentalSection(s)),
         );
     }
@@ -75,9 +82,33 @@ pub fn view<'a>(
     let body = match section {
         ExperimentalSection::TreasureChests => view_treasure_chests(doc, filter),
         ExperimentalSection::EventFlags => view_byte_flags(doc, None, "event_flag", 256, filter),
-        ExperimentalSection::CastleFlags => {
-            view_byte_flags(doc, Some("game_data"), "hon_flag", 50, filter)
-        }
+        ExperimentalSection::TownFlags => view_town_flags(doc, filter),
+        ExperimentalSection::Shops => view_shops(doc),
+        ExperimentalSection::CastleFlags => column![
+            container(
+                column![
+                    text("About Castle HQ Flags (hon_flag[0..49])")
+                        .size(13)
+                        .color(theme::ACCENT_GOLD),
+                    text("• [0..28] Randomized Castle HQ NPC hangout positions & room mini-events (re-rolled when entering Dunan Castle).")
+                        .size(11)
+                        .color(theme::TEXT_MUTED),
+                    text("• [30..32] Permanent Tony's Vegetable Farm & Yuzu's Castle Pasture flags — use the Castle tab for safe editing.")
+                        .size(11)
+                        .color(theme::TEXT_MUTED),
+                    text("• [29] and [34..49] Unused padding (always 0 in saves).")
+                        .size(11)
+                        .color(theme::TEXT_MUTED),
+                ]
+                .spacing(3),
+            )
+            .padding(12)
+            .width(Length::Fill)
+            .style(theme::card_style),
+            view_byte_flags(doc, Some("game_data"), "hon_flag", 50, filter),
+        ]
+        .spacing(12)
+        .into(),
         ExperimentalSection::WarRoom => view_war_room(doc),
     };
 
@@ -265,13 +296,10 @@ fn known_event_flag_info(idx: usize) -> Option<StoryFlagInfo> {
             bits: &[(7, "Prologue Completed / Mercenary Fort unlocked")],
         },
         20 => StoryFlagInfo {
-            name: "Gregminster Alliance & Tomo Lockout",
-            area: "vf01 / vb10",
-            desc: "Toran Republic alliance decision and Tomo recruitment availability",
-            bits: &[
-                (0, "Toran Alliance Completed"),
-                (7, "Tomo Late-Game Lockout (Rockaxe Campaign)"),
-            ],
+            name: "Gregminster Alliance",
+            area: "vf01",
+            desc: "Toran Republic alliance decision",
+            bits: &[(0, "Toran Alliance Completed")],
         },
         23 => StoryFlagInfo {
             name: "South Window Region / Genshu Recruitment",
@@ -288,6 +316,15 @@ fn known_event_flag_info(idx: usize) -> Option<StoryFlagInfo> {
                 (5, "Vincent Spoken First Time"),
                 (6, "Vincent Reunion Cutscene Active"),
                 (7, "Vincent Recruited"),
+            ],
+        },
+        50 => StoryFlagInfo {
+            name: "Kobold Village Hidden Pickups",
+            area: "vh03",
+            desc: "One-time hidden item pickups in Kobold Village (not stored in t_box_flag)",
+            bits: &[
+                (2, "Exertion Orb collected (Submap 0 Outdoors, behind house)"),
+                (3, "Recipe #13 collected (Submap 1, Elder's House)"),
             ],
         },
         65 => StoryFlagInfo {
@@ -384,10 +421,10 @@ fn known_event_flag_info(idx: usize) -> Option<StoryFlagInfo> {
             bits: &[(0, "Tessai Spawn Active in Kuskus")],
         },
         151 => StoryFlagInfo {
-            name: "Tinto Progression & Alberto Despawn",
-            area: "vg08",
-            desc: "Tinto area story progression and armory NPC despawning",
-            bits: &[(6, "Alberto Despawns from Tinto Armory")],
+            name: "Tinto Progression & Late-Game Lockouts",
+            area: "vg08 / vb09",
+            desc: "Tinto area story progression, Alberto armory despawn, and vanilla Tomo late-game lockout",
+            bits: &[(6, "Alberto Despawns / Vanilla Tomo Late-Game Lockout")],
         },
         152 => StoryFlagInfo {
             name: "Hai Yo Cook-Off Battles (Part 1)",
@@ -474,12 +511,6 @@ fn known_event_flag_info(idx: usize) -> Option<StoryFlagInfo> {
                 (5, "Templeton Recruited with Suiko Map"),
             ],
         },
-        171 => StoryFlagInfo {
-            name: "Ryube Forest (Tomo)",
-            area: "vb10",
-            desc: "Tsai house errand and Tomo recruitment status",
-            bits: &[(6, "Tomo Recruited into Army")],
-        },
         172 => StoryFlagInfo {
             name: "Greenhill Checkpoint & Town Square (Fitcher & Nina)",
             area: "ve01",
@@ -528,12 +559,15 @@ fn known_event_flag_info(idx: usize) -> Option<StoryFlagInfo> {
             ],
         },
         208 => StoryFlagInfo {
-            name: "Ryube Forest (Tsai's Spear Errand)",
-            area: "vb04 / vb10",
-            desc: "Errand to Tsai cottage for fire spears to defend Mercenary Fort",
+            name: "Ryube Forest — Tsai's Cottage (Tsai & Tomo)",
+            area: "vb04 / vb09",
+            desc: "Tsai's fire spear errand and Tomo recruitment sequence at Tsai's cottage",
             bits: &[
                 (0, "Tsai Tools Errand Active"),
                 (1, "Spears Completed / Tsai Joins"),
+                (4, "Tomo Recruitment Sequence Initiated (vb09_00)"),
+                (5, "Tomo Cottage Approach Scene Completed (vb09_00)"),
+                (6, "Tomo Recruited into Army (vb09_01)"),
             ],
         },
         209 => StoryFlagInfo {
@@ -666,14 +700,433 @@ fn known_event_flag_info(idx: usize) -> Option<StoryFlagInfo> {
     })
 }
 
+fn known_hon_flag_info(idx: usize) -> Option<StoryFlagInfo> {
+    Some(match idx {
+        11 => StoryFlagInfo {
+            name: "Castle HQ Dialogue Variant",
+            area: "vk* (Castle HQ)",
+            desc: "Randomized per-visit Castle HQ NPC dialogue/placement bit",
+            bits: &[(0, "Entrance / tavern dialogue variant")],
+        },
+        14 => StoryFlagInfo {
+            name: "Castle HQ Tavern / Inn State",
+            area: "vk* (Castle HQ)",
+            desc: "Per-visit Castle HQ tavern & inn NPC placement",
+            bits: &[(1, "Hilda / Alex tavern & inn active")],
+        },
+        16 => StoryFlagInfo {
+            name: "Castle HQ Entrance & Taki Placement",
+            area: "vk* (Castle HQ)",
+            desc: "Randomized per-visit NPC placement in Castle HQ",
+            bits: &[
+                (3, "Entrance hall room trigger"),
+                (6, "Taki entrance hall placement (Lv.1+)"),
+            ],
+        },
+        17 => StoryFlagInfo {
+            name: "Castle HQ Vault / Barbara State",
+            area: "vk* (Castle HQ)",
+            desc: "Randomized per-visit NPC placement (paired with hon_flag[18])",
+            bits: &[(5, "Barbara vault / entrance scene active")],
+        },
+        19 => StoryFlagInfo {
+            name: "Castle HQ Entrance Walk-In Triggers",
+            area: "vk* (Castle HQ)",
+            desc: "Per-visit entrance hall proximity triggers",
+            bits: &[
+                (3, "Upper entrance trigger cleared"),
+                (4, "Lower entrance trigger cleared"),
+            ],
+        },
+        30 => StoryFlagInfo {
+            name: "Tony's Vegetable Farm (Plots 1–8)",
+            area: "Castle Tab",
+            desc: "Permanent crop flags — edit safely in the Castle tab",
+            bits: &[
+                (0, "Cabbage Plot #1"),
+                (1, "Cabbage Plot #2"),
+                (2, "Cabbage Plot #3"),
+                (3, "Potato Plot #1"),
+                (4, "Potato Plot #2"),
+                (5, "Potato Plot #3"),
+                (6, "Spinach Plot #1"),
+                (7, "Spinach Plot #2"),
+            ],
+        },
+        31 => StoryFlagInfo {
+            name: "Tony's Farm (Plots 9–12) & Yuzu's Pasture (Pigs/Sheep)",
+            area: "Castle Tab",
+            desc: "Permanent farm & pasture flags — edit safely in the Castle tab",
+            bits: &[
+                (0, "Spinach Plot #3"),
+                (1, "Tomato Plot #1"),
+                (2, "Tomato Plot #2"),
+                (3, "Tomato Plot #3"),
+                (4, "Piglet #1"),
+                (5, "Piglet #2"),
+                (6, "Piglet #3"),
+                (7, "Lamb #1"),
+            ],
+        },
+        32 => StoryFlagInfo {
+            name: "Yuzu's Castle Pasture (Sheep, Chickens & Calves)",
+            area: "Castle Tab",
+            desc: "Permanent livestock flags — edit safely in the Castle tab",
+            bits: &[
+                (0, "Lamb #2"),
+                (1, "Lamb #3"),
+                (2, "Lamb #4"),
+                (3, "Chick #1"),
+                (4, "Chick #2"),
+                (5, "Chick #3"),
+                (6, "Calf #1"),
+                (7, "Calf #2"),
+            ],
+        },
+        _ => return None,
+    })
+}
+
+fn town_flag_name(idx: usize) -> &'static str {
+    match idx {
+        0 => "Army Garrison / Prologue Camp",
+        1 => "Kyaro Town",
+        3 => "Mercenary Fortress",
+        4 => "Toto Village",
+        5 => "Ryube Village",
+        6 => "Ryube Forest",
+        7 => "Coronet Town",
+        8 => "Muse City",
+        9 => "Sindar Ruins",
+        10 => "White Deer Inn",
+        11 => "Muse-Highland Checkpoint",
+        12 => "Kuskus Town",
+        13 => "South Window City",
+        14 => "North Window",
+        15 => "Dunan Castle HQ",
+        16 => "Tenzan Pass",
+        17 => "Cave of the Wind",
+        18 => "Radat Town",
+        19 => "Path to Matilda",
+        20 => "Muse-Greenhill Checkpoint",
+        21 => "Banner Village",
+        22 => "Rokkaku Hamlet",
+        23 => "Banner Pass",
+        24 => "Gregminster",
+        25 => "Tinto City",
+        26 => "Tinto Mines",
+        27 => "Crom Village",
+        28 => "North Swallow Pass",
+        29 => "Greenhill City",
+        30 => "Forest Village",
+        31 => "Two River City",
+        32 => "Lakewest Town",
+        33 => "Kobold Village",
+        34 => "Highway Village",
+        35 => "Muse-Matilda Checkpoint",
+        36 => "Rockaxe Castle",
+        37 => "Drakemouth Village",
+        38 => "L'Renouille",
+        39 => "Sajah Village",
+        40 => "Tigermouth Village",
+        41 => "Mt. Rakutei",
+        42 => "Highland Camp",
+        43 => "Kobold Forest",
+        44 => "Muse Border / Mercenary Area",
+        45 => "Tinto Border / Mine Area",
+        46 => "Forest Path (Greenhill-Matilda)",
+        47 => "Greenhill Forest",
+        _ => "Unused / Reserved",
+    }
+}
+
+fn view_town_flags<'a>(doc: &'a SaveDocument, filter: &'a str) -> Element<'a, Message> {
+    let q = filter.trim().to_lowercase();
+    let len = doc.get_array_len(None, "town_flag");
+    let mut visited_cnt = 0usize;
+    let mut teleport_cnt = 0usize;
+
+    let mut rows = column![].spacing(6);
+    for idx in 0..len {
+        let val = doc.get_array_i64(None, "town_flag", idx) as u8;
+        let bit7 = (val & 0x80) != 0;
+        let bit6 = (val & 0x40) != 0;
+        if bit7 {
+            visited_cnt += 1;
+        }
+        if bit6 {
+            teleport_cnt += 1;
+        }
+        let name = town_flag_name(idx);
+        if !q.is_empty()
+            && !idx.to_string().contains(&q)
+            && !name.to_lowercase().contains(&q)
+        {
+            continue;
+        }
+        rows = rows.push(
+            container(
+                row![
+                    text(format!("[{:02}]", idx))
+                        .size(12)
+                        .color(if val > 0 {
+                            theme::ACCENT_GOLD
+                        } else {
+                            theme::TEXT_MUTED
+                        })
+                        .width(Length::Fixed(36.0)),
+                    text(name)
+                        .size(12)
+                        .color(if val > 0 {
+                            theme::TEXT_PRIMARY
+                        } else {
+                            theme::TEXT_MUTED
+                        })
+                        .width(Length::Fixed(230.0)),
+                    text(format!("0x{:02X}", val))
+                        .size(12)
+                        .color(theme::ACCENT_CYAN)
+                        .width(Length::Fixed(48.0)),
+                    checkbox("Visited (b7 / 0x80)", bit7)
+                        .on_toggle(move |on| {
+                            Message::ToggleArrayFlagBit(None, "town_flag", idx, 0x80, on)
+                        })
+                        .text_size(12),
+                    Space::with_width(Length::Fixed(16.0)),
+                    checkbox("Viki Teleport / Active (b6 / 0x40)", bit6)
+                        .on_toggle(move |on| {
+                            Message::ToggleArrayFlagBit(None, "town_flag", idx, 0x40, on)
+                        })
+                        .text_size(12),
+                ]
+                .spacing(10)
+                .align_y(Alignment::Center),
+            )
+            .padding([6, 12])
+            .width(Length::Fill)
+            .style(theme::card_style),
+        );
+    }
+
+    column![
+        container(
+            row![
+                column![
+                    text("Visited Towns & Viki Teleport Flags (town_flag[0..70])")
+                        .size(14)
+                        .color(theme::ACCENT_GOLD),
+                    text("Each town entry uses Bit 7 (0x80) and Bit 6 (0x40) to track visited and teleportable status.")
+                        .size(11)
+                        .color(theme::TEXT_MUTED),
+                ]
+                .spacing(2),
+                Space::with_width(Length::Fill),
+                container(
+                    text(format!("b7: {}/{}  •  b6: {}/{}", visited_cnt, len, teleport_cnt, len))
+                        .size(11)
+                        .color(theme::ACCENT_CYAN)
+                )
+                .padding([4, 10])
+                .style(theme::badge_style(theme::ACCENT_CYAN)),
+            ]
+            .align_y(Alignment::Center),
+        )
+        .padding(12)
+        .width(Length::Fill)
+        .style(theme::card_style),
+        rows,
+    ]
+    .spacing(10)
+    .into()
+}
+
+fn view_shop_category<'a>(
+    doc: &'a SaveDocument,
+    title: &'static str,
+    category: &'static str,
+    zai_slots: usize,
+) -> Element<'a, Message> {
+    let count = doc.get_shop_len(category);
+    let mut list = column![].spacing(6);
+
+    for idx in 0..count {
+        let stim = doc.get_shop_stim(category, idx);
+        let mut r = row![
+            text(format!("Shop #{:02}", idx + 1))
+                .size(12)
+                .color(theme::TEXT_MUTED)
+                .width(Length::Fixed(68.0)),
+            text("Timer:")
+                .size(11)
+                .color(theme::TEXT_MUTED),
+            text_input("0", &stim.to_string())
+                .on_input(move |v| Message::SetShopStim(category, idx, v))
+                .padding(4)
+                .size(11)
+                .width(Length::Fixed(58.0))
+                .style(theme::input_style),
+        ]
+        .spacing(8)
+        .align_y(Alignment::Center);
+
+        if zai_slots > 0 {
+            r = r.push(text("Rare Stock (zai):").size(11).color(theme::TEXT_MUTED));
+            for slot in 0..zai_slots {
+                let z = doc.get_shop_zai(category, idx, slot);
+                r = r.push(
+                    text_input("0", &z.to_string())
+                        .on_input(move |v| Message::SetShopZai(category, idx, slot, v))
+                        .padding(4)
+                        .size(11)
+                        .width(Length::Fixed(40.0))
+                        .style(theme::input_style),
+                );
+            }
+        }
+
+        list = list.push(r);
+    }
+
+    container(
+        column![
+            row![
+                text(format!("{} ({} entries)", title, count))
+                    .size(14)
+                    .color(theme::ACCENT_GOLD),
+                Space::with_width(Length::Fill),
+                button(text("Reset All Timers (0)").size(11))
+                    .padding([4, 10])
+                    .style(theme::primary_button_style)
+                    .on_press(Message::ResetAllShopTimers(category)),
+            ]
+            .align_y(Alignment::Center),
+            list,
+        ]
+        .spacing(8),
+    )
+    .padding(14)
+    .width(Length::Fill)
+    .style(theme::card_style)
+    .into()
+}
+
+fn view_shops<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
+    column![
+        container(
+            column![
+                text("Shop Rare Finds & Restock Timers (shop_data)")
+                    .size(14)
+                    .color(theme::ACCENT_GOLD),
+                text("Resetting a shop category's restock timer (stim = 0) forces those shops to re-roll their Rare Finds and restock on your next visit.")
+                    .size(11)
+                    .color(theme::TEXT_MUTED),
+            ]
+            .spacing(3),
+        )
+        .padding(12)
+        .width(Length::Fill)
+        .style(theme::card_style),
+        view_shop_category(doc, "Item Shops (dougu_data)", "dougu_data", 4),
+        view_shop_category(doc, "Armor Shops (bougu_data)", "bougu_data", 4),
+        view_shop_category(doc, "Rune Shops (monsyo_data)", "monsyo_data", 4),
+        view_shop_category(doc, "Trading Posts (koueki_data)", "koueki_data", 0),
+    ]
+    .spacing(12)
+    .into()
+}
+
 fn view_war_room<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
     let leaders = doc.get_array_len(Some("war_data"), "leader_no");
     let subs = doc.get_array_len(Some("war_data"), "sub_no");
+    let assignments = doc.get_array_len(Some("war_data"), "sub_to_leader");
 
-    let mut leader_col = column![
-        text(format!("War Unit Leaders (war_data.leader_no — {} slots)", leaders))
+    let info_banner = container(
+        column![
+            text("About Major War Data (war_data) — Informational Only")
+                .size(13)
+                .color(theme::ACCENT_GOLD),
+            text("Note: This section is kept for completeness and is generally not useful for save editing — you can already reorganize Major War sub-commanders by talking to Apple before any Major Battle.")
+                .size(11)
+                .color(theme::ACCENT_CYAN),
+            text("• sub_to_leader[0..27] is the live Apple War Room ('Form Units') sub-commander assignment table persisted across Major Battles (-1 = Locked, -2 = Unassigned Pool, 0..15 = Assigned Leader Slot).")
+                .size(11)
+                .color(theme::TEXT_MUTED),
+            text("• leader_no[0..13] and sub_no[0..27] are runtime-only scratch buffers (always 0 in saved files).")
+                .size(11)
+                .color(theme::TEXT_MUTED),
+        ]
+        .spacing(3),
+    )
+    .padding(12)
+    .width(Length::Fill)
+    .style(theme::card_style);
+
+    let mut assign_left = column![].spacing(6).width(Length::FillPortion(1));
+    let mut assign_right = column![].spacing(6).width(Length::FillPortion(1));
+    let half = (assignments + 1) / 2;
+
+    for idx in 0..assignments {
+        let val = doc.get_array_i64(Some("war_data"), "sub_to_leader", idx);
+        let (status_label, status_color) = match val {
+            -1 => ("Locked (-1)".to_string(), theme::TEXT_MUTED),
+            -2 => ("Unassigned Pool (-2)".to_string(), theme::ACCENT_CYAN),
+            v if v >= 0 => (format!("Leader Slot #{}", v), theme::ACCENT_GREEN),
+            v => (format!("Value {}", v), theme::TEXT_MUTED),
+        };
+        let r = row![
+            text(format!("Sub #{:02}", idx + 1))
+                .size(12)
+                .color(theme::TEXT_MUTED)
+                .width(Length::Fixed(64.0)),
+            text(status_label)
+                .size(12)
+                .color(status_color)
+                .width(Length::Fill),
+            text_input("-1", &val.to_string())
+                .on_input(move |v| Message::SetArrayIntField(
+                    Some("war_data"),
+                    "sub_to_leader",
+                    idx,
+                    v
+                ))
+                .padding(4)
+                .size(12)
+                .width(Length::Fixed(56.0))
+                .style(theme::input_style),
+        ]
+        .spacing(8)
+        .align_y(Alignment::Center);
+
+        if idx < half {
+            assign_left = assign_left.push(r);
+        } else {
+            assign_right = assign_right.push(r);
+        }
+    }
+
+    let assign_card = container(
+        column![
+            text(format!(
+                "War Sub-Commander Assignments (war_data.sub_to_leader — {} slots)",
+                assignments
+            ))
             .size(15)
             .color(theme::ACCENT_GOLD),
+            row![assign_left, assign_right].spacing(20),
+        ]
+        .spacing(10),
+    )
+    .padding(16)
+    .width(Length::Fill)
+    .style(theme::card_style);
+
+    let mut leader_col = column![
+        text(format!(
+            "War Unit Leaders (war_data.leader_no — {} slots, runtime-only / 0 in saves)",
+            leaders
+        ))
+        .size(13)
+        .color(theme::TEXT_MUTED),
     ]
     .spacing(6);
 
@@ -711,9 +1164,12 @@ fn view_war_room<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
     }
 
     let mut sub_col = column![
-        text(format!("War Sub-Units (war_data.sub_no — {} slots)", subs))
-            .size(15)
-            .color(theme::ACCENT_GOLD),
+        text(format!(
+            "War Sub-Units (war_data.sub_no — {} slots, runtime-only / 0 in saves)",
+            subs
+        ))
+        .size(13)
+        .color(theme::TEXT_MUTED),
     ]
     .spacing(6);
 
@@ -750,17 +1206,22 @@ fn view_war_room<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
         );
     }
 
-    row![
-        container(leader_col)
-            .padding(16)
-            .width(Length::FillPortion(1))
-            .style(theme::card_style),
-        container(sub_col)
-            .padding(16)
-            .width(Length::FillPortion(1))
-            .style(theme::card_style),
+    column![
+        info_banner,
+        assign_card,
+        row![
+            container(leader_col)
+                .padding(16)
+                .width(Length::FillPortion(1))
+                .style(theme::card_style),
+            container(sub_col)
+                .padding(16)
+                .width(Length::FillPortion(1))
+                .style(theme::card_style),
+        ]
+        .spacing(16),
     ]
-    .spacing(16)
+    .spacing(14)
     .into()
 }
 
@@ -777,6 +1238,8 @@ fn view_byte_flags<'a>(
     for idx in 0..len {
         let info = if key == "event_flag" {
             known_event_flag_info(idx)
+        } else if key == "hon_flag" {
+            known_hon_flag_info(idx)
         } else {
             None
         };

@@ -129,7 +129,7 @@ pub const WEAPON_RUNES: &[NamedOption] = &[
     opt(100, "Friendship Orb"),
     opt(101, "Solitude Orb"),
     opt(102, "Kindness Orb"),
-    opt(105, "Exertion Orb"),
+    opt(103, "Exertion Orb"),
 ];
 
 pub fn rune_attrs(id: i64) -> &'static [&'static str] {
@@ -166,7 +166,7 @@ pub fn rune_attrs(id: i64) -> &'static [&'static str] {
         53 => &["25", "RH", "X"],
         54 => &["40", "HR", "X"],
         89 => &["67", "HR", "X"],
-        92..=102 | 105 => &["Wep", "ExR"],
+        92..=103 => &["Wep", "ExR"],
         _ => &[],
     }
 }

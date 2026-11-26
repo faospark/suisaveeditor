@@ -1086,6 +1086,10 @@ fn view_bath_items<'a>(
     portraits: &'a PortraitCache,
 ) -> Element<'a, Message> {
     let items = doc.get_inventory_items("game_data", "furo_item");
+    let bath_raw = doc.get_array_i64(Some("game_data"), "furo_info", 0);
+    let bath_lv = bath_raw & 0x07;
+    let open_air = (bath_raw & 0x08) != 0;
+    let bath_visits = doc.get_array_i64(Some("game_data"), "furo_info", 1);
 
     let mut header = row![].spacing(10).align_y(Alignment::Center);
     if let Some(p) = portrait_thumb(portraits, 90) {
@@ -1099,12 +1103,51 @@ fn view_bath_items<'a>(
             ))
             .size(15)
             .color(theme::ACCENT_GOLD),
-            text("Configure artwork and decorative items displayed in the Dunan Castle Bath House. Paintings occupy Slots 2 & 5; antique ornaments decorate the Girl's and Boy's sides (automatically assigned Trade item category use_cnt: 64).")
+            text("Configure artwork, decorative items, bath visit count, and Open-Air Bath access (unlocked after 20+ visits).")
                 .size(11)
                 .color(theme::TEXT_MUTED),
         ]
         .spacing(2),
     );
+
+    let bath_status_bar = container(
+        row![
+            container(
+                text(format!("Bath Lv {}", bath_lv))
+                    .size(11)
+                    .color(theme::ACCENT_CYAN),
+            )
+            .padding([4, 9])
+            .style(theme::badge_style(theme::ACCENT_CYAN)),
+            text("Bath Visits Taken (furo_info[1]):")
+                .size(12)
+                .color(theme::TEXT_MUTED),
+            text_input("0", &bath_visits.to_string())
+                .on_input(|v| Message::SetArrayIntField(Some("game_data"), "furo_info", 1, v))
+                .padding(5)
+                .size(12)
+                .width(Length::Fixed(64.0))
+                .style(theme::input_style),
+            button(text("Set 20").size(11))
+                .padding([4, 9])
+                .style(theme::secondary_button_style)
+                .on_press(Message::SetArrayIntField(
+                    Some("game_data"),
+                    "furo_info",
+                    1,
+                    "20".to_string(),
+                )),
+            Space::with_width(Length::Fill),
+            checkbox("Open-Air Bath Unlocked (furo_info[0] Bit 3)", open_air)
+                .on_toggle(|on| Message::ToggleArrayFlagBit(Some("game_data"), "furo_info", 0, 0x08, on))
+                .text_size(12),
+        ]
+        .spacing(10)
+        .align_y(Alignment::Center),
+    )
+    .padding([8, 12])
+    .width(Length::Fill)
+    .style(theme::empty_slot_card_style);
 
     let paintings_box = container(
         column![
@@ -1160,7 +1203,7 @@ fn view_bath_items<'a>(
 
     let ornaments_row = row![girls_side, boys_side].spacing(12);
 
-    container(column![header, paintings_box, ornaments_row].spacing(12))
+    container(column![header, bath_status_bar, paintings_box, ornaments_row].spacing(12))
         .padding(16)
         .width(Length::Fill)
         .style(theme::card_style)
@@ -1313,7 +1356,7 @@ fn view_suggestion_box<'a>(
             for target_lv in 0u8..=3 {
                 let active = lv == target_lv;
                 lv_btns = lv_btns.push(
-                    button(text(target_lv.to_string()).size(11))
+                    button(theme::active_text(target_lv.to_string(), 11.0, active))
                         .padding([3, 8])
                         .style(theme::nav_button_style(active))
                         .on_press(Message::SetSuggestionCharLevel(cid, target_lv)),
@@ -1355,6 +1398,9 @@ fn view_suggestion_box<'a>(
         char_grid = char_grid.push(r);
     }
 
+    let meyasu_h = doc.get_array_i64(Some("game_data"), "meyasu_time", 0);
+    let meyasu_m = doc.get_array_i64(Some("game_data"), "meyasu_time", 1);
+
     container(
         column![
             row![
@@ -1362,6 +1408,13 @@ fn view_suggestion_box<'a>(
                     .size(15)
                     .color(theme::ACCENT_GOLD),
                 Space::with_width(Length::Fill),
+                text(format!("Cooldown (meyasu_time): {:02}:{:02}", meyasu_h, meyasu_m))
+                    .size(11)
+                    .color(theme::TEXT_MUTED),
+                button(text("Reset Timer (00:00)").size(11))
+                    .padding([4, 9])
+                    .style(theme::secondary_button_style)
+                    .on_press(Message::ResetGameTimer("meyasu_time")),
                 container(
                     text(if b_meyasu { "New Mail Waiting" } else { "Box Idle" })
                         .size(11)

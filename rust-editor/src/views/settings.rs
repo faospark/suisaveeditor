@@ -45,7 +45,7 @@ fn view_language_card<'a>(current: AppLanguage) -> Element<'a, Message> {
     let mut grid = column![].spacing(10);
     let active_accent = theme::accent();
 
-    for chunk in AppLanguage::ALL.chunks(4) {
+    for chunk in AppLanguage::ALL.chunks(3) {
         let mut r = row![].spacing(10);
         for &lang in chunk {
             let is_selected = lang == current;
@@ -504,6 +504,11 @@ pub fn view_env_blocking_overlay<'a>(env: &'a GameEnvStatus) -> Element<'a, Mess
                 text("BepInEx & SuikodenFix Required")
                     .size(18)
                     .color(theme::TEXT_PRIMARY),
+                Space::with_width(Length::Fill),
+                button(text(crate::i18n::tr("close")).size(12))
+                    .padding([6, 12])
+                    .style(theme::secondary_button_style)
+                    .on_press(Message::DismissEnvWarning),
             ]
             .spacing(10)
             .align_y(Alignment::Center),

@@ -81,11 +81,12 @@ pub fn view<'a>(category: DataValuesCategory, search: &'a str) -> Element<'a, Me
     for chunk in DataValuesCategory::ALL.chunks(6) {
         let mut r = row![].spacing(6);
         for &cat in chunk {
+            let active = cat == category;
             r = r.push(
-                button(text(cat.label()).size(11))
+                button(theme::active_text(cat.label(), 11.0, active))
                     .padding([6, 10])
                     .width(Length::FillPortion(1))
-                    .style(theme::nav_button_style(cat == category))
+                    .style(theme::nav_button_style(active))
                     .on_press(Message::SelectDataValuesCategory(cat)),
             );
         }

@@ -238,6 +238,122 @@ impl SaveDocument {
             .unwrap_or_default()
     }
 
+    pub fn reset_game_timer(&mut self, key: &str) {
+        if let Some(Value::Array(arr)) = self
+            .data
+            .get_mut("game_data")
+            .and_then(|g| g.get_mut(key))
+        {
+            for slot in arr.iter_mut() {
+                *slot = Value::Number(0.into());
+            }
+            self.dirty = true;
+        }
+    }
+
+    pub fn toggle_party_toasty(&mut self, slot: usize, on: bool) {
+        if slot >= 6 {
+            return;
+        }
+        let (status_val, hoka_val) = if on { (8i64, 300i64) } else { (0i64, 0i64) };
+        self.set_array_i64(Some("party_data"), "status", slot, status_val);
+        self.set_array_i64(Some("party_data"), "hoka_time", slot, hoka_val);
+    }
+
+    pub fn get_shop_len(&self, category: &str) -> usize {
+        self.data
+            .get("shop_data")
+            .and_then(|s| s.get(category))
+            .and_then(|v| v.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0)
+    }
+
+    pub fn get_shop_stim(&self, category: &str, idx: usize) -> i64 {
+        let stim_key = if category == "koueki_data" {
+            "kouek_stim"
+        } else {
+            "stim"
+        };
+        self.data
+            .get("shop_data")
+            .and_then(|s| s.get(category))
+            .and_then(|v| v.as_array())
+            .and_then(|a| a.get(idx))
+            .and_then(|e| e.get(stim_key))
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0)
+    }
+
+    pub fn set_shop_stim(&mut self, category: &str, idx: usize, val: i64) {
+        let stim_key = if category == "koueki_data" {
+            "kouek_stim"
+        } else {
+            "stim"
+        };
+        if let Some(entry) = self
+            .data
+            .get_mut("shop_data")
+            .and_then(|s| s.get_mut(category))
+            .and_then(|v| v.as_array_mut())
+            .and_then(|a| a.get_mut(idx))
+            .and_then(|e| e.as_object_mut())
+        {
+            entry.insert(stim_key.to_string(), Value::Number(val.max(0).into()));
+            self.dirty = true;
+        }
+    }
+
+    pub fn get_shop_zai(&self, category: &str, idx: usize, slot: usize) -> i64 {
+        self.data
+            .get("shop_data")
+            .and_then(|s| s.get(category))
+            .and_then(|v| v.as_array())
+            .and_then(|a| a.get(idx))
+            .and_then(|e| e.get("zai"))
+            .and_then(|z| z.as_array())
+            .and_then(|a| a.get(slot))
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0)
+    }
+
+    pub fn set_shop_zai(&mut self, category: &str, idx: usize, slot: usize, val: i64) {
+        if let Some(zai_slot) = self
+            .data
+            .get_mut("shop_data")
+            .and_then(|s| s.get_mut(category))
+            .and_then(|v| v.as_array_mut())
+            .and_then(|a| a.get_mut(idx))
+            .and_then(|e| e.get_mut("zai"))
+            .and_then(|z| z.as_array_mut())
+            .and_then(|a| a.get_mut(slot))
+        {
+            *zai_slot = Value::Number(val.max(0).into());
+            self.dirty = true;
+        }
+    }
+
+    pub fn reset_all_shop_timers(&mut self, category: &str) {
+        let stim_key = if category == "koueki_data" {
+            "kouek_stim"
+        } else {
+            "stim"
+        };
+        if let Some(arr) = self
+            .data
+            .get_mut("shop_data")
+            .and_then(|s| s.get_mut(category))
+            .and_then(|v| v.as_array_mut())
+        {
+            for entry in arr.iter_mut() {
+                if let Some(obj) = entry.as_object_mut() {
+                    obj.insert(stim_key.to_string(), Value::Number(0.into()));
+                }
+            }
+            self.dirty = true;
+        }
+    }
+
     // ---- Recruitment (chara_flag) ----
 
     pub fn get_chara_flag(&self, index: usize) -> i64 {
@@ -995,7 +1111,7 @@ pub fn recruit_story_reset(index: usize) -> Option<RecruitStoryReset> {
         102 => mk(&[(68, 0xF0), (70, 0x01)], &[], false),            // Yuzu
         68 => mk(&[(216, 0x80)], &[], false),                        // Wakaba
         110 => mk(&[(110, 0x02)], &[], false),                       // Tessai
-        17 => mk(&[(171, 0x40), (20, 0x80)], &[], false),            // Tomo
+        17 => mk(&[(208, 0x70)], &[], false),                        // Tomo (vb09 bits 4, 5, 6)
         50 => mk(&[(230, 0x03), (215, 0x14)], &[], false),           // Feather
         43 => mk(&[(230, 0x03), (215, 0x40)], &[], false),           // Ayda
         4 => mk(&[(210, 0xC0)], &[], false),                         // Viki

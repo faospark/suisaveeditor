@@ -4,6 +4,7 @@ use iced::widget::{
 };
 use iced::{Alignment, Element, Length};
 
+use crate::data::catalog::{find_labeled_option, LabeledOption};
 use crate::data::{find_option, opt, NamedOption, CLIVE_MILESTONES};
 use crate::gamedata::{character_name, PortraitCache};
 use crate::i18n;
@@ -31,8 +32,8 @@ pub fn view<'a>(
     ]
     .spacing(16);
 
-    let bottom_col = row![
-        container(clive_card).width(Length::FillPortion(1)),
+    let side_and_aliases = row![
+        container(side_quests_card).width(Length::FillPortion(1)),
         container(aliases_card).width(Length::FillPortion(1)),
     ]
     .spacing(16);
@@ -46,8 +47,8 @@ pub fn view<'a>(
         two_col,
         s1_import_card,
         time_location_card,
-        side_quests_card,
-        bottom_col,
+        side_and_aliases,
+        clive_card,
     ]
     .spacing(16)
     .padding(24);
@@ -132,32 +133,50 @@ fn view_active_party<'a>(
         .style(theme::pick_list_style)
         .menu_style(theme::pick_list_menu_style);
 
-        let card = container(
-            column![
-                row![
-                    portrait,
-                    column![
-                        text(slot_label).size(10).color(if is_convoy {
-                            theme::ACCENT_CYAN
-                        } else {
-                            theme::ACCENT_GOLD
-                        }),
-                        text(name).size(13).color(theme::TEXT_PRIMARY),
-                        text(format!("ID #{}", char_id))
-                            .size(10)
-                            .color(theme::TEXT_MUTED),
-                    ]
-                    .spacing(2),
+        let mut card_col = column![
+            row![
+                portrait,
+                column![
+                    text(slot_label).size(10).color(if is_convoy {
+                        theme::ACCENT_CYAN
+                    } else {
+                        theme::ACCENT_GOLD
+                    }),
+                    text(name).size(13).color(theme::TEXT_PRIMARY),
+                    text(format!("ID #{}", char_id))
+                        .size(10)
+                        .color(theme::TEXT_MUTED),
                 ]
-                .spacing(10)
-                .align_y(Alignment::Center),
-                picker,
+                .spacing(2),
             ]
-            .spacing(8),
-        )
-        .padding(10)
-        .width(Length::FillPortion(1))
-        .style(theme::portrait_card_style(is_convoy));
+            .spacing(10)
+            .align_y(Alignment::Center),
+            picker,
+        ]
+        .spacing(8);
+
+        if !is_convoy {
+            let st = doc.get_array_i64(Some("party_data"), "status", slot_idx);
+            let hoka = doc.get_array_i64(Some("party_data"), "hoka_time", slot_idx);
+            let is_toasty = st == 8;
+            let status_label = if is_toasty {
+                format!("Toasty ({})", hoka)
+            } else if st != 0 {
+                format!("Status #{}", st)
+            } else {
+                "Toasty Buff".to_string()
+            };
+            card_col = card_col.push(
+                checkbox(status_label, is_toasty)
+                    .on_toggle(move |on| Message::TogglePartyToasty(slot_idx, on))
+                    .text_size(11),
+            );
+        }
+
+        let card = container(card_col)
+            .padding(10)
+            .width(Length::FillPortion(1))
+            .style(theme::portrait_card_style(is_convoy));
 
         if slot_idx < 4 {
             row1 = row1.push(card);
@@ -238,6 +257,22 @@ fn view_resources_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
     let castle_lv = doc.get_i64(Some("game_data"), "base_lv");
     let kaji_lv = doc.get_i64(Some("game_data"), "kaji_lv");
     let bath_lv = doc.get_array_i64(Some("game_data"), "furo_info", 0);
+    let bath_raw = doc.get_array_i64(Some("game_data"), "furo_info", 0);
+    let bath_lv = bath_raw & 0x07;
+    let bath_open_air = (bath_raw & 0x08) != 0;
+    let bath_visits = doc.get_array_i64(Some("game_data"), "furo_info", 1);
+    let bath_label = if bath_open_air {
+        format!("Lv {} • Open-Air ({} visits)", bath_lv, bath_visits)
+    } else {
+        format!("Lv {} ({} visits)", bath_lv, bath_visits)
+    };
+    let difficulty = doc.get_i64(Some("game_data"), "difficulty");
+    const DIFFICULTY_OPTIONS: &[LabeledOption] = &[
+        LabeledOption { id: 0, label: "0 - Normal" },
+        LabeledOption { id: 1, label: "1 - Easy" },
+        LabeledOption { id: 2, label: "2 - Hard" },
+    ];
+    let selected_diff = find_labeled_option(DIFFICULTY_OPTIONS, difficulty);
 
     let fields = column![
         text(i18n::tr("resources_castle")).size(15).color(theme::ACCENT_GOLD),
@@ -251,10 +286,27 @@ fn view_resources_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message> {
             doc.get_i64(Some("game_data"), "nige_cnt"),
             |v| Message::SetIntField(Some("game_data"), "nige_cnt", v),
         ),
+        row![
+            text("Difficulty Mode")
+                .size(13)
+                .color(theme::TEXT_MUTED)
+                .width(Length::Fixed(145.0)),
+            pick_list(DIFFICULTY_OPTIONS, selected_diff, |o| {
+                Message::SetIntField(Some("game_data"), "difficulty", o.id.to_string())
+            })
+            .text_size(12)
+            .padding([5, 10])
+            .width(Length::Fixed(160.0))
+            .style(theme::pick_list_style)
+            .menu_style(theme::pick_list_menu_style),
+        ]
+        .spacing(10)
+        .align_y(Alignment::Center),
         readonly_stat_row(i18n::tr("castle_level"), format!("Lv {} (read-only)", castle_lv)),
         readonly_stat_row(i18n::tr("blacksmith_level"), format!("Lv {} (read-only)", kaji_lv)),
         readonly_stat_row(i18n::tr("popularity"), format!("{} (read-only)", popularity)),
         readonly_stat_row(i18n::tr("bath_house_level"), format!("Lv {} (read-only)", bath_lv)),
+        readonly_stat_row(i18n::tr("bath_house_level"), bath_label),
     ]
     .spacing(10);
 
@@ -387,7 +439,7 @@ fn view_time_and_location_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message
         text("Play Time (H : M : S)")
             .size(13)
             .color(theme::TEXT_MUTED)
-            .width(Length::Fixed(145.0)),
+            .width(Length::Fixed(165.0)),
         compact_int_input("H", hours, |v| Message::SetArrayIntField(
             Some("game_data"),
             "play_time",
@@ -425,7 +477,7 @@ fn view_time_and_location_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message
         text("Location & Coords")
             .size(13)
             .color(theme::TEXT_MUTED)
-            .width(Length::Fixed(145.0)),
+            .width(Length::Fixed(165.0)),
         text("Area").size(12).color(theme::TEXT_MUTED),
         compact_int_input("Area", doc.get_i64(Some("game_data"), "area_no"), |v| {
             Message::SetIntField(Some("game_data"), "area_no", v)
@@ -481,7 +533,6 @@ fn view_side_quests_card<'a>(
 ) -> Element<'a, Message> {
     let trade_vol = doc.get_i64(Some("game_data"), "trade_transaction_total");
     let suri_potch = doc.get_i64(Some("game_data"), "suri_potch");
-    let luka_hp = doc.get_i64(Some("game_data"), "luka_hp");
     let eligible = trade_vol >= 50_000;
 
     let mut header = row![].spacing(10).align_y(Alignment::Center);
@@ -542,14 +593,6 @@ fn view_side_quests_card<'a>(
                     .size(13)
                     .width(Length::Fixed(140.0))
                     .style(theme::input_style),
-                button(text("Set 50,000").size(11))
-                    .padding([6, 10])
-                    .style(theme::primary_button_style)
-                    .on_press(Message::SetIntField(
-                        Some("game_data"),
-                        "trade_transaction_total",
-                        "50000".to_string(),
-                    )),
                 container(
                     text(if eligible {
                         "Eligible (>= 50k)"
@@ -574,9 +617,6 @@ fn view_side_quests_card<'a>(
             .align_y(Alignment::Center),
             int_field_row("Chaco's Pickpocketed Potch", suri_potch, |v| {
                 Message::SetIntField(Some("game_data"), "suri_potch", v)
-            }),
-            int_field_row("Luca Ambush HP (luka_hp)", luka_hp, |v| {
-                Message::SetIntField(Some("game_data"), "luka_hp", v)
             }),
             beast_rows,
         ]
@@ -606,20 +646,30 @@ fn view_clive_quest_card<'a>(
                 .color(theme::TEXT_MUTED),
         );
 
-    let mut col = column![header].spacing(8);
+    let mut col = column![header].spacing(10);
 
-    for m in CLIVE_MILESTONES {
-        let checked = (flag_byte & m.bit) != 0;
-        let mask = m.bit;
-        col = col.push(
-            column![
-                checkbox(m.label, checked)
-                    .on_toggle(move |val| Message::ToggleEventFlagBit(94, mask, val))
-                    .text_size(13),
-                text(m.desc).size(11).color(theme::TEXT_MUTED),
-            ]
-            .spacing(2),
-        );
+    for pair in CLIVE_MILESTONES.chunks(2) {
+        let mut r = row![].spacing(16);
+        for m in pair {
+            let checked = (flag_byte & m.bit) != 0;
+            let mask = m.bit;
+            r = r.push(
+                container(
+                    column![
+                        checkbox(m.label, checked)
+                            .on_toggle(move |val| Message::ToggleEventFlagBit(94, mask, val))
+                            .text_size(13),
+                        text(m.desc).size(11).color(theme::TEXT_MUTED),
+                    ]
+                    .spacing(2),
+                )
+                .width(Length::FillPortion(1)),
+            );
+        }
+        if pair.len() == 1 {
+            r = r.push(Space::with_width(Length::FillPortion(1)));
+        }
+        col = col.push(r);
     }
 
     container(col)
@@ -634,9 +684,6 @@ fn view_greenhill_aliases_card<'a>(doc: &'a SaveDocument) -> Element<'a, Message
         "Hero Alias (kari_name[0])",
         "Nanami Alias (kari_name[1])",
         "Flik Alias (kari_name[2])",
-        "Alias Slot 4 (kari_name[3])",
-        "Alias Slot 5 (kari_name[4])",
-        "Alias Slot 6 (kari_name[5])",
     ];
 
     let mut col = column![
@@ -690,7 +737,7 @@ fn int_field_row<'a>(
         text(label)
             .size(13)
             .color(theme::TEXT_MUTED)
-            .width(Length::Fixed(145.0)),
+            .width(Length::Fixed(165.0)),
         text_input("0", &value.to_string())
             .on_input(on_change)
             .padding(7)

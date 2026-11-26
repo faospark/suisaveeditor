@@ -98,7 +98,7 @@ fn view_character_list<'a>(
             row![
                 thumb,
                 column![
-                    text(name).size(13).color(if is_selected {
+                    theme::active_text(name, 13.0, is_selected).color(if is_selected {
                         theme::ACCENT_GOLD
                     } else {
                         theme::TEXT_PRIMARY

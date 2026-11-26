@@ -7,6 +7,7 @@ pub mod general;
 pub mod inventory;
 pub mod investigations;
 pub mod item_modal;
+pub mod notification_modal;
 pub mod recruitment;
 pub mod restore_modal;
 pub mod saves;

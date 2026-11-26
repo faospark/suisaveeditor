@@ -33,17 +33,21 @@ pub fn view<'a>(modal: &'a ItemModalState) -> Element<'a, Message> {
     let q = modal.search.trim().to_lowercase();
 
     let mut cat_tabs = row![
-        button(text(crate::i18n::tr("all")).size(12))
-            .padding([6, 10])
-            .style(theme::nav_button_style(modal.category.is_none()))
-            .on_press(Message::SetModalCategory(None)),
+        button(theme::active_text(
+            crate::i18n::tr("all"),
+            12.0,
+            modal.category.is_none()
+        ))
+        .padding([6, 10])
+        .style(theme::nav_button_style(modal.category.is_none()))
+        .on_press(Message::SetModalCategory(None)),
     ]
     .spacing(5);
 
     for &cat in ItemCategory::ALL {
         let active = modal.category == Some(cat);
         cat_tabs = cat_tabs.push(
-            button(text(cat.to_string()).size(12))
+            button(theme::active_text(cat.to_string(), 12.0, active))
                 .padding([6, 8])
                 .style(theme::category_tab_style(active, cat.color()))
                 .on_press(Message::SetModalCategory(Some(cat))),

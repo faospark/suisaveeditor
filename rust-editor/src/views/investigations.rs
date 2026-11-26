@@ -11,8 +11,43 @@ use crate::Message;
 
 const EXCLUDED_INVESTIGATION_IDS: &[i64] = &[84, 123, 124, 125];
 
-fn is_investigable(char_id: i64) -> bool {
+pub fn is_investigable(char_id: i64) -> bool {
     (1..=122).contains(&char_id) && !EXCLUDED_INVESTIGATION_IDS.contains(&char_id)
+}
+
+/// Exact per-character secret count from `t_phase.CheckSecretOpenLv3` / `CheckSecretOpenLv4`.
+pub fn max_secrets(char_id: i64) -> usize {
+    match char_id {
+        75..=79 | 99 => 2,
+        15 | 17 | 22 | 25 | 27 | 30 | 44 | 50 | 51 | 58 | 62 | 65 | 70 | 74 | 91 | 92 | 97 | 98
+        | 100 | 103 | 104 | 105 | 107 | 111 | 113 | 114 | 117 | 119 | 120 | 121 => 3,
+        _ => 4,
+    }
+}
+
+/// Reads the 4-bit investigation level (`0..=4`) from `tantei_lv[char_id / 2]`.
+/// Odd IDs use the low nibble (`& 0x0F`); even IDs use the high nibble (`>> 4`).
+pub fn get_character_level(doc: &SaveDocument, char_id: usize) -> u8 {
+    let byte_idx = char_id / 2;
+    let byte_val = doc.get_array_i64(Some("game_data"), "tantei_lv", byte_idx) as u8;
+    if char_id % 2 == 1 {
+        byte_val & 0x0F
+    } else {
+        byte_val >> 4
+    }
+}
+
+/// Writes a character's 4-bit investigation level (`0..=4`) into `tantei_lv[char_id / 2]`.
+pub fn set_character_level(doc: &mut SaveDocument, char_id: usize, level: u8) {
+    let byte_idx = char_id / 2;
+    let cur = doc.get_array_i64(Some("game_data"), "tantei_lv", byte_idx) as u8;
+    let lv = level.min(4);
+    let next = if char_id % 2 == 1 {
+        (cur & 0xF0) | lv
+    } else {
+        (cur & 0x0F) | (lv << 4)
+    };
+    doc.set_array_i64(Some("game_data"), "tantei_lv", byte_idx, next as i64);
 }
 
 pub fn view<'a>(
@@ -43,6 +78,9 @@ pub fn view<'a>(
             .color(theme::ACCENT_GOLD),
     );
 
+    let tantei_h = doc.get_array_i64(Some("game_data"), "tantei_time", 0);
+    let tantei_m = doc.get_array_i64(Some("game_data"), "tantei_time", 1);
+
     let active_card = container(
         column![
             active_header,
@@ -68,6 +106,14 @@ pub fn view<'a>(
                     .size(13)
                     .width(Length::Fixed(72.0))
                     .style(theme::input_style),
+                Space::with_width(Length::Fill),
+                text(format!("Timer (tantei_time): {:02}:{:02}", tantei_h, tantei_m))
+                    .size(11)
+                    .color(theme::TEXT_MUTED),
+                button(text("Reset Timer (00:00)").size(11))
+                    .padding([5, 10])
+                    .style(theme::secondary_button_style)
+                    .on_press(Message::ResetGameTimer("tantei_time")),
             ]
             .spacing(10)
             .align_y(Alignment::Center),
@@ -85,15 +131,9 @@ pub fn view<'a>(
         if !is_investigable(char_id as i64) {
             continue;
         }
-        total_clues += 4;
-        let byte_idx = char_id / 2;
-        let bit_base = if char_id % 2 == 1 { 4 } else { 0 };
-        let byte_val = doc.get_array_i64(Some("game_data"), "tantei_lv", byte_idx) as u8;
-        for c in 0..4 {
-            if (byte_val & (1u8 << (bit_base + c))) != 0 {
-                unlocked_clues += 1;
-            }
-        }
+        let max = max_secrets(char_id as i64);
+        total_clues += max;
+        unlocked_clues += (get_character_level(doc, char_id) as usize).min(max);
     }
 
     let toolbar = container(
@@ -115,11 +155,11 @@ pub fn view<'a>(
             button(text("Unlock All Clues").size(12))
                 .padding([6, 12])
                 .style(theme::primary_button_style)
-                .on_press(Message::SetAllInvestigations(255)),
+                .on_press(Message::SetAllInvestigations(true)),
             button(text("Reset All (0)").size(12))
                 .padding([6, 12])
                 .style(theme::secondary_button_style)
-                .on_press(Message::SetAllInvestigations(0)),
+                .on_press(Message::SetAllInvestigations(false)),
         ]
         .spacing(10)
         .align_y(Alignment::Center),
@@ -128,7 +168,7 @@ pub fn view<'a>(
     .width(Length::Fill)
     .style(theme::card_style);
 
-    // Character cards (each character has 4 clues packed into a nibble of tantei_lv[char_id / 2])
+    // Character cards (each character has 2-4 clues stored as a 4-bit level in tantei_lv[char_id / 2])
     let matching: Vec<usize> = (1..=125)
         .filter(|&id| {
             if !is_investigable(id as i64) {
@@ -143,9 +183,8 @@ pub fn view<'a>(
     for chunk in matching.chunks(3) {
         let mut r = row![].spacing(10);
         for &char_id in chunk {
-            let byte_idx = char_id / 2;
-            let bit_base = if char_id % 2 == 1 { 4 } else { 0 };
-            let byte_val = doc.get_array_i64(Some("game_data"), "tantei_lv", byte_idx) as u8;
+            let max = max_secrets(char_id as i64);
+            let current_level = get_character_level(doc, char_id);
             let name = character_name(char_id as i64);
 
             let thumb: Element<'a, Message> = if let Some(handle) = portraits.get(char_id as i64) {
@@ -160,19 +199,13 @@ pub fn view<'a>(
             };
 
             let mut clue_row = row![].spacing(8);
-            for clue in 0..4 {
-                let mask = 1u8 << (bit_base + clue);
-                let checked = (byte_val & mask) != 0;
+            for clue in 0..max {
+                let level = (clue + 1) as u8;
+                let checked = current_level >= level;
                 clue_row = clue_row.push(
                     checkbox(format!("C{}", clue + 1), checked)
                         .on_toggle(move |on| {
-                            Message::ToggleArrayFlagBit(
-                                Some("game_data"),
-                                "tantei_lv",
-                                byte_idx,
-                                mask,
-                                on,
-                            )
+                            Message::SetInvestigationLevel(char_id, if on { level } else { level - 1 })
                         })
                         .text_size(11),
                 );
@@ -209,7 +242,7 @@ pub fn view<'a>(
             text("Richmond's Detective Investigations")
                 .size(22)
                 .color(theme::TEXT_PRIMARY),
-            text("Each character has 4 secret clues (C1–C4) stored as 4-bit nibbles in game_data.tantei_lv[0..64].")
+            text("Each character has 2–4 secret clues stored as 4-bit levels in game_data.tantei_lv[0..64].")
                 .size(13)
                 .color(theme::TEXT_MUTED),
         ]
